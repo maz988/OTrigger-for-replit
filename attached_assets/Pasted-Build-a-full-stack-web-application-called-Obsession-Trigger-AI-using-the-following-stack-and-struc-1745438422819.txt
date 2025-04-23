@@ -1,0 +1,57 @@
+Build a full-stack web application called “Obsession Trigger AI” using the following stack and structure:
+
+🧱 TECH STACK:
+- Frontend: React (use Vite for fast setup)
+- Backend: Firebase (Firestore for storage, Firebase Auth for optional login)
+- AI Integration: OpenAI API (GPT-4 or GPT-3.5)
+- PDF Generation: Use pdf-lib or jsPDF (on client side)
+- Hosting: Replit deployment
+- Email Storage: Save emails and quiz results to Firestore
+
+🎯 PURPOSE:
+This is a romantic relationship quiz tool targeted at women. After users complete a short 5-question quiz, the app uses AI to generate personalized advice based on their answers, compiles the advice into a branded downloadable PDF (with a soft affiliate pitch), and collects their name and email before download.
+
+📋 QUIZ FLOW:
+- Five multiple-choice or short-answer questions:
+   1. What’s your relationship status?
+   2. What’s your biggest concern in the relationship?
+   3. What’s something he does that confuses you?
+   4. How do you communicate with him?
+   5. What’s your desired outcome?
+
+🧠 AI LOGIC:
+- After submission, send the answers to the OpenAI API.
+- Prompt example:
+  “Act as a women’s relationship expert. Based on these answers, give warm, intelligent advice that references emotional triggers, male psychology, and the Hero Instinct concept. End with a recommendation to explore this topic more deeply.”
+
+📄 PDF OUTPUT:
+- Title: “Your Custom Obsession Trigger Plan”
+- 2-3 paragraphs of AI-written advice
+- Footer includes this CTA:
+  “To learn the full system that activates his Hero Instinct, download *His Secret Obsession*. Click here 👉 [your ClickBank affiliate link]”
+- Offer download + open in browser option
+- Make the PDF well-styled and branded (soft romantic colors)
+
+📩 EMAIL COLLECTION:
+- Before showing or downloading the PDF:
+  - Ask for First Name and Email
+  - Store in Firestore
+  - Optional: confirm via modal or toast that it’s saved
+
+💻 UI DESIGN:
+- Modern, soft UI with elegant romantic feel
+- Use soft pink, blue, and white colors
+- Each quiz question appears as a card with smooth transitions
+- Show a loading animation while generating AI result
+- Display PDF preview in browser before download
+
+🎯 BONUS:
+- Include social share buttons after download
+- Track quiz completions in Firestore (timestamp, email, status)
+
+Set up the full environment with folders for:
+- /components (QuizForm, ResultPage, PDFRenderer)
+- /services (firebase.js, openai.js, pdfGenerator.js)
+- .env for API keys
+
+After setup, guide me on how to input Firebase + OpenAI keys securely on Replit.
