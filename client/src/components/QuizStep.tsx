@@ -12,10 +12,6 @@ import {
   FormLabel, 
   FormMessage 
 } from '@/components/ui/form';
-import { 
-  RadioGroup, 
-  RadioGroupItem 
-} from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { type QuizFormData } from '@shared/schema';
@@ -62,32 +58,23 @@ const QuizStep: React.FC<QuizStepProps> = ({
                   
                   return (
                     <FormItem className="space-y-4">
-                      <FormControl>
-                        <RadioGroup 
-                          onValueChange={field.onChange} 
-                          value={field.value || "Dating"}
-                          className="space-y-2"
-                        >
-                          {[
-                            { value: "Single", label: "Single" },
-                            { value: "Dating", label: "Dating" },
-                            { value: "Relationship", label: "In a relationship" },
-                            { value: "Complicated", label: "It's complicated" },
-                          ].map((option) => (
-                            <label
-                              key={option.value}
-                              className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
-                            >
-                              <RadioGroupItem 
-                                value={option.value} 
-                                id={option.value}
-                                className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                              />
-                              <span className="ml-3">{option.label}</span>
-                            </label>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
+                      <div className="space-y-2">
+                        {[
+                          { value: "Single", label: "Single" },
+                          { value: "Dating", label: "Dating" },
+                          { value: "Relationship", label: "In a relationship" },
+                          { value: "Complicated", label: "It's complicated" },
+                        ].map((option) => (
+                          <div
+                            key={option.value}
+                            className={`flex items-center p-3 border rounded-lg cursor-pointer hover:border-pink-200 transition-colors ${field.value === option.value ? 'border-[#f24b7c] bg-[#fdf2f5]' : 'border-gray-200'}`}
+                            onClick={() => field.onChange(option.value)}
+                          >
+                            <div className={`w-4 h-4 rounded-full mr-3 ${field.value === option.value ? 'bg-[#f24b7c]' : 'border border-gray-300'}`} />
+                            <span>{option.label}</span>
+                          </div>
+                        ))}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   );
@@ -118,33 +105,24 @@ const QuizStep: React.FC<QuizStepProps> = ({
                   
                   return (
                     <FormItem className="space-y-4">
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value || "Commitment"}
-                          className="space-y-2"
-                        >
-                          {[
-                            { value: "Communication", label: "Lack of communication" },
-                            { value: "Commitment", label: "Commitment issues" },
-                            { value: "Affection", label: "Lack of affection/romance" },
-                            { value: "Trust", label: "Trust issues" },
-                            { value: "Other", label: "Other" },
-                          ].map((option) => (
-                            <label
-                              key={option.value}
-                              className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
-                            >
-                              <RadioGroupItem 
-                                value={option.value} 
-                                id={option.value}
-                                className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                              />
-                              <span className="ml-3">{option.label}</span>
-                            </label>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
+                      <div className="space-y-2">
+                        {[
+                          { value: "Communication", label: "Lack of communication" },
+                          { value: "Commitment", label: "Commitment issues" },
+                          { value: "Affection", label: "Lack of affection/romance" },
+                          { value: "Trust", label: "Trust issues" },
+                          { value: "Other", label: "Other" },
+                        ].map((option) => (
+                          <div
+                            key={option.value}
+                            className={`flex items-center p-3 border rounded-lg cursor-pointer hover:border-pink-200 transition-colors ${field.value === option.value ? 'border-[#f24b7c] bg-[#fdf2f5]' : 'border-gray-200'}`}
+                            onClick={() => field.onChange(option.value)}
+                          >
+                            <div className={`w-4 h-4 rounded-full mr-3 ${field.value === option.value ? 'bg-[#f24b7c]' : 'border border-gray-300'}`} />
+                            <span>{option.label}</span>
+                          </div>
+                        ))}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   );
@@ -206,33 +184,24 @@ const QuizStep: React.FC<QuizStepProps> = ({
                   
                   return (
                     <FormItem className="space-y-4">
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value || "Emotional"}
-                          className="space-y-2"
-                        >
-                          {[
-                            { value: "Direct", label: "Direct and to the point" },
-                            { value: "Emotional", label: "Emotional and expressive" },
-                            { value: "Passive", label: "Passive, I often hold back" },
-                            { value: "Mixed", label: "It depends on the situation" },
-                            { value: "Avoidant", label: "I avoid difficult conversations" },
-                          ].map((option) => (
-                            <label
-                              key={option.value}
-                              className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
-                            >
-                              <RadioGroupItem 
-                                value={option.value} 
-                                id={option.value}
-                                className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                              />
-                              <span className="ml-3">{option.label}</span>
-                            </label>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
+                      <div className="space-y-2">
+                        {[
+                          { value: "Direct", label: "Direct and to the point" },
+                          { value: "Emotional", label: "Emotional and expressive" },
+                          { value: "Passive", label: "Passive, I often hold back" },
+                          { value: "Mixed", label: "It depends on the situation" },
+                          { value: "Avoidant", label: "I avoid difficult conversations" },
+                        ].map((option) => (
+                          <div
+                            key={option.value}
+                            className={`flex items-center p-3 border rounded-lg cursor-pointer hover:border-pink-200 transition-colors ${field.value === option.value ? 'border-[#f24b7c] bg-[#fdf2f5]' : 'border-gray-200'}`}
+                            onClick={() => field.onChange(option.value)}
+                          >
+                            <div className={`w-4 h-4 rounded-full mr-3 ${field.value === option.value ? 'bg-[#f24b7c]' : 'border border-gray-300'}`} />
+                            <span>{option.label}</span>
+                          </div>
+                        ))}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   );
@@ -263,33 +232,24 @@ const QuizStep: React.FC<QuizStepProps> = ({
                   
                   return (
                     <FormItem className="space-y-4">
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value || "Attention"}
-                          className="space-y-2"
-                        >
-                          {[
-                            { value: "Commitment", label: "Long-term commitment/marriage" },
-                            { value: "Improvement", label: "Improving our existing relationship" },
-                            { value: "Attention", label: "Getting his attention and interest" },
-                            { value: "Understanding", label: "Understanding him better" },
-                            { value: "Closure", label: "Finding closure or moving on" },
-                          ].map((option) => (
-                            <label
-                              key={option.value}
-                              className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
-                            >
-                              <RadioGroupItem 
-                                value={option.value} 
-                                id={option.value}
-                                className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                              />
-                              <span className="ml-3">{option.label}</span>
-                            </label>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
+                      <div className="space-y-2">
+                        {[
+                          { value: "Commitment", label: "Long-term commitment/marriage" },
+                          { value: "Improvement", label: "Improving our existing relationship" },
+                          { value: "Attention", label: "Getting his attention and interest" },
+                          { value: "Understanding", label: "Understanding him better" },
+                          { value: "Closure", label: "Finding closure or moving on" },
+                        ].map((option) => (
+                          <div
+                            key={option.value}
+                            className={`flex items-center p-3 border rounded-lg cursor-pointer hover:border-pink-200 transition-colors ${field.value === option.value ? 'border-[#f24b7c] bg-[#fdf2f5]' : 'border-gray-200'}`}
+                            onClick={() => field.onChange(option.value)}
+                          >
+                            <div className={`w-4 h-4 rounded-full mr-3 ${field.value === option.value ? 'bg-[#f24b7c]' : 'border border-gray-300'}`} />
+                            <span>{option.label}</span>
+                          </div>
+                        ))}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   );
