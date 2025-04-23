@@ -19,10 +19,11 @@ interface BlogPost {
 export function BlogPostList() {
   const { data: blogPostsResponse, isLoading } = useQuery({
     queryKey: ['/api/blog/posts'],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn<BlogPost[]>(),
   });
 
-  const blogPosts = blogPostsResponse?.data as BlogPost[] || [];
+  const blogPosts = blogPostsResponse?.success && blogPostsResponse?.data ? 
+    blogPostsResponse.data : [];
 
   if (isLoading) {
     return (

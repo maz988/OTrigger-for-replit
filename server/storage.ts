@@ -242,8 +242,9 @@ export class MemStorage implements IStorage {
           title: post.title,
           slug: post.slug,
           keyword: post.keyword, 
-          category: 'Relationships',
-          content: `This is the content for ${post.title}.`
+          category: post.slug.includes('hero-instinct') || post.slug.includes('obsessed') ? 'Attraction' : 
+                 post.slug.includes('intimacy') ? 'Communication' : 'Relationships',
+          content: this.generateMockContentForPost(post.title, post.keyword)
         });
         
         // Also generate sample analytics for this post
@@ -366,6 +367,27 @@ export class MemStorage implements IStorage {
       admin.lastLogin = new Date();
       this.admins.set(id, admin);
     }
+  }
+  
+  private generateMockContentForPost(title: string, keyword: string): string {
+    // Create realistic blog post content for each post
+    return `Understanding ${keyword} is crucial for a fulfilling relationship. Many women struggle with this aspect of their romantic relationships, often unsure about how to navigate the complex emotions involved.
+
+When it comes to ${keyword}, psychological research shows that men and women often approach relationships differently. Men tend to respond strongly to feeling needed and appreciated, while also requiring space to pursue their own goals.
+
+The "Hero Instinct" concept explains that men have an innate desire to feel essential in their partner's life. By triggering this natural instinct, you can create a deeper connection with your partner that goes beyond surface-level attraction.
+
+Here are three practical ways to approach ${title.toLowerCase()}:
+
+1. Create opportunities for him to feel needed without seeming dependent. Small requests for his help or opinion can make him feel valued without overwhelming him.
+
+2. Acknowledge and appreciate his efforts, especially when he goes out of his way for you. Recognition is a powerful motivator for continued positive behavior.
+
+3. Support his ambitions and goals while maintaining your own independence. This balanced approach creates mutual respect that strengthens your relationship foundation.
+
+Remember that effective communication remains at the heart of any successful relationship strategy. Being clear about your needs while remaining receptive to his perspective creates the emotional safety needed for vulnerability and growth together.
+
+If you'd like a personalized assessment of your unique relationship situation, take our comprehensive relationship quiz. In just 60 seconds, you'll receive tailored insights and strategies designed specifically for your circumstances.`;
   }
   
   // Analytics summary methods

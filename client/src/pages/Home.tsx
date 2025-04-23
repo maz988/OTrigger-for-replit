@@ -24,10 +24,11 @@ const Home: React.FC = () => {
 
   const { data: featuredPostsResponse } = useQuery({
     queryKey: ['/api/blog/featured'],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn<BlogPost[]>(),
   });
 
-  const featuredPosts = (featuredPostsResponse?.data as BlogPost[] || []).slice(0, 3);
+  const featuredPosts = (featuredPostsResponse?.success && featuredPostsResponse?.data ? 
+    featuredPostsResponse.data : []).slice(0, 3);
 
   return (
     <div className="py-4 min-h-screen bg-white">

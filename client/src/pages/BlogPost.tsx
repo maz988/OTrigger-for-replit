@@ -22,10 +22,11 @@ const BlogPost: React.FC = () => {
   
   const { data: blogPostResponse, isLoading, error } = useQuery({
     queryKey: [`/api/blog/posts/${slug}`],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn<BlogPost>(),
   });
 
-  const post = blogPostResponse?.data as BlogPost;
+  const post = blogPostResponse?.success && blogPostResponse?.data ? 
+    blogPostResponse.data : null;
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
