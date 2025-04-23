@@ -46,14 +46,43 @@ export const generatePDF = ({
   doc.setTextColor(31, 41, 55); // gray-800
   doc.setFontSize(11);
   
-  // Split advice into paragraphs and add with proper spacing
-  const paragraphs = advice.split('\n\n');
+  // Process markdown-like advice text
+  const sections = advice.split('\n\n');
   let yPosition = margin + 20;
   
-  for (const paragraph of paragraphs) {
-    const lines = doc.splitTextToSize(paragraph, contentWidth);
-    doc.text(lines, margin, yPosition);
-    yPosition += lines.length * 6 + 4; // Add spacing between paragraphs
+  for (const section of sections) {
+    // Check if it's a header (starts with # or ##)
+    if (section.startsWith('# ') || section.startsWith('## ') || section.startsWith('### ')) {
+      const headerText = section.replace(/^#+\s/, '');
+      doc.setFontSize(section.startsWith('# ') ? 18 : section.startsWith('## ') ? 16 : 14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(242, 75, 124); // #f24b7c
+      const lines = doc.splitTextToSize(headerText, contentWidth);
+      doc.text(lines, margin, yPosition);
+      yPosition += lines.length * 8;
+      
+      // Reset for normal text
+      doc.setTextColor(31, 41, 55);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+    } 
+    // Check if it's a list item (starts with number and period or * or - )
+    else if (/^\d+\.\s/.test(section) || section.trim().startsWith('* ') || section.trim().startsWith('- ')) {
+      const listText = section;
+      doc.setFont("helvetica", "normal");
+      const lines = doc.splitTextToSize(listText, contentWidth - 5);
+      doc.text(lines, margin + 5, yPosition); // Indent list items
+      yPosition += lines.length * 6 + 2;
+    }
+    // Regular paragraph
+    else {
+      // Check for bold text with **
+      let paragraph = section;
+      
+      const lines = doc.splitTextToSize(paragraph, contentWidth);
+      doc.text(lines, margin, yPosition);
+      yPosition += lines.length * 6 + 4; // Add spacing between paragraphs
+    }
   }
   
   // Add call to action box

@@ -25,11 +25,11 @@ const QuizContainer: React.FC = () => {
   const methods = useForm<QuizFormData>({
     resolver: zodResolver(quizFormSchema),
     defaultValues: {
-      relationshipStatus: '',
-      concernType: '',
-      confusingBehavior: '',
-      communicationStyle: '',
-      desiredOutcome: '',
+      relationshipStatus: 'Dating',
+      concernType: 'Commitment',
+      confusingBehavior: "He's hot and cold with me. One day he seems really interested, texting me all day, and the next day he barely responds.",
+      communicationStyle: 'Emotional',
+      desiredOutcome: 'Attention',
     },
     mode: 'onChange',
   });

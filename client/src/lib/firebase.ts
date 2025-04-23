@@ -12,12 +12,34 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Initialize Firebase (commented out for demo)
+// const app = initializeApp(firebaseConfig);
+// const db = getFirestore(app);
+
+// Mock database for demo
+// Using explicit type declaration to avoid TypeScript 'any' error
+interface MockDb {
+  collection: (name: string) => {
+    add: (data: Record<string, unknown>) => Promise<{ id: string }>;
+  };
+}
+
+const mockDb: MockDb = {
+  collection: () => ({
+    add: async () => ({ id: "mock-id-" + Date.now() }),
+  }),
+};
 
 export const saveQuizResponse = async (quizResponse: InsertQuizResponse, aiResponse: string) => {
   try {
+    // For demo purposes, just log and return success without actual Firebase submission
+    console.log("Demo mode: Saving quiz response", { ...quizResponse, aiResponse });
+    
+    // Return mock response
+    return { success: true, id: "mock-id-" + Date.now() };
+    
+    // Original implementation for when Firebase is configured:
+    /*
     const docRef = await addDoc(collection(db, "quiz-responses"), {
       ...quizResponse,
       aiResponse,
@@ -26,10 +48,12 @@ export const saveQuizResponse = async (quizResponse: InsertQuizResponse, aiRespo
     
     console.log("Document written with ID: ", docRef.id);
     return { success: true, id: docRef.id };
+    */
   } catch (e) {
     console.error("Error adding document: ", e);
     return { success: false, error: e };
   }
 };
 
-export default db;
+// Export mock DB for demo purposes
+export default mockDb;
