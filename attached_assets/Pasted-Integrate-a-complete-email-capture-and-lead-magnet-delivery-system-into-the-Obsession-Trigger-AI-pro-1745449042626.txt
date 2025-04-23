@@ -1,0 +1,50 @@
+Integrate a complete email capture and lead magnet delivery system into the Obsession Trigger AI project. The system should support multiple user-provided lead magnets and connect to a free email marketing tool for automation. Include a sidebar opt-in form on all blog pages and a funnel connected to quiz completions.
+
+📩 PURPOSE:
+Collect emails from women using relationship-focused lead magnets (PDFs provided by me), then automatically send value-based follow-up emails — some purely helpful, others including affiliate offers.
+
+🧱 TECH STACK:
+- Email delivery: Use a free email marketing platform like MailerLite, Brevo (Sendinblue), or ConvertKit (integrate via API or embed form)
+- Frontend: React (or HTML/CSS if plain)
+- Storage: PDFs hosted in /public or Firebase Storage
+
+📦 LEAD MAGNET SYSTEM:
+1. I will provide the lead magnet PDF files.
+2. Users see opt-in form offering a free love guide.
+3. Form collects:
+   - First Name
+   - Email
+4. On submission:
+   - Show success message
+   - Save to Firestore or send to chosen ESP (MailerLite, etc.)
+   - Show download link or automatically email the user the lead magnet
+   - Track timestamp and opt-in source (quiz result, blog sidebar, etc.)
+
+🧠 NEWSLETTER FOLLOW-UP SYSTEM:
+- Generate a series of 5 AI-powered follow-up emails using OpenAI (GPT-4 or 3.5):
+   - Email 1: Warm welcome & relationship tip (no links)
+   - Email 2: Psychology-based advice (e.g. male emotional needs)
+   - Email 3: Practical love tip + invite to quiz
+   - Email 4: Soft promo for *His Secret Obsession* (with my affiliate link)
+   - Email 5: Emotional trust-building story + optional link
+- Emails must sound empathetic, female-targeted, and intelligent
+
+🖼 SIDEBAR LEAD MAGNET OPT-IN:
+- Add a reusable lead magnet form to all blog pages (sidebar on desktop, below content on mobile)
+- Design: Soft, romantic UI with animated heart or glow on CTA
+- Example CTA: “Get your Free Love Guide + Weekly Advice”
+- Submission triggers the same funnel as quiz opt-in
+
+💬 COMPONENTS TO BUILD:
+- `/components/LeadMagnetForm.jsx` (main opt-in form)
+- `/services/emailSignup.js` (handles Firestore save or ESP integration)
+- `/public/leadmagnets/` (folder where I will upload my own PDFs)
+- `/utils/emailTemplates.js` (generate AI follow-up content per subscriber)
+
+📌 EXTRA:
+- Prepare integration option for MailerLite or Brevo (I’ll provide API key or embed if needed)
+- Keep email and subscriber data portable for migration later
+
+Make the system modular so I can reuse it on other pages (like pop-ups or exit-intent).
+
+Let me know when you’re ready for my PDF files and affiliate link.
