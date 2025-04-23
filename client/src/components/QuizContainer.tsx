@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { quizFormSchema, emailFormSchema, type QuizFormData, type EmailFormData } from '@shared/schema';
@@ -10,6 +10,7 @@ import { generateAdvice } from '@/lib/openai';
 import { saveQuizResponse } from '@/lib/firebase';
 import { generatePDF } from '@/lib/pdf-generator';
 import { useToast } from '@/hooks/use-toast';
+import { parseTrackingParams, type ReferralSource } from '@shared/blog-integration';
 
 const QuizContainer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -19,8 +20,36 @@ const QuizContainer: React.FC = () => {
   const [aiAdvice, setAiAdvice] = useState('');
   const [userData, setUserData] = useState<EmailFormData | null>(null);
   const [pdfDocument, setPdfDocument] = useState<any>(null);
+  const [referralData, setReferralData] = useState<ReferralSource | null>(null);
   const { toast } = useToast();
   const totalSteps = 5;
+  
+  // Track referral source on component mount
+  useEffect(() => {
+    try {
+      const currentUrl = window.location.href;
+      const referralSource = parseTrackingParams(currentUrl);
+      
+      if (referralSource) {
+        setReferralData(referralSource);
+        console.log('User referred from:', referralSource);
+        
+        // If user came from the blog, we can personalize their experience
+        if (referralSource.source === 'blog' && referralSource.keyword) {
+          // This could be used to adapt the quiz based on what content they were reading
+          console.log(`User was reading about: ${referralSource.keyword}`);
+          
+          // If this was a blog post about a specific relationship topic,
+          // we could potentially pre-select some quiz options that are relevant
+          if (referralSource.keyword.includes('hero instinct')) {
+            // For example, customize the default form values related to this topic
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing referral data:', error);
+    }
+  }, []);
 
   const methods = useForm<QuizFormData>({
     resolver: zodResolver(quizFormSchema),
@@ -83,17 +112,27 @@ const QuizContainer: React.FC = () => {
       setUserData(data);
       const quizData = methods.getValues();
       
-      // Save to Firebase
+      // Add referral data to the saved information if available
+      const enhancedData = {
+        ...data,
+        referralSource: referralData?.source || 'direct',
+        referralCampaign: referralData?.campaign,
+        referralKeyword: referralData?.keyword,
+        referralContent: referralData?.content,
+        blogPost: referralData?.blogPost
+      };
+      
+      // Save to Firebase with referral data
       await saveQuizResponse(
-        { ...quizData, ...data },
+        { ...quizData, ...enhancedData },
         aiAdvice
       );
       
-      // Generate PDF
+      // Generate PDF 
       const affiliateLink = "https://hop.clickbank.net/?affiliate=yourID&vendor=hissecobs";
       const pdf = generatePDF({
         quizData,
-        userData: data,
+        userData: enhancedData,
         advice: aiAdvice,
         affiliateLink,
       });
