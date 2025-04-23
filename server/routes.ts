@@ -13,7 +13,7 @@ const openai = new OpenAI({
 // Authentication middleware for admin routes
 const authenticateAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Get the admin token from the headers
+    // Get the admin token from cookies, headers, or request body
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

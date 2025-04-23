@@ -33,10 +33,21 @@ const AdminLogin: React.FC = () => {
 
   const loginMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return apiRequest('/api/admin/login', { 
-        method: 'POST', 
-        body: data as any
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+        credentials: 'include'
       });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || `Error ${response.status}`);
+      }
+      
+      return await response.json();
     },
     onSuccess: (response) => {
       if (!response.success) {
@@ -46,6 +57,11 @@ const AdminLogin: React.FC = () => {
           variant: 'destructive',
         });
         return;
+      }
+      
+      // Save token to localStorage
+      if (response.data && response.data.token) {
+        localStorage.setItem('adminToken', response.data.token);
       }
       
       queryClient.invalidateQueries({ queryKey: ['/api/admin/me'] });

@@ -17,9 +17,32 @@ interface AdminUser {
 const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
   const [_, setLocation] = useLocation();
 
+  // Get the token from localStorage
+  const token = localStorage.getItem('adminToken');
+  
   const { data: adminDataResponse, isLoading, isError } = useQuery({
     queryKey: ['/api/admin/me'],
-    queryFn: getQueryFn<AdminUser>({ on401: 'silent' }),
+    queryFn: async () => {
+      if (!token) {
+        return { success: false, error: 'Not authenticated' };
+      }
+      
+      const response = await fetch('/api/admin/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          return { success: false, error: 'Not authenticated' };
+        }
+        const error = await response.text();
+        throw new Error(error || `Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
     retry: false,
   });
 

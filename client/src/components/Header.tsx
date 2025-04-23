@@ -13,16 +13,36 @@ interface AdminUser {
 const Header: React.FC = () => {
   const [location] = useLocation();
   
+  // Get the token from localStorage
+  const token = localStorage.getItem('adminToken');
+  
   const { data: adminDataResponse } = useQuery({
     queryKey: ['/api/admin/me'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: async () => {
+      if (!token) {
+        return { success: false };
+      }
+      
+      const response = await fetch('/api/admin/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          return { success: false };
+        }
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
     retry: false,
-    enabled: location.startsWith('/admin'), // Only fetch if on admin pages
   });
 
-  // Type cast the response data
-  const isAdmin = adminDataResponse && 
-    (adminDataResponse as any).data !== undefined;
+  // Check if we have admin data
+  const isAdmin = adminDataResponse?.success && adminDataResponse?.data;
 
   const getActiveClass = (path: string) => {
     const isActive = location === path || 
