@@ -3,121 +3,186 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{title}} - Obsession Trigger Blog</title>
+  <title>{{title}} | Obsession Trigger</title>
   <meta name="description" content="{{description}}">
   
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="article">
-  <meta property="og:url" content="https://obsession-trigger-blog.com/{{slug}}">
+  <meta property="og:url" content="{{blog_url}}/posts/{{slug}}.html">
   <meta property="og:title" content="{{title}}">
   <meta property="og:description" content="{{description}}">
-  <meta property="og:image" content="{{featuredImage}}">
+  <meta property="og:image" content="{{featured_image}}">
   
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://obsession-trigger-blog.com/{{slug}}">
+  <meta property="twitter:url" content="{{blog_url}}/posts/{{slug}}.html">
   <meta property="twitter:title" content="{{title}}">
   <meta property="twitter:description" content="{{description}}">
-  <meta property="twitter:image" content="{{featuredImage}}">
+  <meta property="twitter:image" content="{{featured_image}}">
   
-  <!-- Stylesheet -->
-  <link rel="stylesheet" href="/css/style.css">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/images/favicon.png">
   
-  <!-- JSON-LD Schema -->
-  {{jsonLd}}
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/styles.css">
+  
+  <!-- JSON-LD -->
+  {{json_ld}}
 </head>
 <body>
-  <header>
+  <!-- Header -->
+  <header class="header">
     <div class="container">
-      <nav>
-        <a href="/" class="logo">Obsession Trigger Blog</a>
-        <ul>
+      <nav class="nav">
+        <a href="/" class="logo">
+          <span>Obsession Trigger</span>
+        </a>
+        
+        <ul class="menu">
           <li><a href="/">Home</a></li>
           <li><a href="/articles" class="active">Articles</a></li>
-          <li><a href="https://obsession-trigger.com" class="nav-cta">Take the Quiz</a></li>
+          <li><a href="https://obsession-trigger.com/quiz" target="_blank">Take the Quiz</a></li>
+          <li><a href="/about">About</a></li>
         </ul>
+        
+        <button class="mobile-menu-btn">
+          <i class="fas fa-bars"></i>
+        </button>
       </nav>
     </div>
   </header>
   
-  <main>
-    <article class="single-post">
-      <div class="container">
-        <header class="post-header">
-          <h1>{{title}}</h1>
-          <div class="post-meta-long">
-            <time datetime="{{dateIso}}">{{dateFormatted}}</time> • <span>{{readingTime}} min read</span>
-          </div>
-        </header>
-        
-        <div class="featured-image">
-          <img src="{{featuredImage}}" alt="{{imageAlt}}" />
-          <p class="image-caption">{{imageCaption}}</p>
-        </div>
-        
-        <div class="post-content article-content">
-          {{content}}
-          
-          <div class="article-cta">
-            <h3>Want Personalized Relationship Advice?</h3>
-            <p>Take our free quiz to receive tailored insights based on your specific situation.</p>
-            <a href="https://obsession-trigger.com" class="cta-button-large">Start the Quiz Now</a>
-          </div>
-          
-          <div class="author-bio">
-            <img src="/images/author-avatar.jpg" alt="Relationship Expert" class="author-avatar">
-            <div class="author-info">
-              <h3>Relationship Expert</h3>
-              <p>Our team of relationship experts has helped thousands of women create deeper connections and lasting relationships through evidence-based techniques and personalized advice.</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="related-posts">
-          <h2>You Might Also Like</h2>
-          <div class="posts-grid">
-            {{relatedPosts}}
-          </div>
+  <!-- Post Header -->
+  <header class="post-header">
+    <div class="container">
+      <h1 class="post-title">{{title}}</h1>
+      <div class="post-meta-header">
+        <time datetime="{{date}}">{{formatted_date}}</time> · {{reading_time}} min read
+      </div>
+      <div class="tags">
+        {{#each tags}}
+        <span class="tag">{{this}}</span>
+        {{/each}}
+      </div>
+    </div>
+  </header>
+  
+  <!-- Post Content -->
+  <main class="post-content">
+    {{content}}
+    
+    <div class="post-footer">
+      <div class="author-bio">
+        <img src="/images/author.jpg" alt="Relationship Expert" class="author-avatar">
+        <div class="author-info">
+          <h4>Obsession Trigger Team</h4>
+          <p>Relationship experts dedicated to helping women build deeper, more passionate connections with their partners.</p>
         </div>
       </div>
-    </article>
+      
+      <div class="share-buttons">
+        <button class="share-button share-facebook" data-type="facebook">
+          <i class="fab fa-facebook-f"></i> Share
+        </button>
+        <button class="share-button share-twitter" data-type="twitter">
+          <i class="fab fa-twitter"></i> Tweet
+        </button>
+        <button class="share-button share-pinterest" data-type="pinterest">
+          <i class="fab fa-pinterest-p"></i> Pin
+        </button>
+      </div>
+      
+      <div class="post-cta">
+        <h3>Discover Your Relationship Potential</h3>
+        <p>Ready to transform your relationship? Take our free quiz to receive personalized insights and strategies tailored specifically to your situation.</p>
+        <a href="https://obsession-trigger.com/quiz" class="btn btn-primary">Take the Quiz Now</a>
+      </div>
+      
+      {{#if related_posts}}
+      <div class="related-posts">
+        <h3>Related Articles</h3>
+        <div class="related-posts-grid">
+          {{#each related_posts}}
+          <div class="related-post-card">
+            {{#if this.featuredImage}}
+            <img src="{{this.featuredImage}}" alt="{{this.title}}">
+            {{/if}}
+            <div class="related-post-content">
+              <h4><a href="/posts/{{this.slug}}.html">{{this.title}}</a></h4>
+              <div class="post-meta">
+                <time datetime="{{this.date}}">{{this.formattedDate}}</time> · {{this.readingTime}} min read
+              </div>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+    </div>
   </main>
   
-  <footer class="site-footer">
+  <!-- Footer -->
+  <footer class="footer">
     <div class="container">
       <div class="footer-content">
-        <div class="footer-logo">
-          <h2>Obsession Trigger Blog</h2>
-          <p>Insights and advice on love, attraction, and relationships</p>
+        <div class="footer-column">
+          <h3>Obsession Trigger</h3>
+          <p>Expert relationship advice to help women create passionate, lasting connections with their partners.</p>
+          <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-pinterest-p"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+          </div>
         </div>
         
-        <div class="footer-links">
-          <h3>Quick Links</h3>
-          <ul>
+        <div class="footer-column">
+          <h3>Explore</h3>
+          <ul class="footer-links">
             <li><a href="/">Home</a></li>
             <li><a href="/articles">Articles</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/privacy">Privacy Policy</a></li>
-            <li><a href="/terms">Terms of Use</a></li>
+            <li><a href="https://obsession-trigger.com/quiz">Quiz</a></li>
+            <li><a href="/about">About Us</a></li>
+            <li><a href="/contact">Contact</a></li>
           </ul>
         </div>
         
-        <div class="footer-newsletter">
-          <h3>Subscribe for Updates</h3>
-          <p>Get relationship tips delivered to your inbox.</p>
+        <div class="footer-column">
+          <h3>Categories</h3>
+          <ul class="footer-links">
+            <li><a href="/articles?category=attraction">Attraction</a></li>
+            <li><a href="/articles?category=communication">Communication</a></li>
+            <li><a href="/articles?category=dating">Dating</a></li>
+            <li><a href="/articles?category=relationships">Relationships</a></li>
+            <li><a href="/articles?category=psychology">Psychology</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Subscribe</h3>
+          <p>Get our latest articles and relationship tips delivered straight to your inbox.</p>
           <form class="newsletter-form">
-            <input type="email" placeholder="Your email address" required>
-            <button type="submit">Subscribe</button>
+            <input type="email" class="newsletter-input" placeholder="Your email address">
+            <button type="submit" class="newsletter-btn"><i class="fas fa-arrow-right"></i></button>
           </form>
         </div>
       </div>
       
       <div class="footer-bottom">
-        <p>&copy; 2025 Obsession Trigger Blog. All rights reserved.</p>
+        <p>&copy; 2025 Obsession Trigger. All rights reserved.</p>
       </div>
     </div>
   </footer>
   
+  <!-- Custom JavaScript -->
   <script src="/js/script.js"></script>
 </body>
 </html>
