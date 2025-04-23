@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import BlogPostList from '@/components/BlogPostList';
 import { Button } from '@/components/ui/button';
 import { Heart } from 'lucide-react';
+import BlogSidebar from '@/components/BlogSidebar';
 
 const Blog: React.FC = () => {
   return (
@@ -22,46 +23,19 @@ const Blog: React.FC = () => {
           <BlogPostList />
         </div>
         
-        <div className="space-y-6">
-          <div className="bg-[#ffedf1] rounded-lg p-6">
-            <h3 className="flex items-center text-xl font-semibold text-[#f24b7c] mb-4">
-              <Heart className="h-5 w-5 mr-2" fill="#fbb5c8" />
-              Take Our Relationship Quiz
-            </h3>
-            <p className="text-gray-700 mb-4">
-              Get personalized insights about your relationship in just 60 seconds.
-            </p>
-            <Link href="/">
-              <Button className="w-full bg-[#f24b7c] hover:bg-[#d22e5d]">
-                Start Free Quiz
-              </Button>
-            </Link>
-          </div>
-          
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              Popular Categories
-            </h3>
-            <div className="space-y-2">
-              <Link href="/blog?category=Communication" className="block text-[#f24b7c] hover:underline">Communication</Link>
-              <Link href="/blog?category=Attraction" className="block text-[#f24b7c] hover:underline">Attraction</Link>
-              <Link href="/blog?category=Dating" className="block text-[#f24b7c] hover:underline">Dating</Link>
-              <Link href="/blog?category=Relationships" className="block text-[#f24b7c] hover:underline">Relationships</Link>
-              <Link href="/blog?category=Marriage" className="block text-[#f24b7c] hover:underline">Marriage</Link>
-            </div>
-          </div>
-          
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              About This Blog
-            </h3>
-            <p className="text-gray-600 mb-2">
-              Expert advice and insights to help you navigate relationship challenges and build deeper connections.
-            </p>
-            <p className="text-gray-600">
-              Our content is created using the latest research in relationship psychology.
-            </p>
-          </div>
+        <div>
+          <BlogSidebar
+            leadMagnetTitle="Get Your Free Relationship Guide"
+            leadMagnetDescription="Discover the psychological triggers that make him fall deeply in love."
+            leadMagnetName="Ultimate Relationship Guide"
+            categories={[
+              { name: 'Communication', slug: 'communication' },
+              { name: 'Attraction', slug: 'attraction' },
+              { name: 'Dating', slug: 'dating' },
+              { name: 'Hero Instinct', slug: 'hero-instinct' },
+              { name: 'Emotional Intimacy', slug: 'emotional-intimacy' },
+            ]}
+          />
         </div>
       </div>
     </div>
