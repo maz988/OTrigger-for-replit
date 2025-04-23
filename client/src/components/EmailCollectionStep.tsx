@@ -13,7 +13,7 @@ import {
   FormLabel, 
   FormMessage 
 } from '@/components/ui/form';
-import { CheckIcon, MailIcon, FileTextIcon } from 'lucide-react';
+import { CheckIcon, MailIcon, FileTextIcon, Sparkles } from 'lucide-react';
 
 interface EmailCollectionStepProps {
   onSubmit: (data: EmailFormData) => void;
@@ -33,29 +33,38 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
   };
 
   return (
-    <Card className="bg-white rounded-xl shadow-card">
-      <CardContent className="p-6 md:p-8">
-        <div className="flex items-center justify-center mb-6">
-          <span className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-            <CheckIcon className="text-primary-500 h-5 w-5" />
+    <Card className="bg-white rounded-2xl shadow-lg border border-pink-100 transition-all duration-300 relative overflow-hidden">
+      {/* Decorative blobs */}
+      <div className="absolute -top-20 -right-20 w-40 h-40 bg-pink-100 rounded-full opacity-20 blur-2xl"></div>
+      <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-100 rounded-full opacity-20 blur-2xl"></div>
+      
+      <CardContent className="p-6 md:p-8 relative z-10">
+        <div className="flex items-center justify-center mb-8">
+          <span className="w-12 h-12 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center shadow-sm">
+            <CheckIcon className="text-pink-600 h-6 w-6" />
           </span>
-          <div className="h-px bg-primary-100 w-12"></div>
-          <span className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-            <MailIcon className="text-primary-500 h-5 w-5" />
+          <div className="h-1 bg-gradient-to-r from-pink-200 to-blue-200 w-12"></div>
+          <span className="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-sm">
+            <MailIcon className="text-blue-600 h-6 w-6" />
           </span>
-          <div className="h-px bg-neutral-200 w-12"></div>
-          <span className="w-10 h-10 bg-neutral-200 rounded-full flex items-center justify-center">
-            <FileTextIcon className="text-neutral-400 h-5 w-5" />
+          <div className="h-1 bg-neutral-200 w-12"></div>
+          <span className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center shadow-sm">
+            <FileTextIcon className="text-neutral-400 h-6 w-6" />
           </span>
         </div>
         
-        <h2 className="text-2xl md:text-3xl font-poppins font-semibold mb-3 text-center">Your advice is ready!</h2>
-        <p className="text-neutral-600 text-center max-w-md mx-auto mb-8">
-          Enter your details below to get your personalized "Obsession Trigger Plan" delivered to your inbox.
-        </p>
+        <div className="text-center mb-6">
+          <Sparkles className="inline-block h-5 w-5 text-pink-500 mb-2" />
+          <h2 className="text-2xl md:text-3xl font-poppins font-semibold bg-gradient-to-r from-pink-500 to-blue-500 bg-clip-text text-transparent">
+            Your advice is ready!
+          </h2>
+          <p className="text-neutral-600 text-center max-w-md mx-auto mt-2 mb-6">
+            Enter your details below to get your personalized "Obsession Trigger Plan" delivered to your inbox.
+          </p>
+        </div>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 max-w-md mx-auto">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5 max-w-md mx-auto">
             <FormField
               control={form.control}
               name="firstName"
@@ -65,7 +74,7 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
                   <FormControl>
                     <Input
                       placeholder="Enter your first name"
-                      className="w-full p-3 border border-neutral-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full p-3 border border-blue-200 rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm"
                       {...field}
                     />
                   </FormControl>
@@ -84,7 +93,7 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
                     <Input
                       type="email"
                       placeholder="Enter your email address"
-                      className="w-full p-3 border border-neutral-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                      className="w-full p-3 border border-blue-200 rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm"
                       {...field}
                     />
                   </FormControl>
@@ -97,7 +106,7 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
             <div className="pt-2">
               <Button 
                 type="submit"
-                className="w-full bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-sm"
+                className="w-full bg-gradient-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 Get My Personalized Plan
               </Button>
