@@ -22,8 +22,10 @@ async function loadKeywordsFromFile() {
       // Read the file content
       const content = await fs.readFile(keywordsFilePath, 'utf8');
       
-      // Split by newlines and filter out empty lines
-      const lines = content.split('\n').filter(line => line.trim().length > 0);
+      // Split by newlines, filter out empty lines and trim whitespace
+      const lines = content.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
       
       // Update the keywords array
       keywords = [...lines];
@@ -61,15 +63,29 @@ const usedKeywordsPath = path.join(__dirname, '../data/used-keywords.json');
 // Initialize the used keywords tracking
 async function initializeKeywordTracking() {
   try {
+    // First, make sure the data directory exists
     await fs.ensureDir(path.dirname(usedKeywordsPath));
     
+    // Load the keywords from file
+    await loadKeywordsFromFile();
+    
+    // Load the used keywords
     if (await fs.pathExists(usedKeywordsPath)) {
       const data = await fs.readJson(usedKeywordsPath);
       usedKeywords = data.usedKeywords || [];
+      
+      // If all keywords have been used, reset the tracking
+      if (usedKeywords.length >= keywords.length) {
+        console.log('All keywords have been used, resetting tracking');
+        usedKeywords = [];
+        await saveUsedKeywords();
+      }
     } else {
       // Create the file if it doesn't exist
       await fs.writeJson(usedKeywordsPath, { usedKeywords: [] });
     }
+    
+    console.log(`Keyword system initialized with ${keywords.length} total keywords and ${usedKeywords.length} used keywords`);
   } catch (error) {
     console.error('Error initializing keyword tracking:', error);
     // If there's an error, initialize with an empty array
@@ -114,6 +130,7 @@ async function markKeywordAsUsed(keyword) {
 
 module.exports = {
   keywords,
+  loadKeywordsFromFile,
   initializeKeywordTracking,
   getUnusedKeywords,
   getRandomUnusedKeyword,
