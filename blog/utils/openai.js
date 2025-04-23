@@ -127,7 +127,7 @@ async function generateBlogPost(keyword) {
  * @returns {string} Generated slug
  */
 function generateSlug(title) {
-  return slug(title, { lower: true });
+  return slugify(title);
 }
 
 // Create data directory if it doesn't exist

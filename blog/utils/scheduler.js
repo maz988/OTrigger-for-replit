@@ -24,10 +24,10 @@ const logger = winston.createLogger({
 let currentJob = null;
 
 /**
- * Get unused keywords
+ * Fetch unused keywords from the keywords module
  * @returns {Array} Array of unused keywords
  */
-async function getUnusedKeywords() {
+async function fetchUnusedKeywords() {
   try {
     // Ensure the keyword tracking is initialized
     const { initializeKeywordTracking } = require('./keywords');
@@ -43,10 +43,10 @@ async function getUnusedKeywords() {
 }
 
 /**
- * Mark keyword as used
+ * Mark keyword as used in the tracking system
  * @param {string} keyword - The keyword to mark
  */
-async function markKeywordAsUsed(keyword) {
+async function trackKeywordAsUsed(keyword) {
   try {
     await require('./keywords').markKeywordAsUsed(keyword);
     logger.info(`Marked keyword as used: "${keyword}"`);
@@ -189,6 +189,6 @@ module.exports = {
   publishNewPost,
   generateSinglePost,
   generatePostWithKeyword,
-  getUnusedKeywords,
-  markKeywordAsUsed
+  fetchUnusedKeywords,
+  trackKeywordAsUsed
 };

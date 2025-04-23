@@ -61,7 +61,8 @@ async function generateCompleteBlogPost(keyword) {
     await updateBlogIndex(blogData);
     
     // Mark the keyword as used
-    await markKeywordAsUsed(keyword);
+    const { trackKeywordAsUsed } = require('./scheduler');
+    await trackKeywordAsUsed(keyword);
     
     logger.info(`Blog post generation completed successfully for: "${blogData.title}"`);
     return blogData;
