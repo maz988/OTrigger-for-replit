@@ -6,6 +6,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const tracking = require('./utils/tracking');
 
 // Simple slugify function since the slug module is ESM
 function slugify(text) {
@@ -28,6 +29,16 @@ function generateBlogPost(keyword) {
   
   // Generate slug from title
   const postSlug = slugify(title);
+  
+  // Create blog data object for tracking
+  const blogData = {
+    title,
+    slug: postSlug,
+    keyword
+  };
+  
+  // Generate quiz URL with tracking parameters
+  const quizUrl = tracking.getQuizUrl('https://obsession-trigger.com/quiz', blogData);
   
   // Current date
   const date = new Date();
@@ -88,7 +99,7 @@ function generateBlogPost(keyword) {
         <ul class="menu">
           <li><a href="/">Home</a></li>
           <li><a href="/articles" class="active">Articles</a></li>
-          <li><a href="https://obsession-trigger.com/quiz" target="_blank">Take the Quiz</a></li>
+          <li><a href="${quizUrl}" target="_blank">Take the Quiz</a></li>
           <li><a href="/about">About</a></li>
         </ul>
         
@@ -140,7 +151,7 @@ function generateBlogPost(keyword) {
       <li>Increased resilience during difficult periods</li>
     </ul>
     
-    <p>Our <a href="https://obsession-trigger.com/quiz">relationship assessment quiz</a> has helped thousands of couples identify their unique emotional connection patterns and develop personalized strategies for improvement.</p>
+    <p>Our <a href="${quizUrl}">relationship assessment quiz</a> has helped thousands of couples identify their unique emotional connection patterns and develop personalized strategies for improvement.</p>
     
     <blockquote>
       <p>"Understanding how to ${keyword} transformed our relationship completely. What once felt like a constant struggle now feels natural and fulfilling." — Sarah, 32</p>
@@ -163,7 +174,7 @@ function generateBlogPost(keyword) {
     <h3>5. Show appreciation consistently</h3>
     <p>Research by Dr. John Gottman found that relationships thrive when positive interactions outnumber negative ones by at least 5:1. Regular expressions of appreciation help maintain this positive balance.</p>
     
-    <p>For personalized guidance on how to improve these skills in your specific relationship dynamic, take our comprehensive <a href="https://obsession-trigger.com/quiz">relationship assessment</a>.</p>
+    <p>For personalized guidance on how to improve these skills in your specific relationship dynamic, take our comprehensive <a href="${quizUrl}">relationship assessment</a>.</p>
     
     <h2>Common Challenges to ${keyword}</h2>
     
