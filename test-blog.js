@@ -1,7 +1,7 @@
 /**
  * Simple script to test blog generation without running the full server
  */
-import { blogGenerator, keywords } from "./blog/utils/index.js";
+const { blogGenerator, keywords } = require('./blog/utils/index.js');
 
 async function testBlogGeneration() {
   try {

@@ -1,14 +1,17 @@
-// Main JavaScript file for Obsession Trigger Blog
+/**
+ * Obsession Trigger Blog JavaScript
+ */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
   // Mobile menu toggle
   const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
   const menu = document.querySelector('.menu');
   
   if (mobileMenuBtn && menu) {
-    mobileMenuBtn.addEventListener('click', () => {
+    mobileMenuBtn.addEventListener('click', function() {
       menu.classList.toggle('active');
       
+      // Change icon based on menu state
       const icon = mobileMenuBtn.querySelector('i');
       if (icon) {
         if (menu.classList.contains('active')) {
@@ -22,72 +25,118 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // Newsletter form handling
+  // Newsletter subscription form
   const newsletterForm = document.querySelector('.newsletter-form');
-  
   if (newsletterForm) {
-    newsletterForm.addEventListener('submit', (e) => {
+    newsletterForm.addEventListener('submit', function(e) {
       e.preventDefault();
       
-      const emailInput = newsletterForm.querySelector('.newsletter-input');
-      if (emailInput && emailInput.value) {
-        showFormMessage(newsletterForm, 'Thank you for subscribing!', 'success');
-        emailInput.value = '';
-      } else {
+      const emailInput = newsletterForm.querySelector('input[type="email"]');
+      const email = emailInput.value.trim();
+      
+      if (!email || !isValidEmail(email)) {
         showFormMessage(newsletterForm, 'Please enter a valid email address', 'error');
+        return;
       }
+      
+      // In a real implementation, this would send the email to a server
+      // For now, just show a success message
+      showFormMessage(newsletterForm, 'Thank you for subscribing!', 'success');
+      emailInput.value = '';
     });
   }
   
-  // Share buttons on blog posts
+  // Share buttons
   const shareButtons = document.querySelectorAll('.share-button');
-  
   if (shareButtons.length > 0) {
     shareButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const type = button.dataset.type;
-        const url = encodeURIComponent(window.location.href);
-        const title = encodeURIComponent(document.title);
+      button.addEventListener('click', function() {
+        const type = this.dataset.type;
+        const title = document.querySelector('.post-title').textContent;
+        const url = window.location.href;
         
-        let shareUrl = '';
+        let shareUrl;
         
-        switch (type) {
+        switch(type) {
           case 'facebook':
-            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
             break;
           case 'twitter':
-            shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+            shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
             break;
           case 'pinterest':
-            const image = encodeURIComponent(document.querySelector('meta[property="og:image"]')?.content || '');
-            shareUrl = `https://pinterest.com/pin/create/button/?url=${url}&media=${image}&description=${title}`;
+            const image = document.querySelector('.post-content img');
+            const imageUrl = image ? image.src : '';
+            shareUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&media=${encodeURIComponent(imageUrl)}&description=${encodeURIComponent(title)}`;
             break;
         }
         
         if (shareUrl) {
-          window.open(shareUrl, '_blank', 'width=600,height=400');
+          window.open(shareUrl, 'share-popup', 'height=600,width=600');
         }
       });
     });
   }
-});
-
-// Helper function to show form messages
-function showFormMessage(form, message, type) {
-  let messageEl = form.querySelector('.form-message');
   
-  if (!messageEl) {
-    messageEl = document.createElement('div');
-    messageEl.className = 'form-message';
-    form.appendChild(messageEl);
+  // Helper function to validate email
+  function isValidEmail(email) {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(email);
   }
   
-  messageEl.textContent = message;
-  messageEl.className = `form-message ${type}`;
+  // Helper function to show form messages
+  function showFormMessage(form, message, type) {
+    let messageDiv = form.querySelector('.form-message');
+    
+    if (!messageDiv) {
+      messageDiv = document.createElement('div');
+      messageDiv.className = 'form-message';
+      form.appendChild(messageDiv);
+    }
+    
+    messageDiv.textContent = message;
+    messageDiv.className = `form-message message-${type}`;
+    
+    // Remove the message after 3 seconds
+    setTimeout(() => {
+      messageDiv.remove();
+    }, 3000);
+  }
   
-  // Auto-remove the message after 3 seconds
-  setTimeout(() => {
-    messageEl.textContent = '';
-    messageEl.className = 'form-message';
-  }, 3000);
-}
+  // Lazy load images
+  const lazyImages = document.querySelectorAll('img[data-src]');
+  if (lazyImages.length > 0) {
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+          imageObserver.unobserve(img);
+        }
+      });
+    });
+    
+    lazyImages.forEach(img => {
+      imageObserver.observe(img);
+    });
+  }
+  
+  // Add smooth scrolling for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      const targetId = this.getAttribute('href');
+      if (targetId === '#') return;
+      
+      const targetElement = document.querySelector(targetId);
+      if (targetElement) {
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    });
+  });
+});
