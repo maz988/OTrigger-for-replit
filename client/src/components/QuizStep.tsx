@@ -5,17 +5,15 @@ import {
   CardContent 
 } from '@/components/ui/card';
 import { 
-  Form, 
-  FormControl, 
   FormField, 
   FormItem, 
-  FormLabel, 
+  FormControl,
   FormMessage 
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { type QuizFormData } from '@shared/schema';
-import { ChevronLeft, ChevronRight, Wand2, Heart } from 'lucide-react';
+import { ChevronLeft, Wand2, Heart } from 'lucide-react';
 
 interface QuizStepProps {
   currentStep: number;
@@ -25,6 +23,64 @@ interface QuizStepProps {
   onSubmit: () => void;
 }
 
+// These are the options for each step
+const STEP_OPTIONS = {
+  relationshipStatus: [
+    { value: "Single", label: "Single" },
+    { value: "Dating", label: "Dating" },
+    { value: "Relationship", label: "In a relationship" },
+    { value: "Complicated", label: "It's complicated" },
+  ],
+  concernType: [
+    { value: "Communication", label: "Lack of communication" },
+    { value: "Commitment", label: "Commitment issues" },
+    { value: "Affection", label: "Lack of affection/romance" },
+    { value: "Trust", label: "Trust issues" },
+    { value: "Other", label: "Other" },
+  ],
+  communicationStyle: [
+    { value: "Direct", label: "Direct and to the point" },
+    { value: "Emotional", label: "Emotional and expressive" },
+    { value: "Passive", label: "Passive, I often hold back" },
+    { value: "Mixed", label: "It depends on the situation" },
+    { value: "Avoidant", label: "I avoid difficult conversations" },
+  ],
+  desiredOutcome: [
+    { value: "Commitment", label: "Long-term commitment/marriage" },
+    { value: "Improvement", label: "Improving our existing relationship" },
+    { value: "Attention", label: "Getting his attention and interest" },
+    { value: "Understanding", label: "Understanding him better" },
+    { value: "Closure", label: "Finding closure or moving on" },
+  ],
+};
+
+// Custom radio option component
+const RadioOption = ({ 
+  value, 
+  label, 
+  isSelected, 
+  onClick 
+}: { 
+  value: string; 
+  label: string; 
+  isSelected: boolean; 
+  onClick: () => void 
+}) => (
+  <div
+    className={`flex items-center p-3 border rounded-lg cursor-pointer hover:border-pink-200 transition-colors ${
+      isSelected ? 'border-[#f24b7c] bg-[#fdf2f5]' : 'border-gray-200'
+    }`}
+    onClick={onClick}
+  >
+    <div 
+      className={`w-4 h-4 rounded-full mr-3 ${
+        isSelected ? 'bg-[#f24b7c]' : 'border border-gray-300'
+      }`} 
+    />
+    <span>{label}</span>
+  </div>
+);
+
 const QuizStep: React.FC<QuizStepProps> = ({
   currentStep,
   totalSteps,
@@ -32,235 +88,154 @@ const QuizStep: React.FC<QuizStepProps> = ({
   onNext,
   onSubmit,
 }) => {
-  const { control } = useFormContext<QuizFormData>();
+  const { control, setValue, watch } = useFormContext<QuizFormData>();
   
-  // Quiz content based on step
+  // Step 1: Relationship Status
+  const renderStep1 = () => {
+    const value = watch('relationshipStatus');
+    return (
+      <>
+        <div className="flex justify-center mb-4">
+          <Heart className="text-[#f24b7c] h-6 w-6" />
+        </div>
+        
+        <h2 className="text-xl text-center font-medium mb-6">What's your current relationship status?</h2>
+        
+        <div className="mb-4 space-y-2">
+          {STEP_OPTIONS.relationshipStatus.map(option => (
+            <RadioOption
+              key={option.value}
+              value={option.value}
+              label={option.label}
+              isSelected={value === option.value}
+              onClick={() => setValue('relationshipStatus', option.value)}
+            />
+          ))}
+        </div>
+      </>
+    );
+  };
+
+  // Step 2: Concern Type
+  const renderStep2 = () => {
+    const value = watch('concernType');
+    return (
+      <>
+        <div className="flex justify-center mb-4">
+          <Heart className="text-[#f24b7c] h-6 w-6" />
+        </div>
+        
+        <h2 className="text-xl text-center font-medium mb-6">What's your biggest concern?</h2>
+        
+        <div className="mb-4 space-y-2">
+          {STEP_OPTIONS.concernType.map(option => (
+            <RadioOption
+              key={option.value}
+              value={option.value}
+              label={option.label}
+              isSelected={value === option.value}
+              onClick={() => setValue('concernType', option.value)}
+            />
+          ))}
+        </div>
+      </>
+    );
+  };
+
+  // Step 3: Confusing Behavior
+  const renderStep3 = () => {
+    return (
+      <>
+        <div className="flex justify-center mb-4">
+          <Heart className="text-[#f24b7c] h-6 w-6" />
+        </div>
+        
+        <h2 className="text-xl text-center font-medium mb-6">What confuses you about his behavior?</h2>
+        
+        <div className="mb-4">
+          <FormField
+            control={control}
+            name="confusingBehavior"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormControl>
+                  <Textarea
+                    placeholder="Describe a behavior that leaves you confused or frustrated..."
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-[#f24b7c] focus:border-[#f24b7c] resize-none h-24"
+                    {...field}
+                  />
+                </FormControl>
+                <p className="text-xs text-gray-500">Your answer helps us provide personalized advice</p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </>
+    );
+  };
+
+  // Step 4: Communication Style
+  const renderStep4 = () => {
+    const value = watch('communicationStyle');
+    return (
+      <>
+        <div className="flex justify-center mb-4">
+          <Heart className="text-[#f24b7c] h-6 w-6" />
+        </div>
+        
+        <h2 className="text-xl text-center font-medium mb-6">How do you typically communicate with him?</h2>
+        
+        <div className="mb-4 space-y-2">
+          {STEP_OPTIONS.communicationStyle.map(option => (
+            <RadioOption
+              key={option.value}
+              value={option.value}
+              label={option.label}
+              isSelected={value === option.value}
+              onClick={() => setValue('communicationStyle', option.value)}
+            />
+          ))}
+        </div>
+      </>
+    );
+  };
+
+  // Step 5: Desired Outcome
+  const renderStep5 = () => {
+    const value = watch('desiredOutcome');
+    return (
+      <>
+        <div className="flex justify-center mb-4">
+          <Heart className="text-[#f24b7c] h-6 w-6" />
+        </div>
+        
+        <h2 className="text-xl text-center font-medium mb-6">What's your desired outcome?</h2>
+        
+        <div className="mb-4 space-y-2">
+          {STEP_OPTIONS.desiredOutcome.map(option => (
+            <RadioOption
+              key={option.value}
+              value={option.value}
+              label={option.label}
+              isSelected={value === option.value}
+              onClick={() => setValue('desiredOutcome', option.value)}
+            />
+          ))}
+        </div>
+      </>
+    );
+  };
+  
+  // Render the appropriate step content
   const renderStepContent = () => {
     switch (currentStep) {
-      case 1:
-        return (
-          <>
-            <div className="flex justify-center mb-4">
-              <Heart className="text-[#f24b7c] h-6 w-6" />
-            </div>
-            
-            <h2 className="text-xl text-center font-medium mb-6">What's your current relationship status?</h2>
-            
-            <div className="mb-4">
-              <FormField
-                control={control}
-                name="relationshipStatus"
-                render={({ field }) => {
-                  // Set a default value for the demo
-                  if (!field.value) {
-                    field.onChange("Dating");
-                  }
-                  
-                  return (
-                    <FormItem className="space-y-4">
-                      <div className="space-y-2">
-                        {[
-                          { value: "Single", label: "Single" },
-                          { value: "Dating", label: "Dating" },
-                          { value: "Relationship", label: "In a relationship" },
-                          { value: "Complicated", label: "It's complicated" },
-                        ].map((option) => (
-                          <div
-                            key={option.value}
-                            className={`flex items-center p-3 border rounded-lg cursor-pointer hover:border-pink-200 transition-colors ${field.value === option.value ? 'border-[#f24b7c] bg-[#fdf2f5]' : 'border-gray-200'}`}
-                            onClick={() => field.onChange(option.value)}
-                          >
-                            <div className={`w-4 h-4 rounded-full mr-3 ${field.value === option.value ? 'bg-[#f24b7c]' : 'border border-gray-300'}`} />
-                            <span>{option.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-          </>
-        );
-      
-      case 2:
-        return (
-          <>
-            <div className="flex justify-center mb-4">
-              <Heart className="text-[#f24b7c] h-6 w-6" />
-            </div>
-            
-            <h2 className="text-xl text-center font-medium mb-6">What's your biggest concern?</h2>
-            
-            <div className="mb-4">
-              <FormField
-                control={control}
-                name="concernType"
-                render={({ field }) => {
-                  // Set a default value for the demo
-                  if (!field.value) {
-                    field.onChange("Commitment");
-                  }
-                  
-                  return (
-                    <FormItem className="space-y-4">
-                      <div className="space-y-2">
-                        {[
-                          { value: "Communication", label: "Lack of communication" },
-                          { value: "Commitment", label: "Commitment issues" },
-                          { value: "Affection", label: "Lack of affection/romance" },
-                          { value: "Trust", label: "Trust issues" },
-                          { value: "Other", label: "Other" },
-                        ].map((option) => (
-                          <div
-                            key={option.value}
-                            className={`flex items-center p-3 border rounded-lg cursor-pointer hover:border-pink-200 transition-colors ${field.value === option.value ? 'border-[#f24b7c] bg-[#fdf2f5]' : 'border-gray-200'}`}
-                            onClick={() => field.onChange(option.value)}
-                          >
-                            <div className={`w-4 h-4 rounded-full mr-3 ${field.value === option.value ? 'bg-[#f24b7c]' : 'border border-gray-300'}`} />
-                            <span>{option.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-          </>
-        );
-      
-      case 3:
-        return (
-          <>
-            <div className="flex justify-center mb-4">
-              <Heart className="text-[#f24b7c] h-6 w-6" />
-            </div>
-            
-            <h2 className="text-xl text-center font-medium mb-6">What confuses you about his behavior?</h2>
-            
-            <div className="mb-4">
-              <FormField
-                control={control}
-                name="confusingBehavior"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe a behavior that leaves you confused or frustrated..."
-                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-[#f24b7c] focus:border-[#f24b7c] resize-none h-24"
-                        {...field}
-                      />
-                    </FormControl>
-                    <p className="text-xs text-gray-500">Your answer helps us provide personalized advice</p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </>
-        );
-      
-      case 4:
-        return (
-          <>
-            <div className="flex justify-center mb-4">
-              <Heart className="text-[#f24b7c] h-6 w-6" />
-            </div>
-            
-            <h2 className="text-xl text-center font-medium mb-6">How do you typically communicate with him?</h2>
-            
-            <div className="mb-4">
-              <FormField
-                control={control}
-                name="communicationStyle"
-                render={({ field }) => {
-                  // Set a default value for the demo
-                  if (!field.value) {
-                    field.onChange("Emotional");
-                  }
-                  
-                  return (
-                    <FormItem className="space-y-4">
-                      <div className="space-y-2">
-                        {[
-                          { value: "Direct", label: "Direct and to the point" },
-                          { value: "Emotional", label: "Emotional and expressive" },
-                          { value: "Passive", label: "Passive, I often hold back" },
-                          { value: "Mixed", label: "It depends on the situation" },
-                          { value: "Avoidant", label: "I avoid difficult conversations" },
-                        ].map((option) => (
-                          <div
-                            key={option.value}
-                            className={`flex items-center p-3 border rounded-lg cursor-pointer hover:border-pink-200 transition-colors ${field.value === option.value ? 'border-[#f24b7c] bg-[#fdf2f5]' : 'border-gray-200'}`}
-                            onClick={() => field.onChange(option.value)}
-                          >
-                            <div className={`w-4 h-4 rounded-full mr-3 ${field.value === option.value ? 'bg-[#f24b7c]' : 'border border-gray-300'}`} />
-                            <span>{option.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-          </>
-        );
-      
-      case 5:
-        return (
-          <>
-            <div className="flex justify-center mb-4">
-              <Heart className="text-[#f24b7c] h-6 w-6" />
-            </div>
-            
-            <h2 className="text-xl text-center font-medium mb-6">What's your desired outcome?</h2>
-            
-            <div className="mb-4">
-              <FormField
-                control={control}
-                name="desiredOutcome"
-                render={({ field }) => {
-                  // Set a default value for the demo
-                  if (!field.value) {
-                    field.onChange("Attention");
-                  }
-                  
-                  return (
-                    <FormItem className="space-y-4">
-                      <div className="space-y-2">
-                        {[
-                          { value: "Commitment", label: "Long-term commitment/marriage" },
-                          { value: "Improvement", label: "Improving our existing relationship" },
-                          { value: "Attention", label: "Getting his attention and interest" },
-                          { value: "Understanding", label: "Understanding him better" },
-                          { value: "Closure", label: "Finding closure or moving on" },
-                        ].map((option) => (
-                          <div
-                            key={option.value}
-                            className={`flex items-center p-3 border rounded-lg cursor-pointer hover:border-pink-200 transition-colors ${field.value === option.value ? 'border-[#f24b7c] bg-[#fdf2f5]' : 'border-gray-200'}`}
-                            onClick={() => field.onChange(option.value)}
-                          >
-                            <div className={`w-4 h-4 rounded-full mr-3 ${field.value === option.value ? 'bg-[#f24b7c]' : 'border border-gray-300'}`} />
-                            <span>{option.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-          </>
-        );
-      
-      default:
-        return null;
+      case 1: return renderStep1();
+      case 2: return renderStep2();
+      case 3: return renderStep3();
+      case 4: return renderStep4();
+      case 5: return renderStep5();
+      default: return null;
     }
   };
   

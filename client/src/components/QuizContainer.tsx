@@ -36,6 +36,7 @@ const QuizContainer: React.FC = () => {
 
   const handlePrevStep = () => {
     if (currentStep > 1) {
+      console.log('Moving from step', currentStep, 'to step', currentStep - 1);
       setCurrentStep(currentStep - 1);
     }
   };
@@ -43,8 +44,10 @@ const QuizContainer: React.FC = () => {
   const handleNextStep = () => {
     // For demonstration purposes, skip validation to make UI functional
     // In a production app, we'd validate properly
+    console.log('Current form values:', methods.getValues());
     
     if (currentStep < totalSteps) {
+      console.log('Moving from step', currentStep, 'to step', currentStep + 1);
       setCurrentStep(currentStep + 1);
     } else {
       // Submit the quiz
