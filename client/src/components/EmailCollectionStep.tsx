@@ -29,6 +29,7 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
   });
 
   const handleSubmit = (data: EmailFormData) => {
+    // For demo purposes, just submit with current form data
     onSubmit(data);
   };
 
