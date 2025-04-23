@@ -182,6 +182,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get current admin user
+  app.get("/api/admin/me", authenticateAdmin, async (req, res) => {
+    try {
+      const admin = (req as any).admin;
+      
+      // Return admin data without the password
+      res.status(200).json({
+        success: true,
+        data: {
+          id: admin.id,
+          username: admin.username,
+          email: admin.email,
+          role: admin.role,
+          lastLogin: admin.lastLogin
+        }
+      });
+    } catch (err: any) {
+      console.error(`Error getting admin user: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
   // Analytics Routes - Protected by admin auth
   app.get("/api/admin/analytics/quiz", authenticateAdmin, async (req, res) => {
     try {
@@ -222,12 +247,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const posts = await storage.getAllBlogPosts();
       
+      // Filter by category if provided
+      const category = req.query.category as string;
+      let filteredPosts = posts;
+      
+      if (category) {
+        filteredPosts = posts.filter(post => 
+          post.category.toLowerCase() === category.toLowerCase()
+        );
+      }
+      
+      // Sort by publish date, newest first
+      filteredPosts.sort((a, b) => 
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
+      
       res.status(200).json({
         success: true,
-        data: posts
+        data: filteredPosts
       });
     } catch (err: any) {
       console.error(`Error getting blog posts: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
+  // Featured blog posts
+  app.get("/api/blog/featured", async (req, res) => {
+    try {
+      const allPosts = await storage.getAllBlogPosts();
+      
+      // Sort by publish date, newest first
+      const sortedPosts = [...allPosts].sort((a, b) => 
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
+      
+      // Get the most recent 3 posts
+      const featuredPosts = sortedPosts.slice(0, 3);
+      
+      res.status(200).json({
+        success: true,
+        data: featuredPosts
+      });
+    } catch (err: any) {
+      console.error(`Error getting featured blog posts: ${err.message}`);
       res.status(500).json({
         success: false,
         error: err.message

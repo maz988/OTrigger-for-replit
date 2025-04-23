@@ -4,15 +4,29 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import Blog from "@/pages/Blog";
+import BlogPost from "@/pages/BlogPost";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminAuthGuard from "@/components/AdminAuthGuard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { Toaster } from "@/components/ui/toaster";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/blog" component={Blog} />
+      <Route path="/blog/:slug" component={BlogPost} />
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin">
+        {() => (
+          <AdminAuthGuard>
+            <AdminDashboard />
+          </AdminAuthGuard>
+        )}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
@@ -28,6 +42,7 @@ function App() {
             <Router />
           </main>
           <Footer />
+          <Toaster />
         </div>
       </TooltipProvider>
     </QueryClientProvider>

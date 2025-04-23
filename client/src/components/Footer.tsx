@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'wouter';
 import { Heart } from 'lucide-react';
 
 const Footer: React.FC = () => {
@@ -17,6 +18,18 @@ const Footer: React.FC = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-y-2 sm:gap-y-0 sm:space-x-6 mt-2">
+            <Link href="/blog" className="text-sm text-[#f24b7c] hover:text-pink-700 transition-colors">
+              Relationship Blog
+            </Link>
+            <Link href="/" className="text-sm text-[#f24b7c] hover:text-pink-700 transition-colors">
+              Quiz
+            </Link>
+            <Link href="/admin/login" className="text-sm text-gray-500 hover:text-[#f24b7c] transition-colors">
+              Admin
+            </Link>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row justify-center gap-y-2 sm:gap-y-0 sm:space-x-6 mt-4">
             <a href="#" className="text-sm text-blue-500 hover:text-pink-500 transition-colors">Privacy Policy</a>
             <a href="#" className="text-sm text-blue-500 hover:text-pink-500 transition-colors">Terms of Service</a>
             <a href="#" className="text-sm text-blue-500 hover:text-pink-500 transition-colors">Contact Us</a>
