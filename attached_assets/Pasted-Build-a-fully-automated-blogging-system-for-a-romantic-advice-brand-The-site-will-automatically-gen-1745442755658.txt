@@ -1,0 +1,61 @@
+Build a fully automated blogging system for a romantic advice brand. The site will automatically generate and publish 1 new article per day using AI (from a keyword list), format it with proper SEO structure, include images, and publish directly to a static site or blog platform.
+
+🧱 STACK:
+- Frontend: React or simple HTML/CSS blog template
+- Backend: Node.js + Firebase OR use a headless CMS like Ghost (self-hosted) or GitHub Pages for static publishing
+- AI: OpenAI API (or Claude/alternative) for article generation
+- Deployment: Compatible for export to Firebase Hosting, Netlify, or similar
+
+🎯 PURPOSE:
+Automatically publish SEO-optimized blog posts daily about love, attraction, relationships, dating advice, breakups, psychology of men, etc., targeting **women only**.
+
+🔁 AUTOMATION FLOW:
+1. Pull a keyword from a predefined list (provided as an array or stored in Firebase)
+2. Use OpenAI to generate a full-length blog post (600–900 words) using that keyword
+3. Include:
+   - Catchy SEO title and meta description
+   - At least 2 royalty-free images (use Unsplash or Pexels API)
+   - Schema markup (Article, Author, Breadcrumb)
+   - Tags and alt text for all images
+   - Internal links to the AI Quiz (e.g., “Take the free relationship quiz”)
+   - External links to trusted sources (PsychologyToday, WebMD, etc.)
+   - Optional affiliate link placement (natural in-content or footer)
+
+4. Schedule to publish 1 article every 24 hours (or trigger via cronjob or Replit deployment task)
+
+📌 FEATURES:
+- Automatically creates article pages and indexes them on homepage
+- Uses Markdown or HTML formatting
+- Optimized for Google search
+- Mobile-friendly layout
+- Article slugs should be clean and keyword-based (e.g., /how-to-make-him-miss-you)
+- Responsive design and lazy-load images
+
+🖼 IMAGE INTEGRATION:
+- Use Unsplash or Pexels API to fetch 2 images based on the keyword or article topic
+- Add descriptive alt text and optimize image names
+
+🔍 SEO FEATURES:
+- Use proper <title>, <meta name="description">, <h1>, <h2>, and semantic HTML
+- Add JSON-LD schema for each post
+- Sitemap auto-update if possible
+
+🔗 LINKING:
+- Internal: Every article must link to the AI Quiz and at least 1 other blog post
+- External: Include 1–2 authority external links (e.g., to studies or trusted love advice sites)
+- Optional CTA to newsletter or affiliate offer (footer or after 3rd paragraph)
+
+🧠 DATA SOURCE:
+- Keywords can be pulled from a .txt or .json file in the repo
+- Rotate through the list without repeating until complete
+
+📤 DEPLOYMENT-READY:
+- Build with clean project structure
+- Ensure project can be exported and hosted outside Replit (Firebase Hosting, Netlify, Vercel, etc.)
+
+Set up the folder structure:
+- /content (for generated articles)
+- /utils (AI logic, image fetch, SEO generator)
+- /public (static images or pre-used graphics)
+
+Ask me for the keywords, Unsplash/Pexels API key, and OpenAI key when needed.
