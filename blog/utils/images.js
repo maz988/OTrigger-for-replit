@@ -2,7 +2,8 @@ const { createClient } = require('pexels');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs-extra');
-const fetch = require('node-fetch');
+// Use node's built-in fetch instead of node-fetch
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });

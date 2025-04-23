@@ -1,0 +1,14 @@
+{
+  "name": "Start Blog System",
+  "description": "Starts the blog server and initializes the automated blog generation system",
+  "commands": [
+    {
+      "name": "Start Blog Server",
+      "command": "cd blog && npm start"
+    },
+    {
+      "name": "Generate Single Post",
+      "command": "cd blog && npm run generate"
+    }
+  ]
+}
