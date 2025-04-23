@@ -3,16 +3,14 @@ import { Heart } from 'lucide-react';
 
 const Header: React.FC = () => {
   return (
-    <header className="bg-white shadow-sm border-b border-pink-100">
-      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div className="flex items-center">
-          <div className="mr-2 text-pink-500">
-            <Heart className="h-5 w-5 fill-pink-200" />
-          </div>
-          <h1 className="text-2xl font-bold font-poppins bg-gradient-to-r from-pink-500 to-blue-500 bg-clip-text text-transparent">
-            <span className="font-script">Obsession</span> Trigger
+    <header className="bg-white">
+      <div className="container mx-auto px-4 py-4 flex justify-center items-center">
+        <a href="/" className="flex items-center">
+          <h1 className="font-script text-3xl text-[#f24b7c]">
+            Obsession Trigger AI
           </h1>
-        </div>
+          <Heart className="ml-1 h-4 w-4 text-[#f24b7c] fill-[#fbb5c8]" />
+        </a>
       </div>
     </header>
   );
