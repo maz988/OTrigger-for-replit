@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Automated blog system for publishing relationship advice",
   "main": "server.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
@@ -22,7 +23,7 @@
     "fs-extra": "^11.2.0",
     "markdown-it": "^13.0.1",
     "node-cron": "^3.0.2",
-    "node-fetch": "^2.7.0",
+    "node-fetch": "^3.3.2",
     "openai": "^4.0.0",
     "pexels": "^1.4.0",
     "showdown": "^2.1.0",

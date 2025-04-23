@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}} - Obsession Trigger Blog</title>
+  <meta name="description" content="{{description}}">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://obsession-trigger-blog.com/{{slug}}">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:image" content="{{featuredImage}}">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://obsession-trigger-blog.com/{{slug}}">
+  <meta property="twitter:title" content="{{title}}">
+  <meta property="twitter:description" content="{{description}}">
+  <meta property="twitter:image" content="{{featuredImage}}">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- JSON-LD Schema -->
+  {{jsonLd}}
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <a href="/" class="logo">Obsession Trigger Blog</a>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/articles" class="active">Articles</a></li>
+          <li><a href="https://obsession-trigger.com" class="nav-cta">Take the Quiz</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  
+  <main>
+    <article class="single-post">
+      <div class="container">
+        <header class="post-header">
+          <h1>{{title}}</h1>
+          <div class="post-meta-long">
+            <time datetime="{{dateIso}}">{{dateFormatted}}</time> • <span>{{readingTime}} min read</span>
+          </div>
+        </header>
+        
+        <div class="featured-image">
+          <img src="{{featuredImage}}" alt="{{imageAlt}}" />
+          <p class="image-caption">{{imageCaption}}</p>
+        </div>
+        
+        <div class="post-content article-content">
+          {{content}}
+          
+          <div class="article-cta">
+            <h3>Want Personalized Relationship Advice?</h3>
+            <p>Take our free quiz to receive tailored insights based on your specific situation.</p>
+            <a href="https://obsession-trigger.com" class="cta-button-large">Start the Quiz Now</a>
+          </div>
+          
+          <div class="author-bio">
+            <img src="/images/author-avatar.jpg" alt="Relationship Expert" class="author-avatar">
+            <div class="author-info">
+              <h3>Relationship Expert</h3>
+              <p>Our team of relationship experts has helped thousands of women create deeper connections and lasting relationships through evidence-based techniques and personalized advice.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="related-posts">
+          <h2>You Might Also Like</h2>
+          <div class="posts-grid">
+            {{relatedPosts}}
+          </div>
+        </div>
+      </div>
+    </article>
+  </main>
+  
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <h2>Obsession Trigger Blog</h2>
+          <p>Insights and advice on love, attraction, and relationships</p>
+        </div>
+        
+        <div class="footer-links">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/articles">Articles</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/terms">Terms of Use</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-newsletter">
+          <h3>Subscribe for Updates</h3>
+          <p>Get relationship tips delivered to your inbox.</p>
+          <form class="newsletter-form">
+            <input type="email" placeholder="Your email address" required>
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2025 Obsession Trigger Blog. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+  
+  <script src="/js/script.js"></script>
+</body>
+</html>

@@ -1,15 +1,11 @@
 const cron = require('node-cron');
+const { generateCompleteBlogPost } = require('./blogGenerator');
+const { getRandomUnusedKeyword, getUnusedKeywords, markKeywordAsUsed } = require('./keywords');
 const fs = require('fs-extra');
 const path = require('path');
 const winston = require('winston');
-const dotenv = require('dotenv');
-const { generateCompleteBlogPost } = require('./blogGenerator');
-const keywords = require('./keywords');
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') });
-
-// Create logger
+// Initialize logger
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
@@ -24,39 +20,26 @@ const logger = winston.createLogger({
   ]
 });
 
-// Create tracking file directory
-const trackingDir = path.join(__dirname, '../content');
-const trackingFile = path.join(trackingDir, 'keywords-used.json');
+// Store the current job
+let currentJob = null;
 
 /**
  * Get unused keywords
  * @returns {Array} Array of unused keywords
  */
 async function getUnusedKeywords() {
-  // Ensure tracking directory exists
-  await fs.ensureDir(trackingDir);
-  
-  // Check if tracking file exists, create if not
-  if (!await fs.pathExists(trackingFile)) {
-    await fs.writeFile(trackingFile, JSON.stringify({ used: [] }));
-    return keywords;
+  try {
+    // Ensure the keyword tracking is initialized
+    const { initializeKeywordTracking } = require('./keywords');
+    await initializeKeywordTracking();
+    
+    // Get unused keywords
+    const unusedKeywords = require('./keywords').getUnusedKeywords();
+    return unusedKeywords;
+  } catch (error) {
+    logger.error(`Error getting unused keywords: ${error.message}`);
+    return [];
   }
-  
-  // Read used keywords
-  const trackingData = JSON.parse(await fs.readFile(trackingFile, 'utf8'));
-  const usedKeywords = trackingData.used || [];
-  
-  // Filter out used keywords
-  const unusedKeywords = keywords.filter(keyword => !usedKeywords.includes(keyword));
-  
-  // If all keywords used, start over
-  if (unusedKeywords.length === 0) {
-    logger.info('All keywords have been used. Resetting tracking.');
-    await fs.writeFile(trackingFile, JSON.stringify({ used: [] }));
-    return keywords;
-  }
-  
-  return unusedKeywords;
 }
 
 /**
@@ -64,19 +47,11 @@ async function getUnusedKeywords() {
  * @param {string} keyword - The keyword to mark
  */
 async function markKeywordAsUsed(keyword) {
-  // Ensure tracking directory exists
-  await fs.ensureDir(trackingDir);
-  
-  // Read current tracking data
-  let trackingData = { used: [] };
-  if (await fs.pathExists(trackingFile)) {
-    trackingData = JSON.parse(await fs.readFile(trackingFile, 'utf8'));
-  }
-  
-  // Add keyword if not already there
-  if (!trackingData.used.includes(keyword)) {
-    trackingData.used.push(keyword);
-    await fs.writeFile(trackingFile, JSON.stringify(trackingData, null, 2));
+  try {
+    await require('./keywords').markKeywordAsUsed(keyword);
+    logger.info(`Marked keyword as used: "${keyword}"`);
+  } catch (error) {
+    logger.error(`Error marking keyword as used: ${error.message}`);
   }
 }
 
@@ -87,27 +62,22 @@ async function publishNewPost() {
   try {
     logger.info('Starting scheduled blog post generation');
     
-    // Get unused keywords
-    const unusedKeywords = await getUnusedKeywords();
+    // Get a random unused keyword
+    const keyword = getRandomUnusedKeyword();
     
-    // Pick a random keyword
-    const randomIndex = Math.floor(Math.random() * unusedKeywords.length);
-    const selectedKeyword = unusedKeywords[randomIndex];
+    if (!keyword) {
+      logger.error('No unused keywords available');
+      return;
+    }
     
-    logger.info(`Selected keyword: ${selectedKeyword}`);
+    logger.info(`Selected keyword for blog post: "${keyword}"`);
     
-    // Generate blog post
-    const blogPost = await generateCompleteBlogPost(selectedKeyword);
+    // Generate the blog post
+    await generateCompleteBlogPost(keyword);
     
-    // Mark keyword as used
-    await markKeywordAsUsed(selectedKeyword);
-    
-    logger.info(`Successfully published new blog post: ${blogPost.title}`);
-    
-    return blogPost;
+    logger.info('Scheduled blog post generation completed successfully');
   } catch (error) {
-    logger.error(`Error publishing new post: ${error.message}`);
-    throw error;
+    logger.error(`Error in scheduled blog post generation: ${error.message}`);
   }
 }
 
@@ -115,31 +85,46 @@ async function publishNewPost() {
  * Start the scheduler
  */
 function startScheduler() {
-  const schedulePattern = process.env.PUBLISH_SCHEDULE || '0 8 * * *'; // Default: Every day at 8 AM
+  // Default schedule: every day at 8 AM
+  const schedule = process.env.PUBLISH_SCHEDULE || '0 8 * * *';
   
-  logger.info(`Starting blog scheduler with pattern: ${schedulePattern}`);
+  logger.info(`Starting blog post scheduler with schedule: ${schedule}`);
   
-  // Validate cron pattern
-  if (!cron.validate(schedulePattern)) {
-    logger.error(`Invalid cron pattern: ${schedulePattern}`);
+  try {
+    // Validate the cron expression
+    if (!cron.validate(schedule)) {
+      logger.error(`Invalid cron expression: ${schedule}`);
+      return false;
+    }
+    
+    // Schedule the job
+    currentJob = cron.schedule(schedule, publishNewPost, {
+      scheduled: true,
+      timezone: "America/New_York" // Default to Eastern Time
+    });
+    
+    logger.info('Blog post scheduler started successfully');
+    
+    // Return the job for potential cancellation
+    return currentJob;
+  } catch (error) {
+    logger.error(`Error starting scheduler: ${error.message}`);
     return false;
   }
+}
+
+/**
+ * Stop the scheduler
+ */
+function stopScheduler() {
+  if (currentJob) {
+    currentJob.stop();
+    logger.info('Blog post scheduler stopped');
+    return true;
+  }
   
-  // Schedule job
-  const job = cron.schedule(schedulePattern, async () => {
-    logger.info('Running scheduled blog post generation');
-    try {
-      await publishNewPost();
-    } catch (error) {
-      logger.error(`Error in scheduled job: ${error.message}`);
-    }
-  });
-  
-  // Start the job
-  job.start();
-  
-  logger.info('Blog scheduler started successfully');
-  return true;
+  logger.warn('No active scheduler to stop');
+  return false;
 }
 
 /**
@@ -147,12 +132,63 @@ function startScheduler() {
  * @returns {Promise} Resolves to the generated post
  */
 async function generateSinglePost() {
-  logger.info('Generating single blog post on demand');
-  return await publishNewPost();
+  try {
+    logger.info('Starting manual blog post generation');
+    
+    // Get a random unused keyword
+    const keyword = getRandomUnusedKeyword();
+    
+    if (!keyword) {
+      logger.error('No unused keywords available');
+      throw new Error('No unused keywords available');
+    }
+    
+    logger.info(`Selected keyword for manual blog post: "${keyword}"`);
+    
+    // Generate the blog post
+    const blogPost = await generateCompleteBlogPost(keyword);
+    
+    logger.info('Manual blog post generation completed successfully');
+    
+    return blogPost;
+  } catch (error) {
+    logger.error(`Error in manual blog post generation: ${error.message}`);
+    throw error;
+  }
 }
 
+/**
+ * Generate a post with a specific keyword
+ * @param {string} keyword - The keyword to use
+ * @returns {Promise} Resolves to the generated post
+ */
+async function generatePostWithKeyword(keyword) {
+  try {
+    if (!keyword) {
+      throw new Error('No keyword provided');
+    }
+    
+    logger.info(`Starting blog post generation with keyword: "${keyword}"`);
+    
+    // Generate the blog post
+    const blogPost = await generateCompleteBlogPost(keyword);
+    
+    logger.info(`Blog post generation for "${keyword}" completed successfully`);
+    
+    return blogPost;
+  } catch (error) {
+    logger.error(`Error generating blog post with keyword "${keyword}": ${error.message}`);
+    throw error;
+  }
+}
+
+// Export the functions
 module.exports = {
   startScheduler,
+  stopScheduler,
+  publishNewPost,
   generateSinglePost,
-  getUnusedKeywords
+  generatePostWithKeyword,
+  getUnusedKeywords,
+  markKeywordAsUsed
 };

@@ -1,16 +1,12 @@
 const fs = require('fs-extra');
 const path = require('path');
-const { generateBlogPost } = require('./openai');
+const { generateBlogPost, ensureDataDirectories } = require('./openai');
 const { searchImages, downloadImages } = require('./images');
-const { generateHtml } = require('./seo');
-const dotenv = require('dotenv');
+const { generateHtml, generateSitemap } = require('./seo');
+const { initializeKeywordTracking, markKeywordAsUsed } = require('./keywords');
 const winston = require('winston');
-const slug = require('slug');
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') });
-
-// Create logger
+// Initialize logger
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
@@ -32,32 +28,42 @@ const logger = winston.createLogger({
  */
 async function generateCompleteBlogPost(keyword) {
   try {
-    logger.info(`Starting blog generation process for keyword: ${keyword}`);
+    logger.info(`Starting blog post generation for keyword: "${keyword}"`);
     
-    // Step 1: Generate blog content using OpenAI
-    logger.info('Generating blog content...');
+    // Ensure required directories exist
+    await ensureDataDirectories();
+    await fs.ensureDir(path.join(__dirname, '../logs'));
+    
+    // Initialize keyword tracking
+    await initializeKeywordTracking();
+    
+    // Generate blog post content using OpenAI
+    logger.info('Generating blog post content with OpenAI');
     const blogData = await generateBlogPost(keyword);
     
-    // Clean up the slug
-    blogData.slug = slug(blogData.title.toLowerCase());
+    // Search and download relevant images
+    logger.info('Searching for images related to the blog post');
+    const images = await searchImages(keyword, 2);
     
-    // Step 2: Fetch relevant images
-    logger.info('Fetching images...');
-    const images = await searchImages(blogData.imageKeywords[0], 2);
+    // Download images if found
+    if (images && images.length > 0) {
+      logger.info(`Found ${images.length} images, downloading them`);
+      blogData.images = await downloadImages(images, blogData.slug);
+    } else {
+      logger.warn('No images found for the blog post');
+      blogData.images = [];
+    }
     
-    // Step 3: Download images
-    logger.info('Downloading images...');
-    blogData.images = await downloadImages(images, blogData.slug);
-    
-    // Step 4: Generate HTML
-    logger.info('Generating HTML...');
-    blogData.html = generateHtml(blogData);
-    
-    // Step 5: Save blog post
-    logger.info('Saving blog post...');
+    // Save the blog post
     await saveBlogPost(blogData);
     
-    logger.info(`Blog post generation complete: ${blogData.title}`);
+    // Update blog index
+    await updateBlogIndex(blogData);
+    
+    // Mark the keyword as used
+    await markKeywordAsUsed(keyword);
+    
+    logger.info(`Blog post generation completed successfully for: "${blogData.title}"`);
     return blogData;
   } catch (error) {
     logger.error(`Error generating blog post: ${error.message}`);
@@ -71,28 +77,31 @@ async function generateCompleteBlogPost(keyword) {
  * @returns {Promise} - Resolves when blog post is saved
  */
 async function saveBlogPost(blogData) {
-  // Ensure directories exist
-  const contentDir = path.join(__dirname, '../content');
-  const postsDir = path.join(contentDir, 'posts');
-  const htmlDir = path.join(__dirname, '../public/articles');
-  
-  await fs.ensureDir(contentDir);
-  await fs.ensureDir(postsDir);
-  await fs.ensureDir(htmlDir);
-  
-  // Save raw blog data as JSON
-  const postDataPath = path.join(postsDir, `${blogData.slug}.json`);
-  await fs.writeFile(postDataPath, JSON.stringify(blogData, null, 2));
-  
-  // Save HTML version
-  const htmlPath = path.join(htmlDir, `${blogData.slug}.html`);
-  await fs.writeFile(htmlPath, blogData.html);
-  
-  // Update blog index
-  await updateBlogIndex(blogData);
-  
-  logger.info(`Blog post saved: ${blogData.slug}`);
-  return { postDataPath, htmlPath };
+  try {
+    logger.info(`Saving blog post: "${blogData.title}"`);
+    
+    // Save the raw blog data as JSON
+    const postsDir = path.join(__dirname, '../data/posts');
+    await fs.ensureDir(postsDir);
+    
+    const jsonPath = path.join(postsDir, `${blogData.slug}.json`);
+    await fs.writeJson(jsonPath, blogData, { spaces: 2 });
+    
+    // Generate HTML and save it
+    const html = generateHtml(blogData);
+    
+    const htmlDir = path.join(__dirname, '../public/posts');
+    await fs.ensureDir(htmlDir);
+    
+    const htmlPath = path.join(htmlDir, `${blogData.slug}.html`);
+    await fs.writeFile(htmlPath, html);
+    
+    logger.info(`Blog post saved successfully: "${blogData.title}"`);
+    return { jsonPath, htmlPath };
+  } catch (error) {
+    logger.error(`Error saving blog post: ${error.message}`);
+    throw error;
+  }
 }
 
 /**
@@ -101,44 +110,49 @@ async function saveBlogPost(blogData) {
  * @returns {Promise} - Resolves when index is updated
  */
 async function updateBlogIndex(blogData) {
-  const indexPath = path.join(__dirname, '../content/index.json');
-  let blogIndex = [];
-  
-  // Read existing index if it exists
-  if (await fs.pathExists(indexPath)) {
-    const indexData = await fs.readFile(indexPath, 'utf8');
-    blogIndex = JSON.parse(indexData);
+  try {
+    logger.info('Updating blog index');
+    
+    const indexPath = path.join(__dirname, '../data/blog-index.json');
+    let blogIndex = [];
+    
+    // Load existing index if it exists
+    if (await fs.pathExists(indexPath)) {
+      blogIndex = await fs.readJson(indexPath);
+    }
+    
+    // Create an index entry with essential data
+    const indexEntry = {
+      title: blogData.title,
+      description: blogData.description,
+      slug: blogData.slug,
+      date: blogData.date,
+      tags: blogData.tags,
+      readingTime: blogData.readingTime,
+      featuredImage: blogData.images && blogData.images.length > 0 ? blogData.images[0].localPath : null
+    };
+    
+    // Add to the beginning of the index
+    blogIndex.unshift(indexEntry);
+    
+    // Sort by date (newest first)
+    blogIndex.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Save the updated index
+    await fs.writeJson(indexPath, blogIndex, { spaces: 2 });
+    
+    // Generate HTML index page
+    await generateIndexHtml(blogIndex);
+    
+    // Generate sitemap
+    await generateSitemap(blogIndex);
+    
+    logger.info('Blog index updated successfully');
+    return blogIndex;
+  } catch (error) {
+    logger.error(`Error updating blog index: ${error.message}`);
+    throw error;
   }
-  
-  // Create summary data for index
-  const postSummary = {
-    title: blogData.title,
-    slug: blogData.slug,
-    metaDescription: blogData.metaDescription,
-    dateCreated: blogData.dateCreated,
-    tags: blogData.tags,
-    thumbnailUrl: blogData.images && blogData.images.length > 0 ? blogData.images[0].localPath : null,
-    keyword: blogData.originalKeyword
-  };
-  
-  // Add to index (avoid duplicates)
-  const existingPostIndex = blogIndex.findIndex(post => post.slug === blogData.slug);
-  if (existingPostIndex >= 0) {
-    blogIndex[existingPostIndex] = postSummary;
-  } else {
-    blogIndex.push(postSummary);
-  }
-  
-  // Sort by date (newest first)
-  blogIndex.sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
-  
-  // Save updated index
-  await fs.writeFile(indexPath, JSON.stringify(blogIndex, null, 2));
-  
-  // Generate HTML index
-  await generateIndexHtml(blogIndex);
-  
-  logger.info(`Blog index updated with ${blogIndex.length} posts`);
 }
 
 /**
@@ -147,157 +161,169 @@ async function updateBlogIndex(blogData) {
  * @returns {Promise} - Resolves when index is generated
  */
 async function generateIndexHtml(blogIndex) {
-  const blogTitle = process.env.BLOG_TITLE || "Obsession Trigger Blog";
-  const blogDescription = process.env.BLOG_DESCRIPTION || "Insights and advice on love, attraction, and relationships";
-  const quizUrl = process.env.QUIZ_URL || "https://obsession-trigger.com";
-  
-  // Generate HTML for blog posts
-  const postsHtml = blogIndex.map(post => `
-    <article class="blog-card">
-      ${post.thumbnailUrl ? `
-        <div class="card-image">
-          <a href="/articles/${post.slug}.html">
-            <img src="${post.thumbnailUrl}" alt="${post.title}" loading="lazy">
-          </a>
-        </div>
-      ` : ''}
-      <div class="card-content">
-        <h2><a href="/articles/${post.slug}.html">${post.title}</a></h2>
-        <div class="post-meta">
-          <time datetime="${post.dateCreated}">${new Date(post.dateCreated).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
-        </div>
-        <p class="excerpt">${post.metaDescription}</p>
-        <div class="tags">
-          ${post.tags.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
-        </div>
-        <a href="/articles/${post.slug}.html" class="read-more">Read Article</a>
-      </div>
-    </article>
-  `).join('');
-  
-  // Full HTML template
-  const indexHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${blogTitle} - Relationship Advice for Women</title>
-  <meta name="description" content="${blogDescription}">
-  
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="${process.env.BLOG_URL}">
-  <meta property="og:title" content="${blogTitle}">
-  <meta property="og:description" content="${blogDescription}">
-  
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="${process.env.BLOG_URL}">
-  <meta property="twitter:title" content="${blogTitle}">
-  <meta property="twitter:description" content="${blogDescription}">
-  
-  <!-- Stylesheet -->
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-  <header>
-    <div class="container">
-      <nav>
-        <a href="/" class="logo">${blogTitle}</a>
-        <ul>
-          <li><a href="/" class="active">Home</a></li>
-          <li><a href="/articles">Articles</a></li>
-          <li><a href="${quizUrl}" class="nav-cta">Take the Quiz</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
-  
-  <main>
-    <section class="hero">
-      <div class="container">
-        <h1>${blogTitle}</h1>
-        <p>${blogDescription}</p>
-        <a href="${quizUrl}" class="cta-button">Take Our Free Relationship Quiz</a>
-      </div>
-    </section>
+  try {
+    logger.info('Generating blog index HTML');
     
-    <section class="latest-posts">
-      <div class="container">
-        <h2>Latest Articles</h2>
-        <div class="posts-grid">
-          ${postsHtml}
-        </div>
-      </div>
-    </section>
+    const indexTemplatePath = path.join(__dirname, '../public/index.html');
+    let indexTemplate;
     
-    <section class="cta-section">
-      <div class="container">
-        <div class="cta-content">
-          <h2>Want Personalized Relationship Advice?</h2>
-          <p>Take our quiz to receive customized insights based on your specific situation.</p>
-          <a href="${quizUrl}" class="cta-button-large">Start the Quiz</a>
-        </div>
-      </div>
-    </section>
-  </main>
-  
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-logo">
-          <h2>${blogTitle}</h2>
-          <p>${blogDescription}</p>
-        </div>
-        
-        <div class="footer-links">
-          <h3>Quick Links</h3>
-          <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/articles">Articles</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/privacy">Privacy Policy</a></li>
-            <li><a href="/terms">Terms of Use</a></li>
-          </ul>
-        </div>
-        
-        <div class="footer-newsletter">
-          <h3>Subscribe for Updates</h3>
-          <p>Get relationship tips delivered to your inbox.</p>
-          <form class="newsletter-form">
-            <input type="email" placeholder="Your email address" required>
-            <button type="submit">Subscribe</button>
-          </form>
-        </div>
-      </div>
+    try {
+      indexTemplate = await fs.readFile(indexTemplatePath, 'utf8');
+    } catch (error) {
+      logger.error(`Error reading index template: ${error.message}`);
+      return;
+    }
+    
+    // Generate HTML for blog posts
+    let postsHtml = '';
+    
+    for (const post of blogIndex.slice(0, 9)) { // Show only the latest 9 posts
+      const postDate = new Date(post.date);
+      const formattedDate = postDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
       
-      <div class="footer-bottom">
-        <p>&copy; ${new Date().getFullYear()} ${blogTitle}. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
-  
-  <script src="/js/script.js"></script>
-</body>
-</html>`;
-  
-  // Save index HTML
-  const publicDir = path.join(__dirname, '../public');
-  await fs.ensureDir(publicDir);
-  await fs.writeFile(path.join(publicDir, 'index.html'), indexHtml);
-  
-  // Also generate an "articles" page
-  const articlesHtml = indexHtml.replace('<li><a href="/" class="active">Home</a></li>', '<li><a href="/">Home</a></li>')
-    .replace('<li><a href="/articles">Articles</a></li>', '<li><a href="/articles" class="active">Articles</a></li>')
-    .replace('<h1>${blogTitle}</h1>', '<h1>All Articles</h1>')
-    .replace(`<p>${blogDescription}</p>`, '<p>Browse our collection of relationship advice articles</p>');
-  
-  await fs.ensureDir(path.join(publicDir, 'articles'));
-  await fs.writeFile(path.join(publicDir, 'articles/index.html'), articlesHtml);
-  
-  logger.info('Generated blog index and articles pages');
+      const featuredImage = post.featuredImage 
+        ? `<img src="${post.featuredImage}" alt="${post.title}" class="card-image">`
+        : '';
+      
+      const tagsHtml = post.tags.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('');
+      
+      postsHtml += `
+        <article class="blog-card">
+          ${featuredImage}
+          <div class="card-content">
+            <h3><a href="/posts/${post.slug}.html">${post.title}</a></h3>
+            <div class="post-meta">
+              <time datetime="${post.date}">${formattedDate}</time> · ${post.readingTime} min read
+            </div>
+            <p class="excerpt">${post.description}</p>
+            <div class="tags">
+              ${tagsHtml}
+            </div>
+          </div>
+        </article>
+      `;
+    }
+    
+    // If no posts yet, show a placeholder
+    if (postsHtml === '') {
+      postsHtml = `
+        <article class="blog-card">
+          <div class="card-content">
+            <h3>Posts will appear here soon</h3>
+            <div class="post-meta">
+              <time datetime="${new Date().toISOString()}">${new Date().toLocaleDateString()}</time>
+            </div>
+            <p class="excerpt">The automated blog system will generate and publish new relationship advice articles here. Check back soon!</p>
+          </div>
+        </article>
+      `;
+    }
+    
+    // Replace the posts placeholder in the template
+    const updatedIndex = indexTemplate.replace(
+      /<div class="posts-grid">([\s\S]*?)<\/div>/,
+      `<div class="posts-grid">${postsHtml}</div>`
+    );
+    
+    // Write the updated index.html
+    await fs.writeFile(indexTemplatePath, updatedIndex);
+    
+    // Also generate an articles page that shows all posts
+    const articlesDir = path.join(__dirname, '../public');
+    await fs.ensureDir(articlesDir);
+    
+    // Create articles.html based on index.html template
+    let articlesTemplate = updatedIndex;
+    
+    // Change the active nav item
+    articlesTemplate = articlesTemplate.replace(
+      /<li><a href="\/" class="active">Home<\/a><\/li>/,
+      '<li><a href="/">Home</a></li>'
+    );
+    
+    articlesTemplate = articlesTemplate.replace(
+      /<li><a href="\/articles">Articles<\/a><\/li>/,
+      '<li><a href="/articles" class="active">Articles</a></li>'
+    );
+    
+    // Change the section titles
+    articlesTemplate = articlesTemplate.replace(
+      /<h2>Latest Articles<\/h2>/,
+      '<h2>All Articles</h2>'
+    );
+    
+    // Generate HTML for all blog posts
+    let allPostsHtml = '';
+    
+    for (const post of blogIndex) {
+      const postDate = new Date(post.date);
+      const formattedDate = postDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      const featuredImage = post.featuredImage 
+        ? `<img src="${post.featuredImage}" alt="${post.title}" class="card-image">`
+        : '';
+      
+      const tagsHtml = post.tags.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('');
+      
+      allPostsHtml += `
+        <article class="blog-card">
+          ${featuredImage}
+          <div class="card-content">
+            <h3><a href="/posts/${post.slug}.html">${post.title}</a></h3>
+            <div class="post-meta">
+              <time datetime="${post.date}">${formattedDate}</time> · ${post.readingTime} min read
+            </div>
+            <p class="excerpt">${post.description}</p>
+            <div class="tags">
+              ${tagsHtml}
+            </div>
+          </div>
+        </article>
+      `;
+    }
+    
+    // If no posts yet, show a placeholder
+    if (allPostsHtml === '') {
+      allPostsHtml = `
+        <article class="blog-card">
+          <div class="card-content">
+            <h3>Posts will appear here soon</h3>
+            <div class="post-meta">
+              <time datetime="${new Date().toISOString()}">${new Date().toLocaleDateString()}</time>
+            </div>
+            <p class="excerpt">The automated blog system will generate and publish new relationship advice articles here. Check back soon!</p>
+          </div>
+        </article>
+      `;
+    }
+    
+    // Replace the posts placeholder in the articles template
+    const updatedArticles = articlesTemplate.replace(
+      /<div class="posts-grid">([\s\S]*?)<\/div>/,
+      `<div class="posts-grid">${allPostsHtml}</div>`
+    );
+    
+    // Write the articles.html file
+    await fs.writeFile(path.join(articlesDir, 'articles.html'), updatedArticles);
+    
+    logger.info('Blog index HTML generated successfully');
+  } catch (error) {
+    logger.error(`Error generating blog index HTML: ${error.message}`);
+    throw error;
+  }
 }
 
 module.exports = {
-  generateCompleteBlogPost
+  generateCompleteBlogPost,
+  saveBlogPost,
+  updateBlogIndex,
+  generateIndexHtml
 };
