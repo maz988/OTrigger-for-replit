@@ -33,48 +33,43 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
   };
 
   return (
-    <Card className="bg-white rounded-2xl shadow-lg border border-pink-100 transition-all duration-300 relative overflow-hidden">
-      {/* Decorative blobs */}
-      <div className="absolute -top-20 -right-20 w-40 h-40 bg-pink-100 rounded-full opacity-20 blur-2xl"></div>
-      <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-100 rounded-full opacity-20 blur-2xl"></div>
-      
+    <Card className="bg-white rounded-xl shadow-md">
       <CardContent className="p-6 md:p-8 relative z-10">
-        <div className="flex items-center justify-center mb-8">
-          <span className="w-12 h-12 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center shadow-sm">
-            <CheckIcon className="text-pink-600 h-6 w-6" />
+        <div className="flex items-center justify-center mb-6">
+          <span className="w-10 h-10 bg-[#fde8ef] rounded-full flex items-center justify-center">
+            <CheckIcon className="text-[#f24b7c] h-5 w-5" />
           </span>
-          <div className="h-1 bg-gradient-to-r from-pink-200 to-blue-200 w-12"></div>
-          <span className="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-sm">
-            <MailIcon className="text-blue-600 h-6 w-6" />
+          <div className="h-1 bg-[#f24b7c] w-10"></div>
+          <span className="w-10 h-10 bg-[#f24b7c] rounded-full flex items-center justify-center">
+            <MailIcon className="text-white h-5 w-5" />
           </span>
-          <div className="h-1 bg-neutral-200 w-12"></div>
-          <span className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center shadow-sm">
-            <FileTextIcon className="text-neutral-400 h-6 w-6" />
+          <div className="h-1 bg-gray-200 w-10"></div>
+          <span className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+            <FileTextIcon className="text-gray-400 h-5 w-5" />
           </span>
         </div>
         
         <div className="text-center mb-6">
-          <Sparkles className="inline-block h-5 w-5 text-pink-500 mb-2" />
-          <h2 className="text-2xl md:text-3xl font-poppins font-semibold bg-gradient-to-r from-pink-500 to-blue-500 bg-clip-text text-transparent">
+          <h2 className="text-xl font-medium text-[#f24b7c] mb-2">
             Your advice is ready!
           </h2>
-          <p className="text-neutral-600 text-center max-w-md mx-auto mt-2 mb-6">
+          <p className="text-gray-600 text-center max-w-md mx-auto mb-6 text-sm">
             Enter your details below to get your personalized "Obsession Trigger Plan" delivered to your inbox.
           </p>
         </div>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5 max-w-md mx-auto">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 max-w-md mx-auto">
             <FormField
               control={form.control}
               name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-neutral-700">Your First Name</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">Your First Name</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Enter your first name"
-                      className="w-full p-3 border border-blue-200 rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm"
+                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-[#f24b7c] focus:border-[#f24b7c]"
                       {...field}
                     />
                   </FormControl>
@@ -88,16 +83,16 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-neutral-700">Email Address</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">Email Address</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
                       placeholder="Enter your email address"
-                      className="w-full p-3 border border-blue-200 rounded-lg focus:ring-pink-500 focus:border-pink-500 shadow-sm"
+                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-[#f24b7c] focus:border-[#f24b7c]"
                       {...field}
                     />
                   </FormControl>
-                  <p className="mt-1 text-xs text-neutral-500">We'll send your personalized advice to this email</p>
+                  <p className="mt-1 text-xs text-gray-500">We'll send your personalized advice to this email</p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -106,13 +101,13 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
             <div className="pt-2">
               <Button 
                 type="submit"
-                className="w-full bg-gradient-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                className="w-full bg-[#f24b7c] hover:bg-[#d22e5d] text-white font-medium py-3 px-6 rounded-full transition-colors"
               >
                 Get My Personalized Plan
               </Button>
             </div>
             
-            <p className="text-xs text-neutral-500 text-center pt-2">
+            <p className="text-xs text-gray-500 text-center pt-2">
               By continuing, you agree to receive relationship advice emails. You can unsubscribe at any time.
             </p>
           </form>

@@ -143,23 +143,26 @@ const QuizStep: React.FC<QuizStepProps> = ({
       case 3:
         return (
           <>
-            <h2 className="text-2xl md:text-3xl font-poppins font-semibold mb-6">Understanding his behavior</h2>
+            <div className="flex justify-center mb-4">
+              <Heart className="text-[#f24b7c] h-6 w-6" />
+            </div>
             
-            <div className="mb-8">
+            <h2 className="text-xl text-center font-medium mb-6">What confuses you about his behavior?</h2>
+            
+            <div className="mb-4">
               <FormField
                 control={control}
                 name="confusingBehavior"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-lg md:text-xl font-medium">What's something he does that confuses you?</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Describe a behavior that leaves you confused or frustrated..."
-                        className="w-full p-4 border border-neutral-200 rounded-lg focus:ring-primary-500 focus:border-primary-500 resize-none h-32"
+                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-[#f24b7c] focus:border-[#f24b7c] resize-none h-24"
                         {...field}
                       />
                     </FormControl>
-                    <p className="text-xs text-neutral-500">Feel free to share as much detail as you're comfortable with</p>
+                    <p className="text-xs text-gray-500">Your answer helps us provide personalized advice</p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -171,20 +174,23 @@ const QuizStep: React.FC<QuizStepProps> = ({
       case 4:
         return (
           <>
-            <h2 className="text-2xl md:text-3xl font-poppins font-semibold mb-6">Your communication style</h2>
+            <div className="flex justify-center mb-4">
+              <Heart className="text-[#f24b7c] h-6 w-6" />
+            </div>
             
-            <div className="mb-8">
+            <h2 className="text-xl text-center font-medium mb-6">How do you typically communicate with him?</h2>
+            
+            <div className="mb-4">
               <FormField
                 control={control}
                 name="communicationStyle"
                 render={({ field }) => (
                   <FormItem className="space-y-4">
-                    <FormLabel className="text-lg md:text-xl font-medium">How do you typically communicate with him?</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
                         value={field.value}
-                        className="space-y-3"
+                        className="space-y-2"
                       >
                         {[
                           { value: "Direct", label: "Direct and to the point" },
@@ -195,12 +201,12 @@ const QuizStep: React.FC<QuizStepProps> = ({
                         ].map((option) => (
                           <label
                             key={option.value}
-                            className="flex items-center p-4 border border-neutral-200 rounded-lg cursor-pointer hover:border-primary-200 transition-colors"
+                            className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
                           >
                             <RadioGroupItem 
                               value={option.value} 
                               id={option.value}
-                              className="text-primary-500 focus:ring-primary-500 h-5 w-5"
+                              className="text-[#f24b7c] focus:ring-[#f24b7c]"
                             />
                             <span className="ml-3">{option.label}</span>
                           </label>
@@ -218,20 +224,23 @@ const QuizStep: React.FC<QuizStepProps> = ({
       case 5:
         return (
           <>
-            <h2 className="text-2xl md:text-3xl font-poppins font-semibold mb-6">Your relationship goals</h2>
+            <div className="flex justify-center mb-4">
+              <Heart className="text-[#f24b7c] h-6 w-6" />
+            </div>
             
-            <div className="mb-8">
+            <h2 className="text-xl text-center font-medium mb-6">What's your desired outcome?</h2>
+            
+            <div className="mb-4">
               <FormField
                 control={control}
                 name="desiredOutcome"
                 render={({ field }) => (
                   <FormItem className="space-y-4">
-                    <FormLabel className="text-lg md:text-xl font-medium">What's your desired outcome for this relationship?</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
                         value={field.value}
-                        className="space-y-3"
+                        className="space-y-2"
                       >
                         {[
                           { value: "Commitment", label: "Long-term commitment/marriage" },
@@ -242,12 +251,12 @@ const QuizStep: React.FC<QuizStepProps> = ({
                         ].map((option) => (
                           <label
                             key={option.value}
-                            className="flex items-center p-4 border border-neutral-200 rounded-lg cursor-pointer hover:border-primary-200 transition-colors"
+                            className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
                           >
                             <RadioGroupItem 
                               value={option.value} 
                               id={option.value}
-                              className="text-primary-500 focus:ring-primary-500 h-5 w-5"
+                              className="text-[#f24b7c] focus:ring-[#f24b7c]"
                             />
                             <span className="ml-3">{option.label}</span>
                           </label>

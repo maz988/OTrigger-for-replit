@@ -64,33 +64,28 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ advice, userData, pdfDocument
   };
 
   return (
-    <Card className="bg-white rounded-2xl shadow-lg border border-pink-100 transition-all duration-300 relative overflow-hidden">
-      {/* Decorative blobs */}
-      <div className="absolute -top-20 -right-20 w-40 h-40 bg-pink-100 rounded-full opacity-20 blur-2xl"></div>
-      <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-100 rounded-full opacity-20 blur-2xl"></div>
-      
-      <CardContent className="p-6 md:p-8 relative z-10">
+    <Card className="bg-white rounded-xl shadow-md">
+      <CardContent className="p-6 md:p-8">
         {/* Progress indicator */}
-        <div className="flex items-center justify-center mb-8">
-          <span className="w-12 h-12 bg-gradient-to-r from-pink-100 to-pink-200 rounded-full flex items-center justify-center shadow-sm">
-            <CheckIcon className="text-pink-600 h-6 w-6" />
+        <div className="flex items-center justify-center mb-6">
+          <span className="w-10 h-10 bg-[#fde8ef] rounded-full flex items-center justify-center">
+            <CheckIcon className="text-[#f24b7c] h-5 w-5" />
           </span>
-          <div className="h-1 bg-gradient-to-r from-pink-200 to-blue-200 w-12"></div>
-          <span className="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-sm">
-            <CheckIcon className="text-blue-600 h-6 w-6" />
+          <div className="h-1 bg-[#f24b7c] w-10"></div>
+          <span className="w-10 h-10 bg-[#fde8ef] rounded-full flex items-center justify-center">
+            <CheckIcon className="text-[#f24b7c] h-5 w-5" />
           </span>
-          <div className="h-1 bg-gradient-to-r from-blue-200 to-pink-200 w-12"></div>
-          <span className="w-12 h-12 bg-gradient-to-r from-pink-200 to-pink-300 rounded-full flex items-center justify-center shadow-sm">
-            <FileTextIcon className="text-pink-600 h-6 w-6" />
+          <div className="h-1 bg-[#f24b7c] w-10"></div>
+          <span className="w-10 h-10 bg-[#f24b7c] rounded-full flex items-center justify-center">
+            <FileTextIcon className="text-white h-5 w-5" />
           </span>
         </div>
         
         <div className="text-center mb-6">
-          <Sparkles className="inline-block h-5 w-5 text-pink-500 mb-2" />
-          <h2 className="text-2xl md:text-3xl font-poppins font-semibold bg-gradient-to-r from-pink-500 to-blue-500 bg-clip-text text-transparent">
+          <h2 className="text-xl font-medium text-[#f24b7c] mb-2">
             Your Custom Obsession Trigger Plan
           </h2>
-          <p className="text-neutral-600 mt-2">Ready for you to download and use right away</p>
+          <p className="text-gray-600 text-sm">Ready for you to download and use right away</p>
         </div>
         
         <PDFPreview
@@ -98,17 +93,17 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ advice, userData, pdfDocument
           advice={advice}
         />
         
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col md:flex-row gap-3 mt-4">
           <Button 
             variant="outline"
-            className="flex-1 border-blue-200 hover:border-blue-300 text-blue-600 font-medium shadow hover:shadow-md transition-all duration-200"
+            className="flex-1 border-gray-200 hover:border-gray-300 text-gray-700 font-medium"
             onClick={handleViewPDF}
           >
             <Eye className="mr-2 h-4 w-4" />
             Preview Full PDF
           </Button>
           <Button 
-            className="flex-1 bg-gradient-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200"
+            className="flex-1 bg-[#f24b7c] hover:bg-[#d22e5d] text-white font-medium"
             onClick={handleDownloadPDF}
           >
             <Download className="mr-2 h-4 w-4" />
@@ -117,51 +112,51 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ advice, userData, pdfDocument
         </div>
         
         {/* Bonus gift box */}
-        <div className="mt-8 p-5 bg-gradient-to-r from-pink-50 to-blue-50 rounded-xl border border-pink-100">
-          <div className="flex items-center mb-2">
-            <Gift className="h-5 w-5 text-pink-500 mr-2" />
-            <h3 className="font-medium text-lg">Free Bonus!</h3>
+        <div className="mt-6 p-4 bg-[#fde8ef] rounded-lg">
+          <div className="flex items-center mb-1">
+            <Gift className="h-5 w-5 text-[#f24b7c] mr-2" />
+            <h3 className="font-medium">Free Bonus!</h3>
           </div>
-          <p className="text-sm text-neutral-700">
-            Get <span className="font-semibold text-pink-600">3 Free Relationship Tips</span> sent to your email to help you start using these techniques right away.
+          <p className="text-xs text-gray-700">
+            Get <span className="font-semibold text-[#f24b7c]">3 Free Relationship Tips</span> sent to your email to help you start using these techniques right away.
           </p>
         </div>
         
         {/* Social Sharing */}
-        <div className="mt-8">
-          <p className="text-center text-sm font-medium text-neutral-600 mb-4">Share this with someone who might need it:</p>
-          <div className="flex justify-center space-x-4">
+        <div className="mt-6">
+          <p className="text-center text-sm text-gray-600 mb-3">Share this with someone who might need it:</p>
+          <div className="flex justify-center space-x-3">
             <Button
               variant="outline"
               size="icon"
-              className="w-11 h-11 rounded-full bg-[#3b5998] text-white hover:bg-[#3b5998]/90 border-none shadow hover:shadow-md transition-all duration-200"
+              className="w-10 h-10 rounded-full bg-[#3b5998] text-white hover:bg-[#3b5998]/90 border-none"
               onClick={() => handleShare('facebook')}
             >
-              <Facebook className="h-5 w-5" />
+              <Facebook className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="w-11 h-11 rounded-full bg-[#1DA1F2] text-white hover:bg-[#1DA1F2]/90 border-none shadow hover:shadow-md transition-all duration-200"
+              className="w-10 h-10 rounded-full bg-[#1DA1F2] text-white hover:bg-[#1DA1F2]/90 border-none"
               onClick={() => handleShare('twitter')}
             >
-              <Twitter className="h-5 w-5" />
+              <Twitter className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="w-11 h-11 rounded-full bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none shadow hover:shadow-md transition-all duration-200"
+              className="w-10 h-10 rounded-full bg-[#25D366] text-white hover:bg-[#25D366]/90 border-none"
               onClick={() => handleShare('whatsapp')}
             >
-              <MessageCircle className="h-5 w-5" />
+              <MessageCircle className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="w-11 h-11 rounded-full bg-[#0077B5] text-white hover:bg-[#0077B5]/90 border-none shadow hover:shadow-md transition-all duration-200"
+              className="w-10 h-10 rounded-full bg-[#0077B5] text-white hover:bg-[#0077B5]/90 border-none"
               onClick={() => handleShare('linkedin')}
             >
-              <Linkedin className="h-5 w-5" />
+              <Linkedin className="h-4 w-4" />
             </Button>
           </div>
         </div>
