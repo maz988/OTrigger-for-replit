@@ -31,7 +31,7 @@ const QuizContainer: React.FC = () => {
       communicationStyle: 'Emotional',
       desiredOutcome: 'Attention',
     },
-    mode: 'onChange',
+    mode: 'onChange', // In a real app this would be 'onBlur' or 'onSubmit'
   });
 
   const handlePrevStep = () => {

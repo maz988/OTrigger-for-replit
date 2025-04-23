@@ -173,7 +173,6 @@ const QuizStep: React.FC<QuizStepProps> = ({
                       <Textarea
                         placeholder="Describe a behavior that leaves you confused or frustrated..."
                         className="w-full p-3 border border-gray-200 rounded-lg focus:ring-[#f24b7c] focus:border-[#f24b7c] resize-none h-24"
-                        defaultValue="He's hot and cold with me. One day he seems really interested, texting me all day, and the next day he barely responds."
                         {...field}
                       />
                     </FormControl>
