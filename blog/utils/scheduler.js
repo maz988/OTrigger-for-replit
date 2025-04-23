@@ -1,6 +1,5 @@
 const cron = require('node-cron');
 const { generateCompleteBlogPost } = require('./blogGenerator');
-const { getRandomUnusedKeyword, getUnusedKeywords, markKeywordAsUsed } = require('./keywords');
 const fs = require('fs-extra');
 const path = require('path');
 const winston = require('winston');
@@ -63,6 +62,7 @@ async function publishNewPost() {
     logger.info('Starting scheduled blog post generation');
     
     // Get a random unused keyword
+    const { getRandomUnusedKeyword } = require('./keywords');
     const keyword = getRandomUnusedKeyword();
     
     if (!keyword) {
@@ -136,6 +136,7 @@ async function generateSinglePost() {
     logger.info('Starting manual blog post generation');
     
     // Get a random unused keyword
+    const { getRandomUnusedKeyword } = require('./keywords');
     const keyword = getRandomUnusedKeyword();
     
     if (!keyword) {

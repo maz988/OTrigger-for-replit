@@ -3,7 +3,7 @@ const path = require('path');
 const { generateBlogPost, ensureDataDirectories } = require('./openai');
 const { searchImages, downloadImages } = require('./images');
 const { generateHtml, generateSitemap } = require('./seo');
-const { initializeKeywordTracking, markKeywordAsUsed } = require('./keywords');
+const { initializeKeywordTracking } = require('./keywords');
 const winston = require('winston');
 
 // Initialize logger
