@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Lato:wght@300;400;700&family=Poppins:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 47.4% 11.2%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 47.4% 11.2%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --primary: 340 86% 55.9%;
+  --primary-foreground: 355.7 100% 97.3%;
+  --secondary: 217.9 100% 60.1%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 215 20.2% 65.1%;
+  --radius: 0.5rem;
+  
+  /* Added soft color palette for the app */
+  --primary-50: 340 93% 98%;
+  --primary-100: 340 93% 90.2%;
+  --primary-200: 340 93% 86.3%;
+  --primary-300: 340 93% 70%;
+  --primary-400: 340 86% 62.4%;
+  --primary-500: 340 86% 55.9%;
+  --primary-600: 342 80% 46.1%;
+  --primary-700: 343 76% 36.5%;
+  --primary-800: 344 73% 26.9%;
+  --primary-900: 344 70% 17.6%;
+  
+  --secondary-50: 213.8 100% 96.9%;
+  --secondary-100: 214.3 95.0% 93.9%;
+  --secondary-200: 212.7 96.2% 91.1%;
+  --secondary-300: 211.0 87.3% 82.0%;
+  --secondary-400: 211.7 93.7% 67.8%;
+  --secondary-500: 217.9 100% 60.1%;
+  --secondary-600: 221.2 83.2% 53.3%;
+  --secondary-700: 224.3 76.3% 48.0%;
+  --secondary-800: 225.9 70.7% 40.2%;
+  --secondary-900: 224.4 64.3% 32.9%;
+}
+
+.dark {
+  --background: 224 71% 4%;
+  --foreground: 213 31% 91%;
+  --muted: 223 47% 11%;
+  --muted-foreground: 215.4 16.3% 56.9%;
+  --popover: 224 71% 4%;
+  --popover-foreground: 215 20.2% 65.1%;
+  --card: 224 71% 4%;
+  --card-foreground: 213 31% 91%;
+  --border: 216 34% 17%;
+  --input: 216 34% 17%;
+  --primary: 340 86% 55.9%;
+  --primary-foreground: 355.7 100% 97.3%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --accent: 216 34% 17%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 216 34% 17%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-lato bg-neutral-50 text-neutral-800;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-poppins;
+  }
+}
+
+@layer utilities {
+  .font-script {
+    font-family: 'Dancing Script', cursive;
+  }
+  
+  .progress-bar {
+    height: 4px;
+    transition: width 0.5s ease-in-out;
+  }
+  
+  .card-transition {
+    transition: all 0.3s ease-out;
+  }
+  
+  .quiz-fade-enter {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  
+  .quiz-fade-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 500ms, transform 500ms;
+  }
+  
+  .quiz-fade-exit {
+    opacity: 1;
+  }
+  
+  .quiz-fade-exit-active {
+    opacity: 0;
+    transition: opacity 500ms;
+  }
+  
+  .pulse-animate {
+    animation: pulseAnimate 2s infinite;
+  }
+  
+  @keyframes pulseAnimate {
+    0% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(251, 211, 233, 0.7);
+    }
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 10px rgba(251, 211, 233, 0);
+    }
+    100% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(251, 211, 233, 0);
+    }
+  }
+}
