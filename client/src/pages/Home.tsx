@@ -13,21 +13,50 @@ const Home: React.FC = () => {
   return (
     <div className="py-4 min-h-screen bg-white">
       {!showQuiz ? (
-        <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 flex flex-col items-center text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#f24b7c] mb-4">
-            Obsession Trigger AI
+        <div className="max-w-5xl mx-auto px-4 pt-12 pb-16 flex flex-col items-center text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            Discover How to Trigger His <span className="text-[#f24b7c]">Obsession</span>
           </h1>
           
-          <h2 className="text-2xl md:text-3xl text-[#f24b7c] font-semibold mb-4">
-            Decode His Mind & Trigger His Obsession...
-          </h2>
-          
-          <p className="text-lg text-gray-700 max-w-2xl mx-auto mb-8">
-            Take the 60-second quiz to uncover exactly what he's thinking and how to spark 
-            <span className="text-[#f24b7c] font-medium"> deep emotional desire</span>.
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-12">
+            Take our 5-question quiz and get personalized advice on how to activate his Hero Instinct
+            and transform your relationship.
           </p>
           
-          <div className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#ffccd8] to-[#e0e8ff] h-1 mb-8 rounded-full"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl mx-auto mb-12">
+            {/* Step 1 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center">
+              <div className="h-12 w-12 rounded-full bg-pink-100 flex items-center justify-center text-xl font-semibold mb-4">
+                1
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Quick Quiz</h3>
+              <p className="text-gray-600 text-center">
+                Answer 5 simple questions about your relationship situation
+              </p>
+            </div>
+            
+            {/* Step 2 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center">
+              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-xl font-semibold mb-4">
+                2
+              </div>
+              <h3 className="text-xl font-semibold mb-2">AI Analysis</h3>
+              <p className="text-gray-600 text-center">
+                Our AI analyzes your answers using relationship psychology principles
+              </p>
+            </div>
+            
+            {/* Step 3 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center">
+              <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center text-xl font-semibold mb-4">
+                3
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Custom Plan</h3>
+              <p className="text-gray-600 text-center">
+                Get your personalized advice plan with actionable relationship tips
+              </p>
+            </div>
+          </div>
           
           <Button 
             onClick={startQuiz}
@@ -35,29 +64,6 @@ const Home: React.FC = () => {
           >
             Start Free Quiz
           </Button>
-          
-          <div className="mt-16 max-w-xl mx-auto bg-white rounded-xl shadow-md p-6">
-            <p className="italic text-gray-600 mb-2 text-lg">
-              "This quiz helped me understand what was really going on in my relationship. The insights were spot on!"
-            </p>
-            <p className="text-[#f24b7c] font-semibold">— Sarah, 32</p>
-          </div>
-          
-          <div className="mt-12 bg-white rounded-xl shadow-md p-6 max-w-xl w-full">
-            <h3 className="flex items-center text-xl font-semibold text-[#f24b7c] mb-4">
-              <Heart className="h-5 w-5 mr-2 inline" fill="#fbb5c8" /> Why Take This Quiz?
-            </h3>
-            <ul className="space-y-4 text-left">
-              <li className="flex items-start">
-                <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
-                <span>Gain clarity on your relationship dynamics</span>
-              </li>
-              <li className="flex items-start">
-                <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
-                <span>Discover psychological insights about his behavior</span>
-              </li>
-            </ul>
-          </div>
         </div>
       ) : (
         <div className="max-w-3xl mx-auto relative">
