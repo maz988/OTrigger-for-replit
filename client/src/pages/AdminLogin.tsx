@@ -61,7 +61,12 @@ const AdminLogin: React.FC = () => {
       
       // Save token to localStorage
       if (response.data && response.data.token) {
+        console.log('Saving token to localStorage:', response.data.token);
         localStorage.setItem('adminToken', response.data.token);
+        
+        // Also save admin credentials for debugging
+        localStorage.setItem('adminUsername', response.data.username);
+        localStorage.setItem('adminId', response.data.id);
       }
       
       queryClient.invalidateQueries({ queryKey: ['/api/admin/me'] });
@@ -69,7 +74,11 @@ const AdminLogin: React.FC = () => {
         title: 'Login successful',
         description: 'You have been logged in successfully.',
       });
-      setLocation('/admin');
+      
+      // Slight delay before redirecting to ensure token is saved
+      setTimeout(() => {
+        setLocation('/admin');
+      }, 500);
     },
     onError: (error: any) => {
       toast({

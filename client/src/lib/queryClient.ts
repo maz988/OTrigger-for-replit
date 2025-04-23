@@ -22,9 +22,9 @@ export async function apiRequest<T = any>(
   const adminToken = localStorage.getItem('adminToken');
   
   // Set up headers with the token if it exists
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers || {},
+    ...(options.headers as Record<string, string> || {}),
   };
   
   if (adminToken && url.includes('/api/admin')) {
@@ -53,7 +53,7 @@ export const getQueryFn = <T>(options: {
     const adminToken = localStorage.getItem('adminToken');
     
     // Set up headers with the token if it exists
-    const headers: HeadersInit = {};
+    const headers: Record<string, string> = {};
     if (adminToken && (queryKey[0] as string).includes('/api/admin')) {
       headers['Authorization'] = `Bearer ${adminToken}`;
     }
