@@ -264,16 +264,18 @@ const QuizStep: React.FC<QuizStepProps> = ({
   };
   
   return (
-    <Card className="bg-white rounded-xl shadow-card">
+    <Card className="bg-white rounded-2xl shadow-lg border border-pink-100 transition-all duration-300 card-transition">
       <CardContent className="p-6 md:p-8">
-        {renderStepContent()}
+        <div className="quiz-fade-enter quiz-fade-enter-active">
+          {renderStepContent()}
+        </div>
         
-        <div className="flex justify-between">
+        <div className="flex justify-between mt-6">
           {currentStep > 1 ? (
             <Button
               variant="outline" 
               onClick={onPrev}
-              className="border border-neutral-300 hover:border-neutral-400 text-neutral-700 font-medium"
+              className="border border-blue-200 hover:border-blue-300 text-blue-600 font-medium shadow-sm hover:shadow transition-all duration-200"
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
               Back
@@ -285,7 +287,7 @@ const QuizStep: React.FC<QuizStepProps> = ({
           {currentStep < totalSteps ? (
             <Button 
               onClick={onNext}
-              className="bg-primary-500 hover:bg-primary-600 text-white font-medium"
+              className="bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200"
             >
               Continue
               <ChevronRight className="ml-2 h-4 w-4" />
@@ -293,7 +295,7 @@ const QuizStep: React.FC<QuizStepProps> = ({
           ) : (
             <Button 
               onClick={onSubmit}
-              className="bg-primary-500 hover:bg-primary-600 text-white font-medium"
+              className="bg-gradient-to-r from-pink-500 to-blue-500 hover:from-pink-600 hover:to-blue-600 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200"
             >
               Generate My Advice
               <Wand2 className="ml-2 h-4 w-4" />
