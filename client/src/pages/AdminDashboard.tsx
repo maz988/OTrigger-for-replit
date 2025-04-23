@@ -57,17 +57,52 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#4CAF50'
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Get the admin token from localStorage
+  const token = localStorage.getItem('adminToken');
+  
   // Fetch quiz analytics data
   const { data: quizAnalyticsResponse, isLoading: quizLoading } = useQuery({
     queryKey: ['/api/admin/analytics/quiz'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/analytics/quiz', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
     refetchInterval: 300000, // Refetch every 5 minutes
   });
 
   // Fetch blog analytics data
   const { data: blogAnalyticsResponse, isLoading: blogLoading } = useQuery({
     queryKey: ['/api/admin/analytics/blog'],
-    queryFn: getQueryFn({ on401: 'throw' }),
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/analytics/blog', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
     refetchInterval: 300000, // Refetch every 5 minutes
   });
   
