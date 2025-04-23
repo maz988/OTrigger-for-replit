@@ -54,37 +54,45 @@ const QuizStep: React.FC<QuizStepProps> = ({
               <FormField
                 control={control}
                 name="relationshipStatus"
-                render={({ field }) => (
-                  <FormItem className="space-y-4">
-                    <FormControl>
-                      <RadioGroup 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                        className="space-y-2"
-                      >
-                        {[
-                          { value: "Single", label: "Single" },
-                          { value: "Dating", label: "Dating" },
-                          { value: "Relationship", label: "In a relationship" },
-                          { value: "Complicated", label: "It's complicated" },
-                        ].map((option) => (
-                          <label
-                            key={option.value}
-                            className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
-                          >
-                            <RadioGroupItem 
-                              value={option.value} 
-                              id={option.value}
-                              className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                            />
-                            <span className="ml-3">{option.label}</span>
-                          </label>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Set a default value for the demo
+                  if (!field.value) {
+                    field.onChange("Dating");
+                  }
+                  
+                  return (
+                    <FormItem className="space-y-4">
+                      <FormControl>
+                        <RadioGroup 
+                          onValueChange={field.onChange} 
+                          value={field.value || "Dating"}
+                          className="space-y-2"
+                        >
+                          {[
+                            { value: "Single", label: "Single" },
+                            { value: "Dating", label: "Dating" },
+                            { value: "Relationship", label: "In a relationship" },
+                            { value: "Complicated", label: "It's complicated" },
+                          ].map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
+                            >
+                              <RadioGroupItem 
+                                value={option.value} 
+                                id={option.value}
+                                className="text-[#f24b7c] focus:ring-[#f24b7c]"
+                                checked={field.value === option.value || (!field.value && option.value === "Dating")}
+                              />
+                              <span className="ml-3">{option.label}</span>
+                            </label>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </>
@@ -103,38 +111,46 @@ const QuizStep: React.FC<QuizStepProps> = ({
               <FormField
                 control={control}
                 name="concernType"
-                render={({ field }) => (
-                  <FormItem className="space-y-4">
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="space-y-2"
-                      >
-                        {[
-                          { value: "Communication", label: "Lack of communication" },
-                          { value: "Commitment", label: "Commitment issues" },
-                          { value: "Affection", label: "Lack of affection/romance" },
-                          { value: "Trust", label: "Trust issues" },
-                          { value: "Other", label: "Other" },
-                        ].map((option) => (
-                          <label
-                            key={option.value}
-                            className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
-                          >
-                            <RadioGroupItem 
-                              value={option.value} 
-                              id={option.value}
-                              className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                            />
-                            <span className="ml-3">{option.label}</span>
-                          </label>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Set a default value for the demo
+                  if (!field.value) {
+                    field.onChange("Commitment");
+                  }
+                  
+                  return (
+                    <FormItem className="space-y-4">
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value || "Commitment"}
+                          className="space-y-2"
+                        >
+                          {[
+                            { value: "Communication", label: "Lack of communication" },
+                            { value: "Commitment", label: "Commitment issues" },
+                            { value: "Affection", label: "Lack of affection/romance" },
+                            { value: "Trust", label: "Trust issues" },
+                            { value: "Other", label: "Other" },
+                          ].map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
+                            >
+                              <RadioGroupItem 
+                                value={option.value} 
+                                id={option.value}
+                                className="text-[#f24b7c] focus:ring-[#f24b7c]"
+                                checked={field.value === option.value || (!field.value && option.value === "Commitment")}
+                              />
+                              <span className="ml-3">{option.label}</span>
+                            </label>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </>
@@ -159,7 +175,8 @@ const QuizStep: React.FC<QuizStepProps> = ({
                       <Textarea
                         placeholder="Describe a behavior that leaves you confused or frustrated..."
                         className="w-full p-3 border border-gray-200 rounded-lg focus:ring-[#f24b7c] focus:border-[#f24b7c] resize-none h-24"
-                        {...field}
+                        value="He's hot and cold with me. One day he seems really interested, texting me all day, and the next day he barely responds."
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     </FormControl>
                     <p className="text-xs text-gray-500">Your answer helps us provide personalized advice</p>
@@ -184,38 +201,46 @@ const QuizStep: React.FC<QuizStepProps> = ({
               <FormField
                 control={control}
                 name="communicationStyle"
-                render={({ field }) => (
-                  <FormItem className="space-y-4">
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="space-y-2"
-                      >
-                        {[
-                          { value: "Direct", label: "Direct and to the point" },
-                          { value: "Emotional", label: "Emotional and expressive" },
-                          { value: "Passive", label: "Passive, I often hold back" },
-                          { value: "Mixed", label: "It depends on the situation" },
-                          { value: "Avoidant", label: "I avoid difficult conversations" },
-                        ].map((option) => (
-                          <label
-                            key={option.value}
-                            className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
-                          >
-                            <RadioGroupItem 
-                              value={option.value} 
-                              id={option.value}
-                              className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                            />
-                            <span className="ml-3">{option.label}</span>
-                          </label>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Set a default value for the demo
+                  if (!field.value) {
+                    field.onChange("Emotional");
+                  }
+                  
+                  return (
+                    <FormItem className="space-y-4">
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value || "Emotional"}
+                          className="space-y-2"
+                        >
+                          {[
+                            { value: "Direct", label: "Direct and to the point" },
+                            { value: "Emotional", label: "Emotional and expressive" },
+                            { value: "Passive", label: "Passive, I often hold back" },
+                            { value: "Mixed", label: "It depends on the situation" },
+                            { value: "Avoidant", label: "I avoid difficult conversations" },
+                          ].map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
+                            >
+                              <RadioGroupItem 
+                                value={option.value} 
+                                id={option.value}
+                                className="text-[#f24b7c] focus:ring-[#f24b7c]"
+                                checked={field.value === option.value || (!field.value && option.value === "Emotional")}
+                              />
+                              <span className="ml-3">{option.label}</span>
+                            </label>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </>
@@ -234,38 +259,46 @@ const QuizStep: React.FC<QuizStepProps> = ({
               <FormField
                 control={control}
                 name="desiredOutcome"
-                render={({ field }) => (
-                  <FormItem className="space-y-4">
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="space-y-2"
-                      >
-                        {[
-                          { value: "Commitment", label: "Long-term commitment/marriage" },
-                          { value: "Improvement", label: "Improving our existing relationship" },
-                          { value: "Attention", label: "Getting his attention and interest" },
-                          { value: "Understanding", label: "Understanding him better" },
-                          { value: "Closure", label: "Finding closure or moving on" },
-                        ].map((option) => (
-                          <label
-                            key={option.value}
-                            className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
-                          >
-                            <RadioGroupItem 
-                              value={option.value} 
-                              id={option.value}
-                              className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                            />
-                            <span className="ml-3">{option.label}</span>
-                          </label>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Set a default value for the demo
+                  if (!field.value) {
+                    field.onChange("Attention");
+                  }
+                  
+                  return (
+                    <FormItem className="space-y-4">
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value || "Attention"}
+                          className="space-y-2"
+                        >
+                          {[
+                            { value: "Commitment", label: "Long-term commitment/marriage" },
+                            { value: "Improvement", label: "Improving our existing relationship" },
+                            { value: "Attention", label: "Getting his attention and interest" },
+                            { value: "Understanding", label: "Understanding him better" },
+                            { value: "Closure", label: "Finding closure or moving on" },
+                          ].map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-pink-200 transition-colors"
+                            >
+                              <RadioGroupItem 
+                                value={option.value} 
+                                id={option.value}
+                                className="text-[#f24b7c] focus:ring-[#f24b7c]"
+                                checked={field.value === option.value || (!field.value && option.value === "Attention")}
+                              />
+                              <span className="ml-3">{option.label}</span>
+                            </label>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </>

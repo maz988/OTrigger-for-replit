@@ -23,8 +23,8 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
   const form = useForm<EmailFormData>({
     resolver: zodResolver(emailFormSchema),
     defaultValues: {
-      firstName: '',
-      email: '',
+      firstName: 'Jessica',
+      email: 'jessica@example.com',
     },
   });
 
