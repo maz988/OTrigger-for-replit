@@ -84,6 +84,64 @@ const AdminLogin: React.FC = () => {
     loginMutation.mutate(data);
   };
 
+  // Create a separate mutation for creating an admin account
+  const registerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/admin/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || `Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Registration successful',
+        description: 'Admin account created. You can now login.',
+      });
+      setShowRegister(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Registration failed',
+        description: error.message || 'Failed to create admin account',
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  const [showRegister, setShowRegister] = React.useState(false);
+  
+  // Create a register form
+  const registerForm = useForm({
+    resolver: zodResolver(z.object({
+      username: z.string().min(3, "Username must be at least 3 characters"),
+      password: z.string().min(6, "Password must be at least 6 characters"),
+      email: z.string().email("Please enter a valid email"),
+    })),
+    defaultValues: {
+      username: "",
+      password: "",
+      email: "",
+    },
+  });
+  
+  const onRegisterSubmit = (data: any) => {
+    registerMutation.mutate({
+      ...data,
+      role: "admin"
+    });
+  };
+  
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-12rem)] p-4">
       <Card className="w-full max-w-md">
@@ -93,49 +151,120 @@ const AdminLogin: React.FC = () => {
               <Lock className="h-6 w-6 text-[#f24b7c]" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center text-[#f24b7c]">Admin Login</CardTitle>
+          <CardTitle className="text-2xl text-center text-[#f24b7c]">{showRegister ? 'Register Admin' : 'Admin Login'}</CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access the admin dashboard
+            {showRegister 
+              ? 'Create a new admin account' 
+              : 'Enter your credentials to access the admin dashboard'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input placeholder="username" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="********" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button 
-                type="submit" 
-                className="w-full bg-[#f24b7c] hover:bg-[#d22e5d]"
-                disabled={loginMutation.isPending}
-              >
-                {loginMutation.isPending ? 'Logging in...' : 'Login'}
-              </Button>
-            </form>
-          </Form>
+          {showRegister ? (
+            <Form {...registerForm}>
+              <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                <FormField
+                  control={registerForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={registerForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="email@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={registerForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button 
+                  type="submit" 
+                  className="w-full bg-[#f24b7c] hover:bg-[#d22e5d]"
+                  disabled={registerMutation.isPending}
+                >
+                  {registerMutation.isPending ? 'Creating account...' : 'Create Admin Account'}
+                </Button>
+                <Button 
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setShowRegister(false)}
+                >
+                  Back to Login
+                </Button>
+              </form>
+            </Form>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button 
+                  type="submit" 
+                  className="w-full bg-[#f24b7c] hover:bg-[#d22e5d]"
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? 'Logging in...' : 'Login'}
+                </Button>
+                <Button 
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setShowRegister(true)}
+                >
+                  Create New Admin
+                </Button>
+              </form>
+            </Form>
+          )}
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-gray-500">

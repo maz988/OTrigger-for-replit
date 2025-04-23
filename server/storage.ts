@@ -100,13 +100,8 @@ export class MemStorage implements IStorage {
     this.blogAnalyticsCurrentId = 1;
     this.adminCurrentId = 1;
     
-    // Create a default admin user
-    this.createAdmin({
-      username: "admin",
-      password: "$2b$10$HwFyQn7d0FbFUzWQTnQgxe1aXQCOd7eV2DN3ZR0wLnLGUt9LRk15a", // "admin123"
-      email: "admin@obsessiontrigger.com",
-      role: "admin"
-    });
+    // Create a default admin user with password "admin123"
+    this.createDefaultAdmin();
     
     // Import blog posts from the public directory
     this.importBlogPosts();
@@ -366,6 +361,24 @@ export class MemStorage implements IStorage {
     if (admin) {
       admin.lastLogin = new Date();
       this.admins.set(id, admin);
+    }
+  }
+  
+  private async createDefaultAdmin() {
+    // Create a default admin user
+    const adminExists = await this.getAdminByUsername('admin');
+    
+    if (!adminExists) {
+      // Create admin with password "admin123"
+      const admin = {
+        username: 'admin',
+        password: '$2b$10$HwJqnJ4DmQXJe/otXHJ8Be4a/7uQJJ0aWziARXNLTMeGO47JkPn7q', // admin123
+        email: 'admin@obsessiontrigger.com',
+        role: 'admin'
+      };
+      
+      await this.createAdmin(admin);
+      console.log('Default admin user created with username: admin, password: admin123');
     }
   }
   

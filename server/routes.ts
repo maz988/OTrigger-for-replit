@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import OpenAI from "openai";
-import bcrypt from "bcrypt";
+import * as bcrypt from "bcrypt";
 import express from "express";
 
 // Initialize OpenAI
@@ -124,6 +124,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({
         success: false,
         error: err.message,
+      });
+    }
+  });
+
+  // Register admin (only for testing)
+  app.post("/api/admin/register", async (req, res) => {
+    try {
+      const { username, password, email, role } = req.body;
+      
+      if (!username || !password || !email) {
+        return res.status(400).json({
+          success: false,
+          error: "Username, password, and email are required"
+        });
+      }
+      
+      // Check if admin already exists
+      const existingAdmin = await storage.getAdminByUsername(username);
+      if (existingAdmin) {
+        return res.status(400).json({
+          success: false,
+          error: "Admin with this username already exists"
+        });
+      }
+      
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Create the admin user
+      const admin = await storage.createAdmin({
+        username,
+        password: hashedPassword,
+        email,
+        role: role || "admin"
+      });
+      
+      // Return the admin data without the password
+      res.status(201).json({
+        success: true,
+        data: {
+          id: admin.id,
+          username: admin.username,
+          email: admin.email,
+          role: admin.role
+        }
+      });
+    } catch (err: any) {
+      console.error(`Error registering admin: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
       });
     }
   });
