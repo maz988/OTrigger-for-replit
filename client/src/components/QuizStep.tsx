@@ -82,7 +82,6 @@ const QuizStep: React.FC<QuizStepProps> = ({
                                 value={option.value} 
                                 id={option.value}
                                 className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                                checked={field.value === option.value || (!field.value && option.value === "Dating")}
                               />
                               <span className="ml-3">{option.label}</span>
                             </label>
@@ -140,7 +139,6 @@ const QuizStep: React.FC<QuizStepProps> = ({
                                 value={option.value} 
                                 id={option.value}
                                 className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                                checked={field.value === option.value || (!field.value && option.value === "Commitment")}
                               />
                               <span className="ml-3">{option.label}</span>
                             </label>
@@ -175,8 +173,8 @@ const QuizStep: React.FC<QuizStepProps> = ({
                       <Textarea
                         placeholder="Describe a behavior that leaves you confused or frustrated..."
                         className="w-full p-3 border border-gray-200 rounded-lg focus:ring-[#f24b7c] focus:border-[#f24b7c] resize-none h-24"
-                        value="He's hot and cold with me. One day he seems really interested, texting me all day, and the next day he barely responds."
-                        onChange={(e) => field.onChange(e.target.value)}
+                        defaultValue="He's hot and cold with me. One day he seems really interested, texting me all day, and the next day he barely responds."
+                        {...field}
                       />
                     </FormControl>
                     <p className="text-xs text-gray-500">Your answer helps us provide personalized advice</p>
@@ -230,7 +228,6 @@ const QuizStep: React.FC<QuizStepProps> = ({
                                 value={option.value} 
                                 id={option.value}
                                 className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                                checked={field.value === option.value || (!field.value && option.value === "Emotional")}
                               />
                               <span className="ml-3">{option.label}</span>
                             </label>
@@ -288,7 +285,6 @@ const QuizStep: React.FC<QuizStepProps> = ({
                                 value={option.value} 
                                 id={option.value}
                                 className="text-[#f24b7c] focus:ring-[#f24b7c]"
-                                checked={field.value === option.value || (!field.value && option.value === "Attention")}
                               />
                               <span className="ml-3">{option.label}</span>
                             </label>
