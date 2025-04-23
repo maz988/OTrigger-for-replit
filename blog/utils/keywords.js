@@ -1,77 +1,60 @@
 /**
  * Keywords for blog post generation
  * These will be used to generate blog posts on relationships and attraction
+ * Keywords are loaded from a file in the data directory
  */
 
-// List of keywords for generating blog posts
-const keywords = [
-  // Attraction topics
-  "how to make him obsessed with you",
-  "how to trigger attraction in men",
-  "signs he is secretly attracted to you",
-  "how to make him chase you",
-  "psychological triggers that make men fall in love",
-  "how to make him miss you",
-  "attraction triggers for men",
-  "how to create an emotional connection with a man",
-  "what makes a man fall deeply in love",
-  "how to be more attractive to men",
-  
-  // Relationship topics
-  "how to fix a relationship that's falling apart",
-  "signs he wants to commit to you",
-  "how to communicate better with your partner",
-  "rebuilding trust after betrayal",
-  "handling relationship anxiety",
-  "how to make a relationship last",
-  "signs of a healthy relationship",
-  "overcoming jealousy in relationships",
-  "how to know if he's the one",
-  "balancing independence and togetherness",
-  
-  // Dating topics
-  "first date conversation starters",
-  "how to tell if your date is going well",
-  "dating red flags to watch for",
-  "how to keep him interested after the first date",
-  "texting rules for modern dating",
-  "how to flirt effectively",
-  "dating after divorce",
-  "how to navigate online dating",
-  "questions to ask before committing",
-  "how to be authentic while dating",
-  
-  // Self-improvement topics
-  "building self-confidence in relationships",
-  "healing from past relationship trauma",
-  "setting healthy boundaries with men",
-  "embracing your feminine energy",
-  "how to stop overthinking in relationships",
-  "developing emotional intelligence",
-  "loving yourself before loving someone else",
-  "breaking toxic relationship patterns",
-  "finding your worth outside of relationships",
-  "overcoming fear of abandonment",
-  
-  // Long-term relationship topics
-  "keeping the spark alive in long-term relationships",
-  "navigating different life stages together",
-  "coping with relationship boredom",
-  "supporting your partner through difficult times",
-  "growing together vs growing apart",
-  "secrets of couples who stay in love",
-  "maintaining independence while being a couple",
-  "resolving conflicts without damaging the relationship",
-  "signs your relationship is worth fighting for",
-  "strengthening emotional intimacy"
-];
+// Module dependencies
+const fs = require('fs-extra');
+const path = require('path');
+
+// Path to the keywords file
+const keywordsFilePath = path.join(__dirname, '../data/keywords.txt');
+
+// This variable will store our keywords after they're loaded from the file
+let keywords = [];
+
+// Function to load keywords from file
+async function loadKeywordsFromFile() {
+  try {
+    // Check if keywords file exists
+    if (await fs.pathExists(keywordsFilePath)) {
+      // Read the file content
+      const content = await fs.readFile(keywordsFilePath, 'utf8');
+      
+      // Split by newlines and filter out empty lines
+      const lines = content.split('\n').filter(line => line.trim().length > 0);
+      
+      // Update the keywords array
+      keywords = [...lines];
+      
+      console.log(`Loaded ${keywords.length} keywords from file`);
+    } else {
+      console.error('Keywords file not found:', keywordsFilePath);
+      // Fallback to some default keywords if file not found
+      keywords = [
+        "how to make him obsessed with you",
+        "how to trigger attraction in men",
+        "signs he is secretly attracted to you",
+        "how to make him chase you",
+        "psychological triggers that make men fall in love"
+      ];
+    }
+  } catch (error) {
+    console.error('Error loading keywords from file:', error);
+    // Fallback to some default keywords if error occurs
+    keywords = [
+      "how to make him obsessed with you",
+      "how to trigger attraction in men",
+      "signs he is secretly attracted to you",
+      "how to make him chase you",
+      "psychological triggers that make men fall in love"
+    ];
+  }
+}
 
 // Track which keywords have been used
 let usedKeywords = [];
-
-// Load used keywords from a file if it exists
-const fs = require('fs-extra');
-const path = require('path');
 
 const usedKeywordsPath = path.join(__dirname, '../data/used-keywords.json');
 
