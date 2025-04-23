@@ -72,6 +72,12 @@ export async function generateEmailTemplate(
   const prompt = getPromptForEmailType(type, { firstName, leadMagnetName, quizUrl, affiliateUrl });
   
   try {
+    // If OpenAI client is not available, fall back to pre-written templates
+    if (!openai) {
+      console.log('Using fallback email template as OpenAI client is not available');
+      return getFallbackEmailTemplate(type, { firstName, leadMagnetName, quizUrl, affiliateUrl });
+    }
+    
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
     const response = await openai.chat.completions.create({
       model: "gpt-4o",

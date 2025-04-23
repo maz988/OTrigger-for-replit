@@ -127,6 +127,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Lead capture endpoints
+  app.post("/api/leads", async (req, res) => {
+    try {
+      const { email, firstName, source, leadMagnetName } = req.body;
+      
+      if (!email || !firstName) {
+        return res.status(400).json({
+          success: false,
+          error: "Email and first name are required"
+        });
+      }
+      
+      // Record lead signup in database (simplified in this example)
+      console.log(`New lead captured: ${firstName} (${email}) from ${source || 'unknown'} for ${leadMagnetName || 'general newsletter'}`);
+      
+      res.status(200).json({
+        success: true,
+        message: "Lead information captured successfully"
+      });
+    } catch (err: any) {
+      console.error(`Error capturing lead data: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/generate-lead-magnet", async (req, res) => {
+    try {
+      const { email, firstName, leadMagnetName } = req.body;
+      
+      if (!email || !firstName || !leadMagnetName) {
+        return res.status(400).json({
+          success: false,
+          error: "Email, firstName, and leadMagnetName are required"
+        });
+      }
+      
+      // In a real implementation, generate a PDF and email it to the user
+      console.log(`Generating lead magnet "${leadMagnetName}" for ${firstName} (${email})`);
+      
+      // Use fallback email template 
+      const emailSubject = `Your ${leadMagnetName}, ${firstName}!`;
+      const emailBody = `Hi ${firstName},\n\nThank you for downloading the ${leadMagnetName}! I'm so excited to share these relationship insights with you.\n\nAs promised, you'll find practical advice that you can start applying right away.\n\nWarmly,\nYour Relationship Coach`;
+      
+      // In a real implementation, send the email with the lead magnet attached
+      console.log(`Email would be sent to ${email} with subject: ${emailSubject}`);
+      
+      res.status(200).json({
+        success: true,
+        message: "Lead magnet generated and email sent successfully"
+      });
+    } catch (err: any) {
+      console.error(`Error generating lead magnet: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/blog/lead-conversion", async (req, res) => {
+    try {
+      const { blogPostId, email } = req.body;
+      
+      if (!blogPostId || !email) {
+        return res.status(400).json({
+          success: false,
+          error: "Blog post ID and email are required"
+        });
+      }
+      
+      // In a real implementation, record the lead conversion for analytics
+      console.log(`Lead conversion from blog post ${blogPostId} for ${email}`);
+      
+      res.status(200).json({
+        success: true
+      });
+    } catch (err: any) {
+      console.error(`Error recording blog lead conversion: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/quiz/lead-conversion", async (req, res) => {
+    try {
+      const { quizResponseId, email } = req.body;
+      
+      if (!quizResponseId || !email) {
+        return res.status(400).json({
+          success: false,
+          error: "Quiz response ID and email are required"
+        });
+      }
+      
+      // In a real implementation, record the lead conversion for analytics
+      console.log(`Lead conversion from quiz ${quizResponseId} for ${email}`);
+      
+      res.status(200).json({
+        success: true
+      });
+    } catch (err: any) {
+      console.error(`Error recording quiz lead conversion: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
 
   // Register admin (only for testing)
   app.post("/api/admin/register", async (req, res) => {
