@@ -1,9 +1,19 @@
 import OpenAI from 'openai';
 
-// Initialize OpenAI with API key
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-});
+// Initialize OpenAI with API key if available
+let openai: OpenAI | null = null;
+
+try {
+  if (import.meta.env.VITE_OPENAI_API_KEY) {
+    openai = new OpenAI({
+      apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+    });
+  } else {
+    console.warn('OpenAI API key not found. Email generation will use fallback templates.');
+  }
+} catch (error) {
+  console.error('Error initializing OpenAI client:', error);
+}
 
 /**
  * Email types for the follow-up sequence
@@ -80,10 +90,11 @@ export async function generateEmailTemplate(
       temperature: 0.7,
     });
     
-    const content = JSON.parse(response.choices[0].message.content);
+    const messageContent = response.choices[0].message.content || '{"subject":"Your Relationship Guide","body":"Thank you for subscribing"}';
+    const content = JSON.parse(messageContent);
     return {
-      subject: content.subject,
-      body: content.body
+      subject: content.subject || 'Your Relationship Guide',
+      body: content.body || `Hi ${firstName},\n\nThank you for your interest in our relationship advice.`
     };
   } catch (error) {
     console.error('Error generating email template:', error);

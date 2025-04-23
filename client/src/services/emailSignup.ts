@@ -1,293 +1,137 @@
-import { LeadMagnetFormData } from '@/components/LeadMagnetForm';
-
-// Email Service Provider options
-export type EmailProvider = 'mailerlite' | 'brevo' | 'convertkit' | 'local';
-
-// Configuration for email services
-interface EmailServiceConfig {
-  provider: EmailProvider;
-  apiKey?: string;
-  listId?: string;
-  formId?: string;
-  endpoint?: string;
-}
-
-// Result object returned from signup
-interface SignupResult {
-  success: boolean;
-  downloadLink?: string;
-  error?: string;
-}
-
-// Full subscriber data with source tracking
-export interface SubscriberData extends LeadMagnetFormData {
-  source: string;
-  leadMagnetName: string;
-  timestamp: string;
-  tags?: string[];
-}
-
-// Default configuration - can be updated with user's actual API keys
-let emailServiceConfig: EmailServiceConfig = {
-  provider: 'local', // Default to local storage if no API key is provided
-};
+import { EmailFormData } from '@shared/schema';
+import { EmailType } from '@/utils/emailTemplates';
 
 /**
- * Configure the email service provider
+ * Interface for lead data submission
  */
-export function configureEmailService(config: EmailServiceConfig) {
-  emailServiceConfig = {
-    ...emailServiceConfig,
-    ...config,
-  };
+export interface LeadData extends EmailFormData {
+  source?: string;
+  leadMagnetName?: string;
 }
 
 /**
- * Sign up a subscriber to the newsletter
+ * Submit lead data to the server
+ * @param leadData Email and lead data
+ * @returns Promise with the response
  */
-export async function signupForNewsletter(
-  data: SubscriberData
-): Promise<SignupResult> {
+export async function submitLeadData(leadData: LeadData): Promise<any> {
   try {
-    // First save locally for backup
-    saveSubscriberLocally(data);
-    
-    // If no provider or local only, return success
-    if (!emailServiceConfig.apiKey || emailServiceConfig.provider === 'local') {
-      console.log('Using local storage only for subscriber:', data.email);
-      return {
-        success: true,
-        downloadLink: getLeadMagnetLink(data.leadMagnetName),
-      };
-    }
-    
-    // Otherwise, attempt to submit to the configured provider
-    switch (emailServiceConfig.provider) {
-      case 'mailerlite':
-        return await submitToMailerLite(data);
-      case 'brevo':
-        return await submitToBrevo(data);
-      case 'convertkit':
-        return await submitToConvertKit(data);
-      default:
-        return {
-          success: true,
-          downloadLink: getLeadMagnetLink(data.leadMagnetName),
-        };
-    }
-  } catch (error) {
-    console.error('Newsletter signup error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'An unknown error occurred',
-    };
-  }
-}
-
-/**
- * Save subscriber data to local storage as backup
- */
-function saveSubscriberLocally(data: SubscriberData): void {
-  try {
-    // Get existing subscribers or initialize empty array
-    const existingData = localStorage.getItem('subscribers');
-    const subscribers = existingData ? JSON.parse(existingData) : [];
-    
-    // Add new subscriber
-    subscribers.push({
-      ...data,
-      storedAt: new Date().toISOString(),
+    const response = await fetch('/api/leads', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(leadData),
     });
     
-    // Save back to localStorage
-    localStorage.setItem('subscribers', JSON.stringify(subscribers));
+    if (!response.ok) {
+      throw new Error('Failed to submit lead data');
+    }
+    
+    return await response.json();
   } catch (error) {
-    console.error('Error saving subscriber locally:', error);
+    console.error('Error submitting lead:', error);
+    throw error;
   }
 }
 
 /**
- * Get the lead magnet download link based on name
+ * Generate a lead magnet PDF and email it to the user
+ * @param email User email
+ * @param firstName User first name
+ * @param leadMagnetName Name of the lead magnet
+ * @returns Promise with the response
  */
-function getLeadMagnetLink(leadMagnetName: string): string {
-  // Map of lead magnet names to their file paths
-  const leadMagnetMap: Record<string, string> = {
-    'Ultimate Relationship Guide': '/leadmagnets/relationship-guide.pdf',
-    'Hero Instinct Secrets': '/leadmagnets/hero-instinct-secrets.pdf',
-    'Communication Cheat Sheet': '/leadmagnets/communication-cheatsheet.pdf',
-    'Attraction Triggers': '/leadmagnets/attraction-triggers.pdf',
-    'Emotional Intimacy Guide': '/leadmagnets/emotional-intimacy.pdf',
-  };
+export async function generateAndSendLeadMagnet(
+  email: string,
+  firstName: string,
+  leadMagnetName: string
+): Promise<any> {
+  try {
+    const response = await fetch('/api/generate-lead-magnet', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        firstName,
+        leadMagnetName,
+        emailType: EmailType.WELCOME
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to generate lead magnet');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error generating lead magnet:', error);
+    throw error;
+  }
+}
+
+/**
+ * Track lead conversion from specific blog post
+ * @param blogPostId ID of the blog post
+ * @param email User email
+ * @returns Promise with the response
+ */
+export async function trackBlogLeadConversion(
+  blogPostId: number | undefined,
+  email: string
+): Promise<void> {
+  if (!blogPostId) return;
   
-  // Return the mapped path or a default
-  return leadMagnetMap[leadMagnetName] || '/leadmagnets/relationship-guide.pdf';
-}
-
-/**
- * Submit subscriber to MailerLite
- */
-async function submitToMailerLite(data: SubscriberData): Promise<SignupResult> {
   try {
-    if (!emailServiceConfig.apiKey || !emailServiceConfig.listId) {
-      throw new Error('MailerLite API key or list ID not configured');
-    }
-    
-    const endpoint = 'https://connect.mailerlite.com/api/subscribers';
-    
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${emailServiceConfig.apiKey}`,
-      },
-      body: JSON.stringify({
-        email: data.email,
-        fields: {
-          name: data.firstName,
-          signup_source: data.source,
-          lead_magnet: data.leadMagnetName,
-        },
-        groups: [emailServiceConfig.listId],
-      }),
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to subscribe to MailerLite');
-    }
-    
-    return {
-      success: true,
-      downloadLink: getLeadMagnetLink(data.leadMagnetName),
-    };
-  } catch (error) {
-    console.error('MailerLite API error:', error);
-    throw error;
-  }
-}
-
-/**
- * Submit subscriber to Brevo (formerly Sendinblue)
- */
-async function submitToBrevo(data: SubscriberData): Promise<SignupResult> {
-  try {
-    if (!emailServiceConfig.apiKey || !emailServiceConfig.listId) {
-      throw new Error('Brevo API key or list ID not configured');
-    }
-    
-    const endpoint = 'https://api.brevo.com/v3/contacts';
-    
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': emailServiceConfig.apiKey,
-      },
-      body: JSON.stringify({
-        email: data.email,
-        attributes: {
-          FIRSTNAME: data.firstName,
-          SIGNUP_SOURCE: data.source,
-          LEAD_MAGNET: data.leadMagnetName,
-        },
-        listIds: [Number(emailServiceConfig.listId)],
-      }),
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to subscribe to Brevo');
-    }
-    
-    return {
-      success: true,
-      downloadLink: getLeadMagnetLink(data.leadMagnetName),
-    };
-  } catch (error) {
-    console.error('Brevo API error:', error);
-    throw error;
-  }
-}
-
-/**
- * Submit subscriber to ConvertKit
- */
-async function submitToConvertKit(data: SubscriberData): Promise<SignupResult> {
-  try {
-    if (!emailServiceConfig.apiKey || !emailServiceConfig.formId) {
-      throw new Error('ConvertKit API key or form ID not configured');
-    }
-    
-    const endpoint = `https://api.convertkit.com/v3/forms/${emailServiceConfig.formId}/subscribe`;
-    
-    const response = await fetch(endpoint, {
+    const response = await fetch('/api/blog/lead-conversion', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        api_key: emailServiceConfig.apiKey,
-        email: data.email,
-        first_name: data.firstName,
-        fields: {
-          signup_source: data.source,
-          lead_magnet: data.leadMagnetName,
-        },
-        tags: data.tags || [],
+        blogPostId,
+        email
       }),
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to subscribe to ConvertKit');
+      throw new Error('Failed to track blog lead conversion');
     }
-    
-    return {
-      success: true,
-      downloadLink: getLeadMagnetLink(data.leadMagnetName),
-    };
   } catch (error) {
-    console.error('ConvertKit API error:', error);
-    throw error;
+    console.error('Error tracking blog lead conversion:', error);
   }
 }
 
 /**
- * Export a CSV of all locally stored subscribers
+ * Track lead conversion from quiz
+ * @param quizResponseId ID of the quiz response
+ * @param email User email
+ * @returns Promise with the response
  */
-export function exportSubscribers(): string {
+export async function trackQuizLeadConversion(
+  quizResponseId: number | undefined,
+  email: string
+): Promise<void> {
+  if (!quizResponseId) return;
+  
   try {
-    const subscribers = localStorage.getItem('subscribers');
-    if (!subscribers) {
-      return '';
+    const response = await fetch('/api/quiz/lead-conversion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        quizResponseId,
+        email
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to track quiz lead conversion');
     }
-    
-    const data = JSON.parse(subscribers) as SubscriberData[];
-    if (!data.length) {
-      return '';
-    }
-    
-    // Create CSV header
-    const headers = ['First Name', 'Email', 'Source', 'Lead Magnet', 'Timestamp'];
-    
-    // Create CSV rows
-    const rows = data.map(sub => [
-      sub.firstName,
-      sub.email,
-      sub.source,
-      sub.leadMagnetName,
-      sub.timestamp
-    ]);
-    
-    // Combine header and rows
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
-    
-    return csvContent;
   } catch (error) {
-    console.error('Error exporting subscribers:', error);
-    return '';
+    console.error('Error tracking quiz lead conversion:', error);
   }
 }
