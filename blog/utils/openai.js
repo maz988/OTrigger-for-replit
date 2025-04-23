@@ -2,7 +2,15 @@ const OpenAI = require('openai');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs-extra');
-const slug = require('slug');
+// Use dynamic import for slug
+const slugify = (text, options = {}) => {
+  return text.toString().toLowerCase()
+    .replace(/\s+/g, '-')           // Replace spaces with -
+    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+    .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+    .replace(/^-+/, '')             // Trim - from start of text
+    .replace(/-+$/, '');            // Trim - from end of text
+};
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });

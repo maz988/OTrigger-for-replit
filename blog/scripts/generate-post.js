@@ -3,49 +3,49 @@
  * Usage: node scripts/generate-post.js [keyword]
  */
 
-const dotenv = require('dotenv');
 const path = require('path');
-const { generateSinglePost, getUnusedKeywords } = require('../utils/scheduler');
+const dotenv = require('dotenv');
+const { generatePostWithKeyword, generateSinglePost } = require('../utils/scheduler');
+const { ensureDataDirectories } = require('../utils/openai');
+const { initializeKeywordTracking } = require('../utils/keywords');
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 async function main() {
   try {
-    console.log('Blog Post Generator');
-    console.log('==================');
+    console.log('Starting blog post generation script...');
     
-    // Check if keyword was provided as command-line argument
-    const providedKeyword = process.argv[2];
+    // Ensure all required directories exist
+    await ensureDataDirectories();
+    await initializeKeywordTracking();
     
-    if (providedKeyword) {
-      console.log(`Using provided keyword: ${providedKeyword}`);
-      const post = await generateSinglePost(providedKeyword);
-      console.log(`\nPost generated successfully: "${post.title}"`);
-      console.log(`Saved to: /content/posts/${post.slug}.json`);
-      console.log(`HTML version: /public/articles/${post.slug}.html`);
+    // Check if a keyword was provided as a command-line argument
+    const keyword = process.argv[2];
+    
+    let blogPost;
+    if (keyword) {
+      console.log(`Generating blog post for keyword: "${keyword}"`);
+      blogPost = await generatePostWithKeyword(keyword);
     } else {
-      // Get unused keywords
-      const unusedKeywords = await getUnusedKeywords();
-      
-      if (unusedKeywords.length === 0) {
-        console.log('No unused keywords found. All keywords have been used.');
-        return;
-      }
-      
-      // Pick a random keyword
-      const randomIndex = Math.floor(Math.random() * unusedKeywords.length);
-      const selectedKeyword = unusedKeywords[randomIndex];
-      
-      console.log(`Selected keyword: ${selectedKeyword}`);
-      
-      // Generate and save blog post
-      const post = await generateSinglePost(selectedKeyword);
-      
-      console.log(`\nPost generated successfully: "${post.title}"`);
-      console.log(`Saved to: /content/posts/${post.slug}.json`);
-      console.log(`HTML version: /public/articles/${post.slug}.html`);
+      console.log('Generating blog post with random keyword');
+      blogPost = await generateSinglePost();
     }
+    
+    console.log('\n===== Blog Post Generated Successfully =====');
+    console.log(`Title: ${blogPost.title}`);
+    console.log(`Slug: ${blogPost.slug}`);
+    console.log(`Word Count: ${blogPost.wordCount}`);
+    console.log(`Reading Time: ${blogPost.readingTime} min`);
+    console.log(`Tags: ${blogPost.tags.join(', ')}`);
+    console.log(`Images: ${blogPost.images ? blogPost.images.length : 0}`);
+    console.log(`URL: /posts/${blogPost.slug}.html`);
+    console.log('===========================================\n');
+    
+    console.log('The blog post has been saved and is available at:');
+    console.log(`http://localhost:3000/posts/${blogPost.slug}.html`);
+    
+    process.exit(0);
   } catch (error) {
     console.error('Error generating blog post:', error);
     process.exit(1);
