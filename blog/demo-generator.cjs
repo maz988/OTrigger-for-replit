@@ -193,13 +193,13 @@ function generateBlogPost(keyword) {
     
     <p>Learning how to ${keyword} is not a one-time achievement but an ongoing practice that evolves as your relationship grows. By implementing the strategies outlined above and maintaining awareness of common challenges, you can create a relationship characterized by deep understanding and lasting connection.</p>
     
-    <p>Ready to discover your unique emotional connection profile and receive tailored guidance? Take our free <a href="https://obsession-trigger.com/quiz">relationship assessment quiz</a> today.</p>
+    <p>Ready to discover your unique emotional connection profile and receive tailored guidance? Take our free <a href="${quizUrl}">relationship assessment quiz</a> today.</p>
     
     <div class="post-footer">
       <div class="post-cta">
         <h3>Discover Your Relationship Potential</h3>
         <p>Ready to transform your relationship? Take our free quiz to receive personalized insights and strategies tailored specifically to your situation.</p>
-        <a href="https://obsession-trigger.com/quiz" class="btn btn-primary">Take the Quiz Now</a>
+        <a href="${quizUrl}" class="btn btn-primary">Take the Quiz Now</a>
       </div>
       
       <div class="related-posts">
@@ -246,7 +246,7 @@ function generateBlogPost(keyword) {
           <ul class="footer-links">
             <li><a href="/">Home</a></li>
             <li><a href="/articles">Articles</a></li>
-            <li><a href="https://obsession-trigger.com/quiz">Quiz</a></li>
+            <li><a href="${quizUrl}">Quiz</a></li>
             <li><a href="/about">About Us</a></li>
             <li><a href="/contact">Contact</a></li>
           </ul>
