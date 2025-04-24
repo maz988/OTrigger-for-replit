@@ -985,7 +985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enhance the photo data with SEO features
       if (data.photos && data.photos.length > 0) {
-        data.photos = data.photos.map(photo => {
+        data.photos = data.photos.map((photo: any) => {
           return {
             ...photo,
             seo: processImageForSEO(
@@ -1383,11 +1383,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Apply the enhanced structure
           const finalContent = createEnhancedPostStructure(openAIContent, !geminiEnhanced);
           
-          // Return the AI-generated content
+          // Search for and incorporate images with SEO optimization
+          if (process.env.PEXELS_API_KEY) {
+            try {
+              console.log("Searching for SEO-optimized images related to:", keyword);
+              
+              const pexelsResponse = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=3&orientation=landscape`, {
+                headers: {
+                  'Authorization': process.env.PEXELS_API_KEY
+                }
+              });
+              
+              if (pexelsResponse.ok) {
+                const pexelsData = await pexelsResponse.json();
+                
+                if (pexelsData.photos && pexelsData.photos.length > 0) {
+                  // Process images with SEO enhancements
+                  const enhancedImages = pexelsData.photos.map((photo: any) => {
+                    return processImageForSEO(
+                      photo.src.large, 
+                      keyword, 
+                      finalContent.title || `${keyword} article`, 
+                      photo.photographer
+                    );
+                  });
+                  
+                  // Store both the original URLs and the enhanced image data
+                  finalContent.imageUrls = pexelsData.photos.map((photo: any) => photo.src.large);
+                  finalContent.enhancedImages = enhancedImages;
+                  
+                  // Add image schema to the article schema
+                  if (finalContent.schema && Array.isArray(enhancedImages) && enhancedImages.length > 0) {
+                    // Add primary image to the article schema
+                    finalContent.schema.image = {
+                      "@type": "ImageObject",
+                      "url": enhancedImages[0].url,
+                      "caption": enhancedImages[0].alt
+                    };
+                    
+                    // Add all images as associated media to the article
+                    finalContent.schema.associatedMedia = enhancedImages.map(img => img.schema);
+                  }
+                  
+                  // Insert feature image at the beginning of the content with proper HTML and SEO attributes
+                  if (enhancedImages.length > 0) {
+                    const featuredImage = enhancedImages[0];
+                    const responsive = featuredImage.responsive;
+                    
+                    // Create responsive image HTML with SEO attributes
+                    let featuredImageHTML = '';
+                    
+                    if (responsive && responsive.srcset) {
+                      featuredImageHTML = `
+                        <figure class="featured-image">
+                          <img 
+                            src="${responsive.medium || featuredImage.url}" 
+                            srcset="${responsive.srcset}"
+                            sizes="(max-width: 400px) 400px, (max-width: 800px) 800px, 1200px"
+                            alt="${featuredImage.alt}"
+                            loading="eager"
+                            width="800"
+                            height="500"
+                            class="rounded-lg shadow-md w-full h-auto object-cover mb-4"
+                          />
+                          <figcaption class="text-sm text-gray-500 text-center">
+                            Photo by ${featuredImage.photographer || 'Unsplash'}
+                          </figcaption>
+                        </figure>
+                      `;
+                    } else {
+                      featuredImageHTML = `
+                        <figure class="featured-image">
+                          <img 
+                            src="${featuredImage.url}" 
+                            alt="${featuredImage.alt}"
+                            loading="eager"
+                            class="rounded-lg shadow-md w-full h-auto object-cover mb-4"
+                          />
+                          <figcaption class="text-sm text-gray-500 text-center">
+                            Photo by ${featuredImage.photographer || 'Unsplash'}
+                          </figcaption>
+                        </figure>
+                      `;
+                    }
+                    
+                    // Add featured image after the H1 tag
+                    if (finalContent.content.includes('</h1>')) {
+                      finalContent.content = finalContent.content.replace('</h1>', '</h1>' + featuredImageHTML);
+                    } else {
+                      // If no H1 tag, add at the beginning
+                      finalContent.content = featuredImageHTML + finalContent.content;
+                    }
+                    
+                    // Add additional images throughout the content at strategic locations
+                    if (enhancedImages.length > 1) {
+                      // Find H2 tags to place images after
+                      const h2Sections = finalContent.content.match(/<h2[^>]*>.*?<\/h2>/gi) || [];
+                      
+                      if (h2Sections.length > 0) {
+                        // Place second image after the first H2
+                        if (h2Sections.length >= 1 && enhancedImages.length >= 2) {
+                          const secondImg = enhancedImages[1];
+                          const secondImgHTML = `
+                            <figure class="content-image">
+                              <img 
+                                src="${secondImg.responsive?.medium || secondImg.url}" 
+                                ${secondImg.responsive?.srcset ? `srcset="${secondImg.responsive.srcset}"` : ''}
+                                ${secondImg.responsive?.srcset ? `sizes="(max-width: 400px) 400px, (max-width: 800px) 800px, 1200px"` : ''}
+                                alt="${secondImg.alt}"
+                                loading="lazy"
+                                class="rounded-lg shadow-md w-full h-auto object-cover my-4"
+                              />
+                              <figcaption class="text-sm text-gray-500 text-center">
+                                Photo by ${secondImg.photographer || 'Unsplash'}
+                              </figcaption>
+                            </figure>
+                          `;
+                          
+                          finalContent.content = finalContent.content.replace(
+                            h2Sections[0], 
+                            h2Sections[0] + secondImgHTML
+                          );
+                        }
+                        
+                        // Place third image after another H2 if available
+                        if (h2Sections.length >= 2 && enhancedImages.length >= 3) {
+                          const thirdImg = enhancedImages[2];
+                          const thirdImgHTML = `
+                            <figure class="content-image">
+                              <img 
+                                src="${thirdImg.responsive?.medium || thirdImg.url}" 
+                                ${thirdImg.responsive?.srcset ? `srcset="${thirdImg.responsive.srcset}"` : ''}
+                                ${thirdImg.responsive?.srcset ? `sizes="(max-width: 400px) 400px, (max-width: 800px) 800px, 1200px"` : ''}
+                                alt="${thirdImg.alt}"
+                                loading="lazy"
+                                class="rounded-lg shadow-md w-full h-auto object-cover my-4"
+                              />
+                              <figcaption class="text-sm text-gray-500 text-center">
+                                Photo by ${thirdImg.photographer || 'Unsplash'}
+                              </figcaption>
+                            </figure>
+                          `;
+                          
+                          finalContent.content = finalContent.content.replace(
+                            h2Sections[1], 
+                            h2Sections[1] + thirdImgHTML
+                          );
+                        }
+                      }
+                    }
+                  }
+                  
+                  console.log(`Successfully added ${enhancedImages.length} SEO-optimized images to the blog post`);
+                }
+              }
+            } catch (imageError) {
+              console.error("Error fetching and processing images:", imageError);
+              // Continue without images if there's an error
+            }
+          }
+          
+          // Return the AI-generated content with enhanced images
           return res.status(200).json({
             success: true,
             data: finalContent,
-            note: geminiEnhanced ? "Content enhanced with OpenAI + Gemini" : undefined
+            note: geminiEnhanced ? "Content enhanced with OpenAI + Gemini and SEO-optimized images" : "Content generated with SEO-optimized images"
           });
         } catch (openaiError: any) {
           console.error(`Error generating blog content with OpenAI: ${openaiError.message}`);
@@ -1406,10 +1566,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 keyword: keyword
               }, false);
               
+              // Search for and incorporate images with SEO optimization for Gemini content
+              if (process.env.PEXELS_API_KEY) {
+                try {
+                  console.log("Searching for SEO-optimized images for Gemini content related to:", keyword);
+                  
+                  const pexelsResponse = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=3&orientation=landscape`, {
+                    headers: {
+                      'Authorization': process.env.PEXELS_API_KEY
+                    }
+                  });
+                  
+                  if (pexelsResponse.ok) {
+                    const pexelsData = await pexelsResponse.json();
+                    
+                    if (pexelsData.photos && pexelsData.photos.length > 0) {
+                      // Process images with SEO enhancements
+                      const enhancedImages = pexelsData.photos.map((photo: any) => {
+                        return processImageForSEO(
+                          photo.src.large, 
+                          keyword, 
+                          finalGeminiContent.title || `${keyword} article`, 
+                          photo.photographer
+                        );
+                      });
+                      
+                      // Store both the original URLs and the enhanced image data
+                      finalGeminiContent.imageUrls = pexelsData.photos.map((photo: any) => photo.src.large);
+                      finalGeminiContent.enhancedImages = enhancedImages;
+                      
+                      // Add image schema to the article schema
+                      if (finalGeminiContent.schema && Array.isArray(enhancedImages) && enhancedImages.length > 0) {
+                        // Add primary image to the article schema
+                        finalGeminiContent.schema.image = {
+                          "@type": "ImageObject",
+                          "url": enhancedImages[0].url,
+                          "caption": enhancedImages[0].alt
+                        };
+                        
+                        // Add all images as associated media to the article
+                        finalGeminiContent.schema.associatedMedia = enhancedImages.map(img => img.schema);
+                      }
+                      
+                      // Insert feature image at the beginning of the content
+                      if (enhancedImages.length > 0) {
+                        const featuredImage = enhancedImages[0];
+                        const responsive = featuredImage.responsive;
+                        
+                        // Create responsive image HTML with SEO attributes
+                        let featuredImageHTML = '';
+                        
+                        if (responsive && responsive.srcset) {
+                          featuredImageHTML = `
+                            <figure class="featured-image">
+                              <img 
+                                src="${responsive.medium || featuredImage.url}" 
+                                srcset="${responsive.srcset}"
+                                sizes="(max-width: 400px) 400px, (max-width: 800px) 800px, 1200px"
+                                alt="${featuredImage.alt}"
+                                loading="eager"
+                                width="800"
+                                height="500"
+                                class="rounded-lg shadow-md w-full h-auto object-cover mb-4"
+                              />
+                              <figcaption class="text-sm text-gray-500 text-center">
+                                Photo by ${featuredImage.photographer || 'Unsplash'}
+                              </figcaption>
+                            </figure>
+                          `;
+                        } else {
+                          featuredImageHTML = `
+                            <figure class="featured-image">
+                              <img 
+                                src="${featuredImage.url}" 
+                                alt="${featuredImage.alt}"
+                                loading="eager"
+                                class="rounded-lg shadow-md w-full h-auto object-cover mb-4"
+                              />
+                              <figcaption class="text-sm text-gray-500 text-center">
+                                Photo by ${featuredImage.photographer || 'Unsplash'}
+                              </figcaption>
+                            </figure>
+                          `;
+                        }
+                        
+                        // Add featured image after the H1 tag
+                        if (finalGeminiContent.content.includes('</h1>')) {
+                          finalGeminiContent.content = finalGeminiContent.content.replace('</h1>', '</h1>' + featuredImageHTML);
+                        } else {
+                          // If no H1 tag, add at the beginning
+                          finalGeminiContent.content = featuredImageHTML + finalGeminiContent.content;
+                        }
+                        
+                        // Add additional images throughout the content
+                        if (enhancedImages.length > 1) {
+                          // Find H2 tags to place images after
+                          const h2Sections = finalGeminiContent.content.match(/<h2[^>]*>.*?<\/h2>/gi) || [];
+                          
+                          if (h2Sections.length > 0) {
+                            // Place images after H2 tags
+                            for (let i = 0; i < Math.min(h2Sections.length, enhancedImages.length - 1); i++) {
+                              const img = enhancedImages[i + 1];
+                              const imgHTML = `
+                                <figure class="content-image">
+                                  <img 
+                                    src="${img.responsive?.medium || img.url}" 
+                                    ${img.responsive?.srcset ? `srcset="${img.responsive.srcset}"` : ''}
+                                    ${img.responsive?.srcset ? `sizes="(max-width: 400px) 400px, (max-width: 800px) 800px, 1200px"` : ''}
+                                    alt="${img.alt}"
+                                    loading="lazy"
+                                    class="rounded-lg shadow-md w-full h-auto object-cover my-4"
+                                  />
+                                  <figcaption class="text-sm text-gray-500 text-center">
+                                    Photo by ${img.photographer || 'Unsplash'}
+                                  </figcaption>
+                                </figure>
+                              `;
+                              
+                              finalGeminiContent.content = finalGeminiContent.content.replace(
+                                h2Sections[i], 
+                                h2Sections[i] + imgHTML
+                              );
+                            }
+                          }
+                        }
+                      }
+                      
+                      console.log(`Successfully added ${enhancedImages.length} SEO-optimized images to the Gemini blog post`);
+                    }
+                  }
+                } catch (imageError) {
+                  console.error("Error fetching and processing images for Gemini content:", imageError);
+                  // Continue without images if there's an error
+                }
+              }
+              
               return res.status(200).json({
                 success: true,
                 data: finalGeminiContent,
-                note: "Content generated with Gemini (OpenAI unavailable)"
+                note: "Content generated with Gemini (OpenAI unavailable) and SEO-optimized images"
               });
             } catch (geminiError: any) {
               console.error(`Gemini generation also failed: ${geminiError.message}`);

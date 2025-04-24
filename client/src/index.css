@@ -204,6 +204,37 @@
     color: var(--obsession-dark-pink);
     text-decoration: underline;
   }
+  
+  /* Enhanced image handling with SEO optimizations */
+  figure.featured-image,
+  figure.content-image {
+    margin: 2rem 0;
+    width: 100%;
+  }
+  
+  figure.featured-image img,
+  figure.content-image img {
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  figure.featured-image img:hover,
+  figure.content-image img:hover {
+    transform: scale(1.01);
+  }
+  
+  figure figcaption {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #666;
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
 }
 
 :root {
