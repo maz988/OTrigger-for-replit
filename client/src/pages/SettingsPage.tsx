@@ -702,6 +702,62 @@ const SettingsPage: React.FC = () => {
                   </CardContent>
                 </Card>
               </div>
+              
+              <div className="grid gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Brevo Integration</CardTitle>
+                    <CardDescription>
+                      Configure Brevo (formerly Sendinblue) for email marketing
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="brevoApiKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Brevo API Key</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="xkeysib-..."
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Alternative email service with marketing automation
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="font-medium text-sm">
+                        Status: 
+                        <span className={getStatusColor(
+                          form.getValues().activeEmailService === 'brevo', 
+                          !!form.getValues().brevoApiKey
+                        )}>
+                          {' '}{getStatusText(
+                            form.getValues().activeEmailService === 'brevo', 
+                            !!form.getValues().brevoApiKey
+                          )}
+                        </span>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!form.getValues().brevoApiKey}
+                        onClick={() => handleTestService('brevo')}
+                      >
+                        Test Connection
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
               <Card>
                 <CardHeader>
