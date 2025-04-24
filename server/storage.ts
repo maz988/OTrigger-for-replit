@@ -57,12 +57,17 @@ export interface IStorage {
   
   // Blog post methods
   saveBlogPost(post: InsertBlogPost): Promise<BlogPost>;
+  getBlogPostById(id: number): Promise<BlogPost | undefined>;
   getBlogPostBySlug(slug: string): Promise<BlogPost | undefined>;
   getAllBlogPosts(): Promise<BlogPost[]>;
+  updateBlogPost(id: number, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
+  deleteBlogPost(id: number): Promise<boolean>;
   
   // Blog analytics methods
   recordBlogView(postId: number, isUnique: boolean): Promise<void>;
   recordQuizClick(postId: number): Promise<void>;
+  recordLinkClick(postId: number, linkUrl: string): Promise<void>;
+  getBlogPostAnalytics(postId: number): Promise<BlogPostAnalytics | undefined>;
   
   // Admin methods
   getAdminByUsername(username: string): Promise<AdminUser | undefined>;
@@ -327,6 +332,93 @@ export class MemStorage implements IStorage {
       
       this.blogAnalytics.set(id, analyticsEntry);
     }
+  }
+  
+  async recordLinkClick(postId: number, linkUrl: string): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Check if we already have an analytics entry for this post and date
+    const existingEntry = Array.from(this.blogAnalytics.values()).find(
+      (entry) => entry.postId === postId && 
+                 entry.viewDate instanceof Date && 
+                 entry.viewDate.getTime() === today.getTime()
+    );
+    
+    if (existingEntry) {
+      // Update existing entry's referrers
+      if (!existingEntry.referrers) {
+        existingEntry.referrers = {};
+      }
+      
+      if (existingEntry.referrers[linkUrl]) {
+        existingEntry.referrers[linkUrl]++;
+      } else {
+        existingEntry.referrers[linkUrl] = 1;
+      }
+    } else {
+      // Create new entry
+      const id = this.blogAnalyticsCurrentId++;
+      const analyticsEntry: BlogPostAnalytics = {
+        id,
+        postId,
+        viewDate: today,
+        uniqueViews: 0,
+        totalViews: 0,
+        quizClicks: 0,
+        referrers: {
+          [linkUrl]: 1
+        }
+      };
+      
+      this.blogAnalytics.set(id, analyticsEntry);
+    }
+  }
+  
+  async getBlogPostById(id: number): Promise<BlogPost | undefined> {
+    return this.blogPosts.get(id);
+  }
+  
+  async getBlogPostAnalytics(postId: number): Promise<BlogPostAnalytics | undefined> {
+    return Array.from(this.blogAnalytics.values()).find(
+      (analytics) => analytics.postId === postId
+    );
+  }
+  
+  async updateBlogPost(id: number, updates: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
+    const post = this.blogPosts.get(id);
+    
+    if (!post) {
+      return undefined;
+    }
+    
+    // Create updated post with new values
+    const updatedPost: BlogPost = {
+      ...post,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.blogPosts.set(id, updatedPost);
+    return updatedPost;
+  }
+  
+  async deleteBlogPost(id: number): Promise<boolean> {
+    if (!this.blogPosts.has(id)) {
+      return false;
+    }
+    
+    this.blogPosts.delete(id);
+    
+    // Also delete associated analytics
+    const analyticsToDelete = Array.from(this.blogAnalytics.entries())
+      .filter(([_, analytics]) => analytics.postId === id);
+      
+    for (const [analyticsId, _] of analyticsToDelete) {
+      this.blogAnalytics.delete(analyticsId);
+    }
+    
+    return true;
   }
   
   // Admin methods

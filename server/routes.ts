@@ -439,6 +439,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Admin blog management routes
+  app.post("/api/admin/blog/posts", authenticateAdmin, async (req, res) => {
+    try {
+      const postData = req.body;
+      
+      if (!postData.title || !postData.content || !postData.keyword) {
+        return res.status(400).json({
+          success: false,
+          error: "Title, content and keyword are required"
+        });
+      }
+      
+      // Generate slug if not provided
+      if (!postData.slug) {
+        postData.slug = postData.title
+          .toLowerCase()
+          .replace(/[^\w\s]/g, '') // Remove special chars
+          .replace(/\s+/g, '-');   // Replace spaces with hyphens
+      }
+      
+      // Create the blog post
+      const post = await storage.saveBlogPost(postData);
+      
+      res.status(201).json({
+        success: true,
+        data: post
+      });
+    } catch (err: any) {
+      console.error(`Error creating blog post: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.get("/api/admin/blog/posts", authenticateAdmin, async (req, res) => {
+    try {
+      const posts = await storage.getAllBlogPosts();
+      
+      // Sort by publish date, newest first
+      posts.sort((a, b) => 
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
+      
+      res.status(200).json({
+        success: true,
+        data: posts
+      });
+    } catch (err: any) {
+      console.error(`Error getting admin blog posts: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.get("/api/admin/blog/posts/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid post ID"
+        });
+      }
+      
+      const post = await storage.getBlogPostById(id);
+      if (!post) {
+        return res.status(404).json({
+          success: false,
+          error: "Blog post not found"
+        });
+      }
+      
+      // Get analytics for this post
+      const analytics = await storage.getBlogPostAnalytics(id);
+      
+      res.status(200).json({
+        success: true,
+        data: {
+          post,
+          analytics
+        }
+      });
+    } catch (err: any) {
+      console.error(`Error getting blog post: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.patch("/api/admin/blog/posts/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid post ID"
+        });
+      }
+      
+      const updates = req.body;
+      const updatedPost = await storage.updateBlogPost(id, updates);
+      
+      if (!updatedPost) {
+        return res.status(404).json({
+          success: false,
+          error: "Blog post not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: updatedPost
+      });
+    } catch (err: any) {
+      console.error(`Error updating blog post: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.delete("/api/admin/blog/posts/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid post ID"
+        });
+      }
+      
+      const deleted = await storage.deleteBlogPost(id);
+      
+      if (!deleted) {
+        return res.status(404).json({
+          success: false,
+          error: "Blog post not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        message: "Blog post deleted successfully"
+      });
+    } catch (err: any) {
+      console.error(`Error deleting blog post: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Record a link click from a blog post
+  app.post("/api/blog/record-link-click", async (req, res) => {
+    try {
+      const { postId, linkUrl } = req.body;
+      
+      if (!postId || !linkUrl) {
+        return res.status(400).json({
+          success: false,
+          error: "Post ID and link URL are required"
+        });
+      }
+      
+      await storage.recordLinkClick(postId, linkUrl);
+      
+      res.status(200).json({
+        success: true,
+        message: "Link click recorded successfully"
+      });
+    } catch (err: any) {
+      console.error(`Error recording link click: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
 
   // Featured blog posts
   app.get("/api/blog/featured", async (req, res) => {
