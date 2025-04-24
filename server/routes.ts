@@ -2086,27 +2086,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
             
-            const response = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, 
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contents: [{ parts: [{ text: "Hello, just testing the connection" }] }]
-                })
-              }
+            // First try to check if the API key is valid by using a safer endpoint
+            const modelListResponse = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
             );
             
-            const data = await response.json();
-            
-            if (response.ok && data.candidates) {
-              return res.status(200).json({
-                success: true,
-                message: "Successfully connected to Google Gemini API!"
-              });
-            } else {
-              throw new Error(data.error?.message || "Invalid response from Gemini API");
+            if (!modelListResponse.ok) {
+              const errorText = await modelListResponse.text();
+              try {
+                // Try to parse as JSON, but handle gracefully if it's not valid JSON
+                const errorData = JSON.parse(errorText);
+                throw new Error(errorData.error?.message || `API error: ${modelListResponse.status}`);
+              } catch (jsonError) {
+                // If we can't parse the error as JSON, just use the status code
+                throw new Error(`API returned status ${modelListResponse.status}`);
+              }
             }
+            
+            return res.status(200).json({
+              success: true,
+              message: "Successfully connected to Google Gemini API!"
+            });
+            
           } catch (error) {
             return res.status(400).json({
               success: false,
