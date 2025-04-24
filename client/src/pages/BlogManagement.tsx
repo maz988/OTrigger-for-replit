@@ -409,6 +409,63 @@ const BlogManagement: React.FC = () => {
     });
   };
   
+  // Fetch images from Pexels API
+  const [pexelsSearchTerm, setPexelsSearchTerm] = useState('');
+  const [pexelsDialogOpen, setPexelsDialogOpen] = useState(false);
+  const [pexelsImages, setPexelsImages] = useState<Array<{ id: string, src: { medium: string, original: string }; photographer: string; }>>([]);
+  const [isPexelsLoading, setIsPexelsLoading] = useState(false);
+  
+  const fetchPexelsImages = async (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      toast({
+        title: 'Search Term Required',
+        description: 'Please enter a keyword to search for images.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsPexelsLoading(true);
+    
+    try {
+      const response = await fetch(`/api/admin/pexels?query=${encodeURIComponent(searchTerm)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setPexelsImages(data.data.photos || []);
+    } catch (error) {
+      toast({
+        title: 'Error Fetching Images',
+        description: error instanceof Error ? error.message : 'Failed to fetch images',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPexelsLoading(false);
+    }
+  };
+  
+  const handleAddPexelsImage = (imageUrl: string) => {
+    setFormData({
+      ...formData,
+      imageUrls: [...(formData.imageUrls || []), imageUrl]
+    });
+    
+    toast({
+      title: 'Image Added',
+      description: 'The selected image has been added to your post.',
+      variant: 'default',
+    });
+    
+    setPexelsDialogOpen(false);
+  };
+  
   // Handle tag addition
   const handleAddTag = () => {
     if (!tagInput.trim()) return;
@@ -792,7 +849,7 @@ const BlogManagement: React.FC = () => {
                         onChange={(e) => handleImageUpload(e.target.files)}
                       />
                     </Label>
-                    <Button variant="outline" type="button">
+                    <Button variant="outline" type="button" onClick={() => setPexelsDialogOpen(true)}>
                       <ImageIcon className="h-4 w-4 mr-2" />
                       Add from Pexels
                     </Button>
@@ -1077,7 +1134,7 @@ const BlogManagement: React.FC = () => {
                     onChange={(e) => handleImageUpload(e.target.files)}
                   />
                 </Label>
-                <Button variant="outline" type="button">
+                <Button variant="outline" type="button" onClick={() => setPexelsDialogOpen(true)}>
                   <ImageIcon className="h-4 w-4 mr-2" />
                   Add from Pexels
                 </Button>
@@ -1193,6 +1250,85 @@ const BlogManagement: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Pexels Image Search Dialog */}
+      <Dialog open={pexelsDialogOpen} onOpenChange={setPexelsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Search Pexels Images</DialogTitle>
+            <DialogDescription>
+              Search and select images for your blog post
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search for images (e.g., 'couple', 'romance', 'dating')..."
+                value={pexelsSearchTerm}
+                onChange={(e) => setPexelsSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchPexelsImages(pexelsSearchTerm)}
+                className="flex-1"
+              />
+              <Button 
+                onClick={() => fetchPexelsImages(pexelsSearchTerm)}
+                disabled={isPexelsLoading || !pexelsSearchTerm.trim()}
+              >
+                {isPexelsLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Search className="h-4 w-4 mr-2" />
+                )}
+                Search
+              </Button>
+            </div>
+            
+            <div className="border rounded-md p-4 min-h-[300px]">
+              {isPexelsLoading ? (
+                <div className="flex flex-col items-center justify-center h-64">
+                  <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+                  <p className="text-muted-foreground">Searching for images...</p>
+                </div>
+              ) : pexelsImages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-center">
+                  <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground mb-2">No images found</p>
+                  <p className="text-xs text-muted-foreground max-w-md">
+                    Try searching for different terms like "couple", "relationship", "romance", etc.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {pexelsImages.map((image) => (
+                    <div 
+                      key={image.id} 
+                      className="relative group cursor-pointer rounded-md overflow-hidden"
+                      onClick={() => handleAddPexelsImage(image.src.original)}
+                    >
+                      <img 
+                        src={image.src.medium} 
+                        alt={`Photo by ${image.photographer}`} 
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center flex-col text-white p-2 text-center">
+                        <Plus className="h-8 w-8 mb-2" />
+                        <p className="text-xs">Click to add this image</p>
+                        <p className="text-[10px] mt-1">Photo by {image.photographer}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPexelsDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
