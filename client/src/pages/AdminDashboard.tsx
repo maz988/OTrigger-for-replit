@@ -1099,9 +1099,8 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="quiz">Quiz Analytics</TabsTrigger>
           <TabsTrigger value="blog">Blog Analytics</TabsTrigger>
           <TabsTrigger value="content">Blog Posts</TabsTrigger>
           <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
@@ -1313,23 +1312,25 @@ const AdminDashboard: React.FC = () => {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Quiz Responses Trend</CardTitle>
-                <CardDescription>Daily responses over the past week</CardDescription>
+                <CardTitle>Quiz Analytics Dashboard</CardTitle>
+                <CardDescription>Detailed quiz response analysis and trends</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={quizData.responsesByDay}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" name="Responses" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
+              <CardContent className="flex flex-col items-center justify-center space-y-4 py-6">
+                <div className="rounded-full bg-primary/10 p-6">
+                  <BarChart3 className="h-12 w-12 text-primary" />
+                </div>
+                <div className="text-center space-y-2">
+                  <h3 className="text-lg font-medium">Quiz Analytics</h3>
+                  <p className="text-sm text-muted-foreground">
+                    View detailed metrics, response trends, and insights on your relationship assessment quiz
+                  </p>
+                </div>
+                <Link href="/admin/quiz-analytics">
+                  <Button className="w-full">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Access Quiz Analytics
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
@@ -1420,148 +1421,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </TabsContent>
 
-        {/* Quiz Analytics Tab */}
-        <TabsContent value="quiz" className="space-y-6">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-2xl font-bold">Quiz Analytics</h2>
-              <p className="text-muted-foreground">Key metrics from your relationship assessment quiz</p>
-            </div>
-            <Link href="/admin/quiz-analytics">
-              <Button>
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Detailed Analytics
-              </Button>
-            </Link>
-          </div>
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiz Metrics</CardTitle>
-                <CardDescription>Key performance indicators</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Total Responses</span>
-                    <span className="font-medium">{quizData.totalResponses}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Completion Rate</span>
-                    <span className="font-medium">{quizData.completionRate}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Conversion Rate</span>
-                    <span className="font-medium">{quizData.conversionRate}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Avg. Time to Complete</span>
-                    <span className="font-medium">3:42</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Daily Quiz Responses</CardTitle>
-                <CardDescription>Response trend over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={quizData.responsesByDay}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" name="Daily Responses" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Referring Blog Posts</CardTitle>
-                <CardDescription>Blog posts driving quiz traffic</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    layout="vertical"
-                    data={quizData.topReferringBlogPosts}
-                    margin={{ top: 5, right: 30, left: 50, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="title" />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" name="Referrals" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Referral Breakdown</CardTitle>
-                <CardDescription>Traffic sources</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={quizData.responsesByReferral}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="count"
-                      nameKey="source"
-                    >
-                      {quizData.responsesByReferral.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Common Concerns Distribution</CardTitle>
-              <CardDescription>Issues users are seeking help with</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={quizData.commonConcerns}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="type" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="count" name="Number of Responses" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Blog Analytics Tab */}
         <TabsContent value="blog" className="space-y-6">
