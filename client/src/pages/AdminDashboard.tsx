@@ -1208,11 +1208,10 @@ const AdminDashboard: React.FC = () => {
                   </DialogHeader>
                   
                   <div className="mt-4 space-y-6">
-                    <div className="prose max-w-none dark:prose-invert">
-                      {selectedPostWithAnalytics.post.content.split("\n").map((paragraph, idx) => (
-                        <p key={idx}>{paragraph}</p>
-                      ))}
-                    </div>
+                    <div 
+                      className="prose max-w-none dark:prose-invert"
+                      dangerouslySetInnerHTML={{ __html: selectedPostWithAnalytics.post.content }}
+                    ></div>
                     
                     {selectedPostWithAnalytics.analytics && (
                       <Card>

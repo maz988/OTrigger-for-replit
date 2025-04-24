@@ -123,11 +123,10 @@ const BlogPost: React.FC = () => {
             <span className="px-2 py-1 text-xs bg-[#ffedf1] text-[#f24b7c] rounded-full">{post.category}</span>
           </div>
           
-          <div className="prose prose-lg max-w-none mb-10">
-            {post.content.split('\n\n').map((paragraph, index) => (
-              <p key={index} className="mb-4 text-gray-700">{paragraph}</p>
-            ))}
-          </div>
+          <div 
+            className="prose prose-lg max-w-none mb-10"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          ></div>
           
           {/* Quiz Call-to-Action */}
           <div className="bg-[#ffedf1] rounded-lg p-6 my-8">
