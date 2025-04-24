@@ -1990,7 +1990,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Update environment variables when applicable
+      // Update environment variables when applicable for all integration services
+      
+      // Handle OpenAI API key
       if (settingsData.openaiApiKey && process.env.OPENAI_API_KEY !== settingsData.openaiApiKey) {
         process.env.OPENAI_API_KEY = settingsData.openaiApiKey;
         
@@ -2010,6 +2012,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.warn("Error testing new OpenAI API key, not updating:", error);
           }
         }
+      }
+      
+      // Handle Gemini API key
+      if (settingsData.geminiApiKey && process.env.GEMINI_API_KEY !== settingsData.geminiApiKey) {
+        process.env.GEMINI_API_KEY = settingsData.geminiApiKey;
+        console.log("Updated Gemini API key in environment");
+      }
+      
+      // Handle Pexels API key
+      if (settingsData.pexelsApiKey && process.env.PEXELS_API_KEY !== settingsData.pexelsApiKey) {
+        process.env.PEXELS_API_KEY = settingsData.pexelsApiKey;
+        console.log("Updated Pexels API key in environment");
+      }
+      
+      // Handle Unsplash API key
+      if (settingsData.unsplashApiKey && process.env.UNSPLASH_API_KEY !== settingsData.unsplashApiKey) {
+        process.env.UNSPLASH_API_KEY = settingsData.unsplashApiKey;
+        console.log("Updated Unsplash API key in environment");
+      }
+      
+      // Handle SendGrid API key
+      if (settingsData.sendgridApiKey && process.env.SENDGRID_API_KEY !== settingsData.sendgridApiKey) {
+        process.env.SENDGRID_API_KEY = settingsData.sendgridApiKey;
+        console.log("Updated SendGrid API key in environment");
+      }
+      
+      // Handle MailerLite API key
+      if (settingsData.mailerliteApiKey && process.env.MAILERLITE_API_KEY !== settingsData.mailerliteApiKey) {
+        process.env.MAILERLITE_API_KEY = settingsData.mailerliteApiKey;
+        console.log("Updated MailerLite API key in environment");
+      }
+      
+      // Handle Brevo API key
+      if (settingsData.brevoApiKey && process.env.BREVO_API_KEY !== settingsData.brevoApiKey) {
+        process.env.BREVO_API_KEY = settingsData.brevoApiKey;
+        console.log("Updated Brevo API key in environment");
       }
       
       // Update Pexels API key
