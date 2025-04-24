@@ -329,10 +329,15 @@ const RichTextEditor = ({
 
   // Auto-save functionality
   useEffect(() => {
-    if (autoSaveEnabled && onAutoSave) {
+    // Always define the cleanup function to avoid conditional hooks
+    const cleanup = () => {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
       }
+    };
+    
+    if (autoSaveEnabled && onAutoSave) {
+      cleanup(); // Clear previous timer
       
       autoSaveTimerRef.current = setTimeout(() => {
         onAutoSave(value);
@@ -340,11 +345,7 @@ const RichTextEditor = ({
       }, 10000); // Auto-save after 10 seconds of inactivity
     }
 
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
+    return cleanup;
   }, [value, autoSaveEnabled, onAutoSave]);
 
   // Toggle fullscreen mode
@@ -383,17 +384,369 @@ const RichTextEditor = ({
     : ''
   }`;
 
+  // Create all needed components outside of conditionals to avoid hooks inside conditionals
+  const mediaAlert = (
+    <Alert variant="destructive" className="absolute top-0 right-0 w-72 z-50 bg-white">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertTitle>Error</AlertTitle>
+      <AlertDescription>
+        Please complete all required fields.
+      </AlertDescription>
+    </Alert>
+  );
+  
+  // Pre-create all dialog components to avoid conditional hooks
+  const imageUploadDialog = (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-lg">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Insert Image</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowImageUpload(false)}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="space-y-6">
+          <div>
+            <Label htmlFor="image-url">Image URL</Label>
+            <Input
+              id="image-url"
+              placeholder="https://example.com/image.jpg"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Enter the URL of the image you want to insert
+            </p>
+          </div>
+          
+          {imageUrl && (
+            <div className="border rounded-md p-3 bg-muted/30">
+              <div className="text-sm font-medium mb-2">Image Preview</div>
+              <div className="flex justify-center bg-checkerboard rounded-md p-2 mb-2">
+                <img 
+                  src={imageUrl} 
+                  alt="Preview"
+                  className="max-h-40 object-contain"
+                  onError={(e) => { 
+                    (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzk5OSI+SW1hZ2UgZXJyb3I8L3RleHQ+PC9zdmc+';
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="image-alt">Alt Text</Label>
+              <Input
+                id="image-alt"
+                placeholder="Descriptive alt text"
+                value={imageAlt}
+                onChange={(e) => setImageAlt(e.target.value)}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                For accessibility and SEO
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="image-caption">Caption</Label>
+              <Input
+                id="image-caption"
+                placeholder="Optional caption"
+                value={imageCaption}
+                onChange={(e) => setImageCaption(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="image-width">Width</Label>
+              <Input
+                id="image-width"
+                placeholder="e.g. 500 or 100%"
+                value={imageWidth}
+                onChange={(e) => setImageWidth(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="image-height">Height</Label>
+              <Input
+                id="image-height"
+                placeholder="e.g. 300"
+                value={imageHeight}
+                onChange={(e) => setImageHeight(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <Label>Alignment</Label>
+            <div className="flex gap-2 mt-2">
+              <Button 
+                type="button" 
+                variant={imageAlignment === 'left' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setImageAlignment('left')}
+                className="flex-1"
+              >
+                <AlignLeft className="h-4 w-4 mr-1" />
+                Left
+              </Button>
+              <Button 
+                type="button" 
+                variant={imageAlignment === 'center' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setImageAlignment('center')}
+                className="flex-1"
+              >
+                <AlignCenter className="h-4 w-4 mr-1" />
+                Center
+              </Button>
+              <Button 
+                type="button" 
+                variant={imageAlignment === 'right' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setImageAlignment('right')}
+                className="flex-1"
+              >
+                <AlignRight className="h-4 w-4 mr-1" />
+                Right
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowImageUpload(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={insertImage} disabled={!imageUrl}>Insert Image</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  
+  const buttonConfigDialog = (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Insert Button</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowButtonConfig(false)}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="button-text">Button Text</Label>
+            <Input
+              id="button-text"
+              placeholder="Click Here"
+              value={buttonConfig.text}
+              onChange={(e) => setButtonConfig({...buttonConfig, text: e.target.value})}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="button-url">Button URL</Label>
+            <Input
+              id="button-url"
+              placeholder="https://example.com"
+              value={buttonConfig.url}
+              onChange={(e) => setButtonConfig({...buttonConfig, url: e.target.value})}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="button-style">Button Style</Label>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <Button 
+                type="button"
+                className={`${buttonConfig.style === 'primary' ? 'ring-2 ring-offset-2 ring-blue-500' : ''} bg-[#f24b7c] hover:bg-[#d22e5d]`}
+                onClick={() => setButtonConfig({...buttonConfig, style: 'primary'})}
+              >
+                Primary
+              </Button>
+              <Button 
+                type="button"
+                variant="secondary"
+                className={buttonConfig.style === 'secondary' ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
+                onClick={() => setButtonConfig({...buttonConfig, style: 'secondary'})}
+              >
+                Secondary
+              </Button>
+              <Button 
+                type="button"
+                className={`${buttonConfig.style === 'success' ? 'ring-2 ring-offset-2 ring-blue-500' : ''} bg-green-600 hover:bg-green-700`}
+                onClick={() => setButtonConfig({...buttonConfig, style: 'success'})}
+              >
+                Success
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="button-new-tab"
+              checked={buttonConfig.newTab}
+              onCheckedChange={(checked) => setButtonConfig({...buttonConfig, newTab: checked})}
+            />
+            <Label htmlFor="button-new-tab">Open in new tab</Label>
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowButtonConfig(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={insertButton}>Insert Button</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  
+  const linkConfigDialog = (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Insert Link</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowLinkConfig(false)}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="link-text">Link Text</Label>
+            <Input
+              id="link-text"
+              placeholder="Click here"
+              value={linkConfig.text}
+              onChange={(e) => setLinkConfig({...linkConfig, text: e.target.value})}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Optional if text is already selected in the editor
+            </p>
+          </div>
+          
+          <div>
+            <Label htmlFor="link-url">Link URL</Label>
+            <Input
+              id="link-url"
+              placeholder="https://example.com"
+              value={linkConfig.url}
+              onChange={(e) => setLinkConfig({...linkConfig, url: e.target.value})}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="link-title">Link Title</Label>
+            <Input
+              id="link-title"
+              placeholder="Description for hovering"
+              value={linkConfig.title}
+              onChange={(e) => setLinkConfig({...linkConfig, title: e.target.value})}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Optional title attribute for the link
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="link-new-tab"
+              checked={linkConfig.newTab}
+              onCheckedChange={(checked) => setLinkConfig({...linkConfig, newTab: checked})}
+            />
+            <Label htmlFor="link-new-tab">Open in new tab</Label>
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowLinkConfig(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={insertLink}>Insert Link</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  
+  const codeSnippetDialog = (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Insert Code Snippet</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowSnippetDialog(false)}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="code-snippet">Code</Label>
+            <Textarea
+              id="code-snippet"
+              placeholder="Enter your code here..."
+              value={snippetContent}
+              onChange={(e) => setSnippetContent(e.target.value)}
+              className="font-mono text-sm h-60"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Paste your code snippet here. HTML tags will be automatically escaped.
+            </p>
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowSnippetDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={insertCodeSnippet}>Insert Code</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className={containerClasses}>
-      {showMediaAlert && (
-        <Alert variant="destructive" className="absolute top-0 right-0 w-72 z-50 bg-white">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            Please complete all required fields.
-          </AlertDescription>
-        </Alert>
-      )}
+      {showMediaAlert && mediaAlert}
       
       <div className="mb-4 border rounded-md overflow-hidden">
         {/* Editor Tabs */}
@@ -533,347 +886,10 @@ const RichTextEditor = ({
       </div>
       
       {/* Image upload dialog */}
-      {showImageUpload && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Insert Image</h3>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowImageUpload(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="image-url">Image URL</Label>
-                <Input
-                  id="image-url"
-                  placeholder="https://example.com/image.jpg"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter the URL of the image you want to insert
-                </p>
-              </div>
-              
-              {imageUrl && (
-                <div className="border rounded-md p-3 bg-muted/30">
-                  <div className="text-sm font-medium mb-2">Image Preview</div>
-                  <div className="flex justify-center bg-checkerboard rounded-md p-2 mb-2">
-                    <img 
-                      src={imageUrl} 
-                      alt="Preview"
-                      className="max-h-40 object-contain"
-                      onError={(e) => { 
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzk5OSI+SW1hZ2UgZXJyb3I8L3RleHQ+PC9zdmc+';
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="image-alt">Alt Text</Label>
-                  <Input
-                    id="image-alt"
-                    placeholder="Descriptive alt text"
-                    value={imageAlt}
-                    onChange={(e) => setImageAlt(e.target.value)}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    For accessibility and SEO
-                  </p>
-                </div>
-                
-                <div>
-                  <Label htmlFor="image-caption">Caption</Label>
-                  <Input
-                    id="image-caption"
-                    placeholder="Optional caption"
-                    value={imageCaption}
-                    onChange={(e) => setImageCaption(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="image-width">Width</Label>
-                  <Input
-                    id="image-width"
-                    placeholder="e.g. 500 or 100%"
-                    value={imageWidth}
-                    onChange={(e) => setImageWidth(e.target.value)}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="image-height">Height</Label>
-                  <Input
-                    id="image-height"
-                    placeholder="e.g. 300"
-                    value={imageHeight}
-                    onChange={(e) => setImageHeight(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label>Alignment</Label>
-                <div className="flex gap-2 mt-2">
-                  <Button 
-                    type="button" 
-                    variant={imageAlignment === 'left' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setImageAlignment('left')}
-                    className="flex-1"
-                  >
-                    <AlignLeft className="h-4 w-4 mr-1" />
-                    Left
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant={imageAlignment === 'center' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setImageAlignment('center')}
-                    className="flex-1"
-                  >
-                    <AlignCenter className="h-4 w-4 mr-1" />
-                    Center
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant={imageAlignment === 'right' ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setImageAlignment('right')}
-                    className="flex-1"
-                  >
-                    <AlignRight className="h-4 w-4 mr-1" />
-                    Right
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowImageUpload(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={insertImage} disabled={!imageUrl}>Insert Image</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Button configuration dialog */}
-      {showButtonConfig && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Insert Button</h3>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowButtonConfig(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="button-text">Button Text</Label>
-                <Input
-                  id="button-text"
-                  placeholder="Click Here"
-                  value={buttonConfig.text}
-                  onChange={(e) => setButtonConfig({...buttonConfig, text: e.target.value})}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="button-url">Button URL</Label>
-                <Input
-                  id="button-url"
-                  placeholder="https://example.com"
-                  value={buttonConfig.url}
-                  onChange={(e) => setButtonConfig({...buttonConfig, url: e.target.value})}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="button-style">Button Style</Label>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <Button 
-                    type="button"
-                    className={`${buttonConfig.style === 'primary' ? 'ring-2 ring-offset-2 ring-blue-500' : ''} bg-[#f24b7c] hover:bg-[#d22e5d]`}
-                    onClick={() => setButtonConfig({...buttonConfig, style: 'primary'})}
-                  >
-                    Primary
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant="secondary"
-                    className={buttonConfig.style === 'secondary' ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
-                    onClick={() => setButtonConfig({...buttonConfig, style: 'secondary'})}
-                  >
-                    Secondary
-                  </Button>
-                  <Button 
-                    type="button"
-                    className={`${buttonConfig.style === 'success' ? 'ring-2 ring-offset-2 ring-blue-500' : ''} bg-green-600 hover:bg-green-700`}
-                    onClick={() => setButtonConfig({...buttonConfig, style: 'success'})}
-                  >
-                    Success
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowButtonConfig(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={insertButton}>Insert Button</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Link configuration dialog */}
-      {showLinkConfig && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Insert Link</h3>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowLinkConfig(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="link-text">Link Text</Label>
-                <Input
-                  id="link-text"
-                  placeholder="Click here"
-                  value={linkConfig.text}
-                  onChange={(e) => setLinkConfig({...linkConfig, text: e.target.value})}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Optional if text is already selected in the editor
-                </p>
-              </div>
-              
-              <div>
-                <Label htmlFor="link-url">Link URL</Label>
-                <Input
-                  id="link-url"
-                  placeholder="https://example.com"
-                  value={linkConfig.url}
-                  onChange={(e) => setLinkConfig({...linkConfig, url: e.target.value})}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="link-title">Link Title</Label>
-                <Input
-                  id="link-title"
-                  placeholder="Description for hovering"
-                  value={linkConfig.title}
-                  onChange={(e) => setLinkConfig({...linkConfig, title: e.target.value})}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Optional title attribute for the link
-                </p>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="link-new-tab"
-                  checked={linkConfig.newTab}
-                  onCheckedChange={(checked) => setLinkConfig({...linkConfig, newTab: checked})}
-                />
-                <Label htmlFor="link-new-tab">Open in new tab</Label>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowLinkConfig(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={insertLink}>Insert Link</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Code snippet dialog */}
-      {showSnippetDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Insert Code Snippet</h3>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowSnippetDialog(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="code-snippet">Code</Label>
-                <Textarea
-                  id="code-snippet"
-                  placeholder="Enter your code here..."
-                  value={snippetContent}
-                  onChange={(e) => setSnippetContent(e.target.value)}
-                  className="font-mono text-sm h-60"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Paste your code snippet here. HTML tags will be automatically escaped.
-                </p>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowSnippetDialog(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={insertCodeSnippet}>Insert Code</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {showImageUpload && imageUploadDialog}
+      {showButtonConfig && buttonConfigDialog}
+      {showLinkConfig && linkConfigDialog}
+      {showSnippetDialog && codeSnippetDialog}
     </div>
   );
 };
