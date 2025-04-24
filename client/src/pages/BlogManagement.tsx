@@ -1426,9 +1426,9 @@ const BlogManagement: React.FC = () => {
                       </Button>
                     </div>
                   </div>
-                  <RichTextEditor 
+                  <SimpleRichTextEditor 
                     value={formData.content || ''} 
-                    onChange={(value) => setFormData({...formData, content: value})} 
+                    onChange={(value: string) => setFormData({...formData, content: value})} 
                     placeholder="Write your blog post content here..."
                     minHeight="400px"
                   />
@@ -1699,9 +1699,9 @@ const BlogManagement: React.FC = () => {
             
             <div className="space-y-2">
               <Label htmlFor="edit-content">Content</Label>
-              <RichTextEditor 
+              <SimpleRichTextEditor 
                 value={formData.content || ''} 
-                onChange={(value) => setFormData({...formData, content: value})} 
+                onChange={(value: string) => setFormData({...formData, content: value})} 
                 placeholder="Write your blog post content here..."
                 minHeight="400px"
               />

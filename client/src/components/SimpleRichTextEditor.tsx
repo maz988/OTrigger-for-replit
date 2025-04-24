@@ -137,12 +137,11 @@ const SimpleRichTextEditor = ({
           <TabsContent value="html" className="p-0 border-0">
             <div className="border rounded-md p-4">
               <Label htmlFor="html-source" className="sr-only">HTML Source</Label>
-              <Input
+              <textarea
                 id="html-source"
-                as="textarea"
                 value={htmlSource}
                 onChange={(e) => handleHtmlSourceChange(e.target.value)}
-                className="font-mono text-sm h-[400px] min-h-[400px]"
+                className="w-full h-[400px] min-h-[400px] p-2 font-mono text-sm border rounded-md"
                 style={{ minHeight }}
               />
             </div>
