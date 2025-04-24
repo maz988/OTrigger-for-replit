@@ -105,6 +105,83 @@ const BlogManagement: React.FC = () => {
   // Tag input state
   const [tagInput, setTagInput] = useState('');
   
+  // Update auto-scheduling settings mutation
+  const updateSchedulingMutation = useMutation({
+    mutationFn: async (settings: { enabled: boolean; frequency: string; time: string }) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/blog/auto-schedule/settings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Auto-Scheduling Updated',
+        description: 'The blog auto-scheduling settings have been updated successfully.',
+        variant: 'default',
+      });
+      refetchScheduling();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Updating Auto-Scheduling',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Manually trigger a scheduled post generation
+  const triggerScheduledPostMutation = useMutation({
+    mutationFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/blog/generate-scheduled', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Post Generated',
+        description: `Successfully generated and published a new blog post: "${data.data.title}"`,
+        variant: 'default',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/blog/posts'] });
+      refetchScheduling();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Generating Post',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
   const { toast } = useToast();
 
   // Get the admin token from localStorage
@@ -141,6 +218,32 @@ const BlogManagement: React.FC = () => {
       }
       
       const response = await fetch('/api/admin/keywords', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    }
+  });
+  
+  // Fetch auto-scheduling settings
+  const { 
+    data: schedulingResponse, 
+    isLoading: schedulingLoading, 
+    refetch: refetchScheduling 
+  } = useQuery({
+    queryKey: ['/api/admin/blog/auto-schedule/settings'],
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/blog/auto-schedule/settings', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -673,6 +776,184 @@ const BlogManagement: React.FC = () => {
           <p className="text-muted-foreground">Create, edit, and manage all blog content</p>
         </div>
       </div>
+      
+      {/* Auto-Scheduling Panel */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <CalendarClock className="h-5 w-5 text-primary mr-2" />
+            Auto-Blogging Scheduler
+          </CardTitle>
+          <CardDescription>Configure automatic blog post generation and publishing</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-6">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="auto-scheduling-toggle" className="text-base font-medium flex items-center gap-2">
+                    <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                    Enable Auto-Blogging
+                  </Label>
+                  <Switch 
+                    id="auto-scheduling-toggle" 
+                    checked={schedulingEnabled}
+                    onCheckedChange={(checked) => {
+                      setSchedulingEnabled(checked);
+                      updateSchedulingMutation.mutate({
+                        enabled: checked,
+                        frequency: scheduleFrequency,
+                        time: scheduleTime
+                      });
+                    }}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, the system will automatically generate and publish blog posts on your specified schedule.
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-frequency">Publication Frequency</Label>
+                  <Select 
+                    disabled={!schedulingEnabled} 
+                    value={scheduleFrequency}
+                    onValueChange={(value) => {
+                      setScheduleFrequency(value as any);
+                      updateSchedulingMutation.mutate({
+                        enabled: schedulingEnabled,
+                        frequency: value,
+                        time: scheduleTime
+                      });
+                    }}
+                  >
+                    <SelectTrigger id="schedule-frequency">
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="twice-daily">Twice Daily (2 posts/day)</SelectItem>
+                      <SelectItem value="daily">Daily (1 post/day)</SelectItem>
+                      <SelectItem value="every-other-day">Every Other Day</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-time">Publication Time</Label>
+                  <Input 
+                    id="schedule-time" 
+                    type="time" 
+                    value={scheduleTime}
+                    disabled={!schedulingEnabled}
+                    onChange={(e) => {
+                      setScheduleTime(e.target.value);
+                      updateSchedulingMutation.mutate({
+                        enabled: schedulingEnabled,
+                        frequency: scheduleFrequency,
+                        time: e.target.value
+                      });
+                    }}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {scheduleFrequency === 'twice-daily' ? 
+                      'Posts will be published at this time and 12 hours later.' : 
+                      'Posts will be published at this time.'
+                    }
+                  </p>
+                </div>
+              </div>
+              
+              <div className="pt-2">
+                <Button 
+                  onClick={() => triggerScheduledPostMutation.mutate()}
+                  disabled={triggerScheduledPostMutation.isPending}
+                >
+                  {triggerScheduledPostMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Generate Post Now
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Manually trigger the auto-generation process to create a post immediately.
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-accent/50 rounded-md p-4 space-y-4">
+              <h3 className="font-medium">Auto-Blogging Stats</h3>
+              
+              {schedulingLoading ? (
+                <div className="flex justify-center items-center h-32">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Status:</span>
+                      <Badge variant={schedulingEnabled ? "default" : "outline"}>
+                        {schedulingEnabled ? "Active" : "Disabled"}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-sm mt-2">
+                      <span className="text-muted-foreground">Schedule:</span>
+                      <span>
+                        {scheduleFrequency === 'twice-daily' ? 'Twice Daily' : 
+                         scheduleFrequency === 'daily' ? 'Daily' :
+                         scheduleFrequency === 'every-other-day' ? 'Every Other Day' : 'Weekly'} 
+                        at {scheduleTime}
+                      </span>
+                    </div>
+                    
+                    {lastGenerated && (
+                      <div className="flex items-center justify-between text-sm mt-2">
+                        <span className="text-muted-foreground">Last Published:</span>
+                        <span>{new Date(lastGenerated).toLocaleString()}</span>
+                      </div>
+                    )}
+                    
+                    {lastGeneratedKeyword && (
+                      <div className="flex items-center justify-between text-sm mt-2">
+                        <span className="text-muted-foreground">Last Keyword:</span>
+                        <Badge variant="outline">{lastGeneratedKeyword}</Badge>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {lastError && (
+                    <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded border border-destructive/20">
+                      <div className="flex items-start">
+                        <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium">Last Error:</p>
+                          <p className="text-xs mt-1">{lastError}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="border-t pt-6">
+          <p className="text-xs text-muted-foreground">
+            The auto-blogging system uses AI to generate content based on your keyword list. 
+            New posts will be automatically published on the schedule you specify, selecting random keywords from your collection.
+          </p>
+        </CardFooter>
+      </Card>
       
       <div className="mb-6 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div className="flex flex-col sm:flex-row gap-4">

@@ -58,7 +58,6 @@ import {
   Clock,
   RefreshCw,
   Settings,
-  FileText2,
   CalendarClock,
   FileEdit
 } from 'lucide-react';
