@@ -65,10 +65,12 @@ export const adminUsers = pgTable("admin_users", {
 export const emailSubscribers = pgTable("email_subscribers", {
   id: serial("id").primaryKey(),
   firstName: text("first_name").notNull(),
+  lastName: text("last_name"),
   email: text("email").notNull().unique(),
   source: text("source").notNull().default('unknown'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  unsubscribed: boolean("unsubscribed").notNull().default(false),
+  isSubscribed: boolean("is_subscribed").notNull().default(true),
+  unsubscribeToken: text("unsubscribe_token").notNull(),
   lastEmailSent: timestamp("last_email_sent"),
 });
 
@@ -83,15 +85,53 @@ export const leadMagnets = pgTable("lead_magnets", {
   updatedAt: timestamp("updated_at"),
 });
 
+// Email sequences (series of emails)
+export const emailSequences = pgTable("email_sequences", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+});
+
 // Email templates for automated emails
 export const emailTemplates = pgTable("email_templates", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   subject: text("subject").notNull(),
   content: text("content").notNull(),
+  emailType: text("email_type").notNull().default('custom'), // welcome, value, hero_instinct, affiliate, story, custom
+  sequenceId: integer("sequence_id").notNull(),
+  delayDays: integer("delay_days").notNull().default(0),
+  attachLeadMagnet: boolean("attach_lead_magnet").notNull().default(false),
+  leadMagnetPath: text("lead_magnet_path"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at"),
+});
+
+// Email queue for scheduled emails
+export const emailQueue = pgTable("email_queue", {
+  id: serial("id").primaryKey(),
+  subscriberId: integer("subscriber_id").notNull(),
+  templateId: integer("template_id").notNull(),
+  scheduledFor: timestamp("scheduled_for").notNull(),
+  status: text("status").notNull().default('queued'), // queued, sent, failed, cancelled, error, skipped
+  statusMessage: text("status_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  processedAt: timestamp("processed_at"),
+});
+
+// Email sent history
+export const emailHistory = pgTable("email_history", {
+  id: serial("id").primaryKey(),
+  subscriberId: integer("subscriber_id").notNull(),
+  templateId: integer("template_id").notNull(),
+  sentAt: timestamp("sent_at").notNull(),
+  provider: text("provider").notNull(), // sendgrid, mailerlite, brevo
+  status: text("status").notNull(), // sent, delivered, opened, clicked, bounced, etc.
+  metadata: jsonb("metadata"),
 });
 
 // System settings (API keys, integration settings, etc.)
@@ -144,10 +184,26 @@ export const insertLeadMagnetSchema = createInsertSchema(leadMagnets).omit({
   updatedAt: true,
 });
 
+export const insertEmailSequenceSchema = createInsertSchema(emailSequences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertEmailQueueSchema = createInsertSchema(emailQueue).omit({
+  id: true,
+  createdAt: true,
+  processedAt: true,
+});
+
+export const insertEmailHistorySchema = createInsertSchema(emailHistory).omit({
+  id: true,
 });
 
 export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({

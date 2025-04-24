@@ -1,0 +1,60 @@
+Build a flexible and dynamic email automation system for the Obsession Trigger AI project that supports multiple email providers. The system must use whichever email service is marked as “active” in the admin dashboard Settings (SendGrid, MailerLite, or Brevo).
+
+📌 PURPOSE:
+Automatically send a sequence of AI-generated emails after lead magnet signup, supporting trust-building and affiliate marketing — and route emails dynamically through the user-selected provider.
+
+📬 FEATURES:
+
+1. 📥 **Subscriber Intake**
+   - Form fields: First Name, Email, Opt-in Source
+   - Save to Firestore (`subscribers` collection) with timestamp + source
+   - Option to sync with external ESP list (if API allows)
+
+2. 🤖 **AI-Powered Email Sequence**
+   - Store or generate 5–7 follow-up emails via GPT-4 or Claude
+   - Sequence examples:
+     - Email 1: Welcome message (no links)
+     - Email 2: Emotional advice + blog link
+     - Email 3: Introduce Hero Instinct (no link)
+     - Email 4: CTA to *His Secret Obsession* (use `process.env.AFFILIATE_LINK`)
+     - Email 5: Trust-building or relationship repair story
+   - Save these emails in `emailTemplates` collection
+
+3. 📤 **Dynamic Email Sending**
+   - Detect current "active email provider" from Settings
+   - Switch logic:
+     - If `SendGrid` is active: use SendGrid’s API + SMTP  
+     - If `MailerLite` is active: use MailerLite’s REST API  
+     - If `Brevo` is active: use Brevo’s v3 API  
+   - Use template + subscriber name/email to send email
+   - Trigger via Firebase Cloud Functions or Replit CRON
+
+4. 📅 **Delivery Schedule**
+   - Store timestamp of each subscriber’s signup
+   - Calculate and queue emails with delay:
+     - Email 1 = immediate
+     - Email 2 = +1 day
+     - Email 3 = +2 days … etc.
+   - Support daily run check via serverless function or timer
+
+5. ⚙️ **Admin Controls**
+   - Show all queued subscribers
+   - Show email history (sent, open/click status if supported)
+   - Option to regenerate any email using AI
+   - Option to resend email manually
+
+6. 🧠 SETTINGS INTEGRATION
+   - Pull API keys + sender email + active provider from Settings section
+   - Disable sending if no active service or missing key
+
+📂 FILE STRUCTURE:
+- `/services/emailDispatcher.js` (handles provider switching logic)
+- `/services/emailTemplates.js` (generates or loads AI email content)
+- `/functions/emailCron.js` (timer/trigger function for scheduled sends)
+- `/components/AdminEmailManager.jsx` (dashboard UI)
+
+🔐 SECURITY & BEST PRACTICES:
+- Store API keys in Replit Secrets
+- Validate email format before submission
+- Add unsubscribe link in every email
+
