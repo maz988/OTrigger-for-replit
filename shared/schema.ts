@@ -61,6 +61,49 @@ export const adminUsers = pgTable("admin_users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Email subscribers table
+export const emailSubscribers = pgTable("email_subscribers", {
+  id: serial("id").primaryKey(),
+  firstName: text("first_name").notNull(),
+  email: text("email").notNull().unique(),
+  source: text("source").notNull().default('unknown'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  unsubscribed: boolean("unsubscribed").notNull().default(false),
+  lastEmailSent: timestamp("last_email_sent"),
+});
+
+// Lead magnets (downloadable content)
+export const leadMagnets = pgTable("lead_magnets", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  filePath: text("file_path").notNull(),
+  downloadCount: integer("download_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// Email templates for automated emails
+export const emailTemplates = pgTable("email_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  content: text("content").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// System settings (API keys, integration settings, etc.)
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  settingKey: text("setting_key").notNull().unique(),
+  settingValue: text("setting_value"),
+  settingType: text("setting_type").notNull().default('string'), // string, json, boolean, etc.
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  description: text("description"),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -86,6 +129,30 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
   id: true,
   lastLogin: true,
   createdAt: true,
+});
+
+export const insertEmailSubscriberSchema = createInsertSchema(emailSubscribers).omit({
+  id: true,
+  createdAt: true,
+  lastEmailSent: true,
+});
+
+export const insertLeadMagnetSchema = createInsertSchema(leadMagnets).omit({
+  id: true,
+  downloadCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  lastUpdated: true,
 });
 
 export const quizFormSchema = z.object({
@@ -118,3 +185,11 @@ export type BlogPostAnalytics = typeof blogPostAnalytics.$inferSelect;
 export type InsertBlogPostAnalytics = z.infer<typeof insertBlogPostAnalyticsSchema>;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+export type EmailSubscriber = typeof emailSubscribers.$inferSelect;
+export type InsertEmailSubscriber = z.infer<typeof insertEmailSubscriberSchema>;
+export type LeadMagnet = typeof leadMagnets.$inferSelect;
+export type InsertLeadMagnet = z.infer<typeof insertLeadMagnetSchema>;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
