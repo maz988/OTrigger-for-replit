@@ -7,6 +7,9 @@ import {
   emailSubscribers,
   leadMagnets,
   emailTemplates,
+  emailSequences,
+  emailQueue,
+  emailHistory,
   systemSettings,
   type User, 
   type InsertUser,
@@ -21,8 +24,14 @@ import {
   type InsertEmailSubscriber,
   type LeadMagnet,
   type InsertLeadMagnet,
+  type EmailSequence,
+  type InsertEmailSequence,
   type EmailTemplate,
   type InsertEmailTemplate,
+  type EmailQueue,
+  type InsertEmailQueue,
+  type EmailHistory,
+  type InsertEmailHistory,
   type SystemSetting,
   type InsertSystemSetting
 } from "@shared/schema";
@@ -141,13 +150,36 @@ export interface IStorage {
   deleteLeadMagnet(id: number): Promise<boolean>;
   recordLeadMagnetDownload(id: number): Promise<void>;
   
+  // Email Sequence methods
+  getAllEmailSequences(): Promise<EmailSequence[]>;
+  getEmailSequenceById(id: number): Promise<EmailSequence | undefined>;
+  getDefaultEmailSequence(): Promise<EmailSequence | undefined>;
+  saveEmailSequence(sequence: InsertEmailSequence): Promise<EmailSequence>;
+  updateEmailSequence(id: number, sequence: Partial<InsertEmailSequence>): Promise<EmailSequence | undefined>;
+  deleteEmailSequence(id: number): Promise<boolean>;
+  
   // Email Template methods
   getAllEmailTemplates(): Promise<EmailTemplate[]>;
   getEmailTemplateById(id: number): Promise<EmailTemplate | undefined>;
+  getEmailTemplatesBySequenceId(sequenceId: number): Promise<EmailTemplate[]>;
   saveEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
   updateEmailTemplate(id: number, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined>;
   deleteEmailTemplate(id: number): Promise<boolean>;
   toggleEmailTemplateStatus(id: number, isActive: boolean): Promise<boolean>;
+  
+  // Email Queue methods
+  getAllQueuedEmails(): Promise<EmailQueue[]>;
+  getQueuedEmailById(id: number): Promise<EmailQueue | undefined>;
+  getQueuedEmailsBySubscriberId(subscriberId: number): Promise<EmailQueue[]>;
+  getDueQueuedEmails(): Promise<EmailQueue[]>;
+  queueEmail(emailQueue: InsertEmailQueue): Promise<EmailQueue>;
+  updateQueuedEmailStatus(id: number, status: string, message?: string): Promise<EmailQueue | undefined>;
+  deleteQueuedEmail(id: number): Promise<boolean>;
+  
+  // Email History methods
+  getAllEmailHistory(): Promise<EmailHistory[]>;
+  getEmailHistoryBySubscriberId(subscriberId: number): Promise<EmailHistory[]>;
+  recordEmailSent(emailHistory: InsertEmailHistory): Promise<EmailHistory>;
   
   // System Settings methods
   getAllSettings(): Promise<SystemSetting[]>;
@@ -170,7 +202,10 @@ export class MemStorage implements IStorage {
   private admins: Map<number, AdminUser>;
   private emailSubscribers: Map<number, EmailSubscriber>;
   private leadMagnets: Map<number, LeadMagnet>;
+  private emailSequences: Map<number, EmailSequence>;
   private emailTemplates: Map<number, EmailTemplate>;
+  private emailQueue: Map<number, EmailQueue>;
+  private emailHistory: Map<number, EmailHistory>;
   private systemSettings: Map<string, SystemSetting>;
   private keywords: Set<string>;
   private autoSchedulingEnabled: boolean;
@@ -182,7 +217,10 @@ export class MemStorage implements IStorage {
   private adminCurrentId: number;
   private emailSubscriberCurrentId: number;
   private leadMagnetCurrentId: number;
+  private emailSequenceCurrentId: number;
   private emailTemplateCurrentId: number;
+  private emailQueueCurrentId: number;
+  private emailHistoryCurrentId: number;
   private systemSettingCurrentId: number;
 
   constructor() {
@@ -193,7 +231,10 @@ export class MemStorage implements IStorage {
     this.admins = new Map();
     this.emailSubscribers = new Map();
     this.leadMagnets = new Map();
+    this.emailSequences = new Map();
     this.emailTemplates = new Map();
+    this.emailQueue = new Map();
+    this.emailHistory = new Map();
     this.systemSettings = new Map();
     this.keywords = new Set();
     this.autoSchedulingEnabled = true;
@@ -205,7 +246,10 @@ export class MemStorage implements IStorage {
     this.adminCurrentId = 1;
     this.emailSubscriberCurrentId = 1;
     this.leadMagnetCurrentId = 1;
+    this.emailSequenceCurrentId = 1;
     this.emailTemplateCurrentId = 1;
+    this.emailQueueCurrentId = 1;
+    this.emailHistoryCurrentId = 1;
     this.systemSettingCurrentId = 1;
     
     // Create a default admin user with password "admin123"
