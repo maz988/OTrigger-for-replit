@@ -147,7 +147,16 @@ const BlogManagement: React.FC = () => {
   
   // Blog posts data
   const blogPosts: BlogPost[] = postsResponse?.data || [];
-  const keywords: Keyword[] = keywordsResponse?.data || [];
+  
+  // Convert keyword strings to Keyword objects for compatibility
+  const keywords: Keyword[] = keywordsResponse?.data 
+    ? keywordsResponse.data.map((keyword: string, index: number) => ({
+        id: index,
+        keyword: keyword,
+        used: false,
+        category: 'general'
+      }))
+    : [];
   
   // Filter and sort blog posts
   const filteredPosts = blogPosts
@@ -195,7 +204,7 @@ const BlogManagement: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(newKeywordData)
+        body: JSON.stringify({ keyword: newKeywordData.keyword }) // The API only accepts a keyword string
       });
       
       if (!response.ok) {
