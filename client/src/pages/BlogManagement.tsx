@@ -45,7 +45,11 @@ import {
   Loader2,
   CalendarClock,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Settings2,
+  Calendar,
+  Clock,
+  Info as InfoIcon
 } from 'lucide-react';
 
 // Define types
@@ -794,172 +798,276 @@ const BlogManagement: React.FC = () => {
       </div>
       
       {/* Auto-Scheduling Panel */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <CalendarClock className="h-5 w-5 text-primary mr-2" />
-            Auto-Blogging Scheduler
+      <Card className="mb-8 overflow-hidden border-primary/20 shadow-md">
+        <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardTitle className="flex items-center text-xl">
+            <CalendarClock className="h-6 w-6 text-primary mr-2" />
+            AI Content Engine & Scheduler
           </CardTitle>
-          <CardDescription>Configure automatic blog post generation and publishing</CardDescription>
+          <CardDescription>Automated content generation and publishing system</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-6">
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="auto-scheduling-toggle" className="text-base font-medium flex items-center gap-2">
-                    <RefreshCw className="h-4 w-4 text-muted-foreground" />
-                    Enable Auto-Blogging
-                  </Label>
-                  <Switch 
-                    id="auto-scheduling-toggle" 
-                    checked={schedulingEnabled}
-                    onCheckedChange={(checked) => {
-                      setSchedulingEnabled(checked);
-                      updateSchedulingMutation.mutate({
-                        enabled: checked,
-                        frequency: scheduleFrequency,
-                        time: scheduleTime
-                      });
-                    }}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  When enabled, the system will automatically generate and publish blog posts on your specified schedule.
-                </p>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-frequency">Publication Frequency</Label>
-                  <Select 
-                    disabled={!schedulingEnabled} 
-                    value={scheduleFrequency}
-                    onValueChange={(value) => {
-                      setScheduleFrequency(value as any);
-                      updateSchedulingMutation.mutate({
-                        enabled: schedulingEnabled,
-                        frequency: value,
-                        time: scheduleTime
-                      });
-                    }}
-                  >
-                    <SelectTrigger id="schedule-frequency">
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="twice-daily">Twice Daily (2 posts/day)</SelectItem>
-                      <SelectItem value="daily">Daily (1 post/day)</SelectItem>
-                      <SelectItem value="every-other-day">Every Other Day</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-time">Publication Time</Label>
-                  <Input 
-                    id="schedule-time" 
-                    type="time" 
-                    value={scheduleTime}
-                    disabled={!schedulingEnabled}
-                    onChange={(e) => {
-                      setScheduleTime(e.target.value);
-                      updateSchedulingMutation.mutate({
-                        enabled: schedulingEnabled,
-                        frequency: scheduleFrequency,
-                        time: e.target.value
-                      });
-                    }}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {scheduleFrequency === 'twice-daily' ? 
-                      'Posts will be published at this time and 12 hours later.' : 
-                      'Posts will be published at this time.'
-                    }
+        <CardContent className="p-0">
+          <div className="grid lg:grid-cols-7 divide-y lg:divide-y-0 lg:divide-x">
+            {/* Left Side: Configuration Controls */}
+            <div className="p-6 lg:col-span-4 space-y-6">
+              <div className="flex flex-col space-y-4">
+                <div className="bg-gradient-to-r from-primary/5 to-background p-5 rounded-xl border shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="auto-scheduling-toggle" className="text-base font-semibold flex items-center gap-2">
+                      <RefreshCw className="h-5 w-5 text-primary" />
+                      Enable Auto-Blogging
+                    </Label>
+                    <Switch 
+                      id="auto-scheduling-toggle" 
+                      checked={schedulingEnabled}
+                      className="data-[state=checked]:bg-primary"
+                      onCheckedChange={(checked) => {
+                        setSchedulingEnabled(checked);
+                        updateSchedulingMutation.mutate({
+                          enabled: checked,
+                          frequency: scheduleFrequency,
+                          time: scheduleTime
+                        });
+                      }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    When enabled, the system will automatically generate and publish blog posts on your specified schedule.
                   </p>
+                  
+                  {updateSchedulingMutation.isPending && (
+                    <div className="flex items-center justify-center mt-2 text-sm text-primary">
+                      <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                      Updating scheduler settings...
+                    </div>
+                  )}
+                  
+                  {!schedulingEnabled && (
+                    <div className="flex items-center gap-2 mt-3 p-2 bg-red-50 border border-red-100 rounded-md text-red-700 text-sm">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      <div>
+                        <p className="font-medium">Auto-scheduling is currently disabled</p>
+                        <p className="text-xs">Enable it to automatically publish new blog posts.</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {schedulingEnabled && (
+                    <div className="flex items-center gap-2 mt-3 p-2 bg-emerald-50 border border-emerald-100 rounded-md text-emerald-700 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <div>
+                        <p className="font-medium">Auto-scheduling is active</p>
+                        <p className="text-xs">Blog posts will be published according to your selected schedule.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               
-              <div className="pt-2">
+              <div className="space-y-5 p-5 rounded-xl border">
+                <h3 className="text-base font-medium mb-3 flex items-center border-b pb-2">
+                  <Settings2 className="h-4 w-4 mr-2 text-primary" />
+                  Scheduling Configuration
+                </h3>
+                
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule-frequency" className="flex items-center">
+                      <Calendar className="h-4 w-4 text-muted-foreground mr-2" />
+                      Publication Frequency
+                    </Label>
+                    <Select 
+                      disabled={!schedulingEnabled} 
+                      value={scheduleFrequency}
+                      onValueChange={(value) => {
+                        setScheduleFrequency(value as any);
+                        updateSchedulingMutation.mutate({
+                          enabled: schedulingEnabled,
+                          frequency: value,
+                          time: scheduleTime
+                        });
+                      }}
+                    >
+                      <SelectTrigger id="schedule-frequency" className={!schedulingEnabled ? "opacity-50" : ""}>
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="twice-daily">Twice Daily (2 posts/day)</SelectItem>
+                        <SelectItem value="daily">Daily (1 post/day)</SelectItem>
+                        <SelectItem value="every-other-day">Every Other Day</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="bg-muted/30 p-2 rounded-md mt-1">
+                      <p className="text-xs text-muted-foreground">
+                        {scheduleFrequency === 'twice-daily' && '✓ Two posts per day, maximizing content creation'}
+                        {scheduleFrequency === 'daily' && '✓ One post each day for consistent content'}
+                        {scheduleFrequency === 'every-other-day' && '✓ Posts every 48 hours for a balanced schedule'}
+                        {scheduleFrequency === 'weekly' && '✓ One post weekly for lighter content calendar'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule-time" className="flex items-center">
+                      <Clock className="h-4 w-4 text-muted-foreground mr-2" />
+                      Publication Time
+                    </Label>
+                    <Input 
+                      id="schedule-time" 
+                      type="time" 
+                      value={scheduleTime}
+                      disabled={!schedulingEnabled}
+                      onChange={(e) => {
+                        setScheduleTime(e.target.value);
+                        updateSchedulingMutation.mutate({
+                          enabled: schedulingEnabled,
+                          frequency: scheduleFrequency,
+                          time: e.target.value
+                        });
+                      }}
+                      className={`w-full ${!schedulingEnabled ? "opacity-50" : ""}`}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md mt-1">
+                      <p className="text-xs text-muted-foreground">
+                        {scheduleFrequency === 'twice-daily' ? 
+                          'Posts at this time and 12 hours later for optimal distribution.' : 
+                          'All posts will be published at this specific time.'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col space-y-3 items-center justify-center p-5 rounded-xl border bg-primary/5">
                 <Button 
+                  size="lg"
+                  className="w-full sm:w-auto font-medium"
                   onClick={() => triggerScheduledPostMutation.mutate()}
                   disabled={triggerScheduledPostMutation.isPending}
+                  variant="default"
                 >
                   {triggerScheduledPostMutation.isPending ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Generating AI Blog Post...
                     </>
                   ) : (
                     <>
-                      <RefreshCw className="mr-2 h-4 w-4" />
+                      <RefreshCw className="mr-2 h-5 w-5" />
                       Generate Post Now
                     </>
                   )}
                 </Button>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Manually trigger the auto-generation process to create a post immediately.
+                <p className="text-xs text-center max-w-md text-muted-foreground mt-2">
+                  {schedulingEnabled 
+                    ? "Generate a post immediately using the AI content engine, without waiting for the scheduled time." 
+                    : "Generate a post manually even though auto-scheduling is disabled."}
                 </p>
               </div>
             </div>
             
-            <div className="bg-accent/50 rounded-md p-4 space-y-4">
-              <h3 className="font-medium">Auto-Blogging Stats</h3>
+            {/* Right Side: Information & Stats */}
+            <div className="p-6 lg:col-span-3 space-y-6">
+              <div className="rounded-xl border bg-gradient-to-b from-secondary/10 to-background p-5 shadow-sm">
+                <h3 className="text-base font-medium mb-3 flex items-center gap-2 border-b pb-2">
+                  <InfoIcon className="h-5 w-5 text-blue-500" />
+                  Advanced AI Content Engine
+                </h3>
+                <ul className="text-sm space-y-3">
+                  <li className="flex items-start gap-2">
+                    <div className="mt-0.5 bg-blue-100 p-0.5 rounded-full">
+                      <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span><strong>Multi-AI Technology:</strong> Content generated using both OpenAI GPT-4o and Google's Gemini AI for enhanced quality and diversity</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="mt-0.5 bg-blue-100 p-0.5 rounded-full">
+                      <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span><strong>SEO Optimization:</strong> Posts include schema.org markup, structured header hierarchy, and optimized metadata for search engines</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="mt-0.5 bg-blue-100 p-0.5 rounded-full">
+                      <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span><strong>Smart Images:</strong> Automatic image sourcing with responsive sizing, descriptive alt text, and srcset attributes</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="mt-0.5 bg-blue-100 p-0.5 rounded-full">
+                      <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span><strong>Enhanced Linking Strategy:</strong> Automatic links to quiz, lead magnets, and authoritative sources to boost conversions</span>
+                  </li>
+                </ul>
+              </div>
               
-              {schedulingLoading ? (
-                <div className="flex justify-center items-center h-32">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Status:</span>
-                      <Badge variant={schedulingEnabled ? "default" : "outline"}>
-                        {schedulingEnabled ? "Active" : "Disabled"}
-                      </Badge>
+              <div className="rounded-xl border p-5">
+                <h3 className="text-sm font-medium flex items-center border-b pb-2 mb-3">
+                  <Tag className="h-4 w-4 mr-2 text-primary" />
+                  Content Generation Status
+                </h3>
+                
+                {schedulingLoading ? (
+                  <div className="flex justify-center items-center h-24">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-muted/30 p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Status</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className={`w-2 h-2 rounded-full ${schedulingEnabled ? "bg-green-500" : "bg-red-500"}`}></div>
+                          <p className="font-medium">{schedulingEnabled ? "Active" : "Disabled"}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-muted/30 p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Schedule</p>
+                        <p className="font-medium mt-1">
+                          {scheduleFrequency === 'twice-daily' ? 'Twice Daily' : 
+                           scheduleFrequency === 'daily' ? 'Daily' :
+                           scheduleFrequency === 'every-other-day' ? 'Every Other Day' : 'Weekly'} 
+                          at {scheduleTime}
+                        </p>
+                      </div>
                     </div>
                     
-                    <div className="flex items-center justify-between text-sm mt-2">
-                      <span className="text-muted-foreground">Schedule:</span>
-                      <span>
-                        {scheduleFrequency === 'twice-daily' ? 'Twice Daily' : 
-                         scheduleFrequency === 'daily' ? 'Daily' :
-                         scheduleFrequency === 'every-other-day' ? 'Every Other Day' : 'Weekly'} 
-                        at {scheduleTime}
-                      </span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-muted/30 p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Auto-Generated Posts</p>
+                        <p className="font-medium text-lg mt-1">{blogPosts.filter(post => post.autoGenerated).length}</p>
+                      </div>
+                      
+                      {lastGenerated && (
+                        <div className="bg-muted/30 p-3 rounded-lg">
+                          <p className="text-xs text-muted-foreground">Last Published</p>
+                          <p className="font-medium mt-1">{new Date(lastGenerated).toLocaleString()}</p>
+                        </div>
+                      )}
                     </div>
                     
-                    {lastGenerated && (
-                      <div className="flex items-center justify-between text-sm mt-2">
-                        <span className="text-muted-foreground">Last Published:</span>
-                        <span>{new Date(lastGenerated).toLocaleString()}</span>
+                    {lastGeneratedKeyword && (
+                      <div className="bg-muted/30 p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Last Used Keyword</p>
+                        <Badge variant="secondary" className="mt-1">{lastGeneratedKeyword}</Badge>
                       </div>
                     )}
                     
-                    {lastGeneratedKeyword && (
-                      <div className="flex items-center justify-between text-sm mt-2">
-                        <span className="text-muted-foreground">Last Keyword:</span>
-                        <Badge variant="outline">{lastGeneratedKeyword}</Badge>
+                    {lastError && (
+                      <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-700">
+                        <h4 className="font-medium mb-1 flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4 text-red-500" />
+                          Last Error:
+                        </h4>
+                        <p className="text-xs">{lastError}</p>
                       </div>
                     )}
                   </div>
-                  
-                  {lastError && (
-                    <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded border border-destructive/20">
-                      <div className="flex items-start">
-                        <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium">Last Error:</p>
-                          <p className="text-xs mt-1">{lastError}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
