@@ -28,7 +28,9 @@ import {
   Quote, 
   PanelLeft, 
   FileText, 
-  Eye 
+  Eye,
+  Maximize,
+  Minimize 
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -98,7 +100,7 @@ const RichTextEditor = ({
     text: '', 
     url: '', 
     title: '',
-    newTab: true 
+    newTab: true
   });
   
   // Editor State
@@ -133,9 +135,51 @@ const RichTextEditor = ({
     if (imageUrl && editorInstance) {
       const editor = editorInstance.getEditor();
       const range = editor.getSelection(true);
-      editor.insertEmbed(range.index, 'image', imageUrl, 'user');
+      
+      // Create an enhanced image HTML with all parameters
+      let style = '';
+      if (imageWidth) style += `width: ${imageWidth.includes('%') ? imageWidth : `${imageWidth}px`}; `;
+      if (imageHeight) style += `height: ${imageHeight}px; `;
+      
+      // Handle alignment
+      let alignClass = '';
+      let wrapperStyle = '';
+      if (imageAlignment === 'left') {
+        alignClass = 'float-left mr-4 mb-2';
+      } else if (imageAlignment === 'right') {
+        alignClass = 'float-right ml-4 mb-2';
+      } else if (imageAlignment === 'center') {
+        wrapperStyle = 'text-align: center; margin: 1rem 0;';
+      }
+      
+      // Build the image HTML
+      let imageHTML = '';
+      if (wrapperStyle) {
+        imageHTML += `<div style="${wrapperStyle}">`;
+      }
+      
+      imageHTML += `<img src="${imageUrl}" alt="${imageAlt || ''}" style="${style}" class="${alignClass}" />`;
+      
+      // Add caption if provided
+      if (imageCaption) {
+        imageHTML += `<figcaption class="text-sm text-center text-gray-500 mt-1">${imageCaption}</figcaption>`;
+      }
+      
+      if (wrapperStyle) {
+        imageHTML += `</div>`;
+      }
+      
+      // Insert the HTML
+      editor.clipboard.dangerouslyPasteHTML(range.index, imageHTML);
       editor.setSelection(range.index + 1);
+      
+      // Reset state
       setImageUrl('');
+      setImageAlt('');
+      setImageCaption('');
+      setImageWidth('');
+      setImageHeight('');
+      setImageAlignment('center');
       setShowImageUpload(false);
     } else {
       setShowMediaAlert(true);
@@ -157,7 +201,7 @@ const RichTextEditor = ({
                  ? 'bg-gray-600 hover:bg-gray-700' 
                  : 'bg-green-600 hover:bg-green-700'
            }" 
-           target="_blank" rel="noopener noreferrer"
+           ${buttonConfig.newTab ? 'target="_blank" rel="noopener noreferrer"' : ''}
         >
           ${buttonConfig.text}
         </a>
@@ -179,17 +223,47 @@ const RichTextEditor = ({
       const editor = editorInstance.getEditor();
       editor.setSelection(editorSelection);
       
+      // Build the link with the new attributes
+      const linkAttributes = { 
+        href: linkConfig.url,
+        ...(linkConfig.title && { title: linkConfig.title }),
+        ...(linkConfig.newTab && { target: '_blank', rel: 'noopener noreferrer' })
+      };
+      
       if (editorSelection.length > 0) {
-        // User has selected text, apply link to selection
-        editor.format('link', linkConfig.url);
+        // User has selected text, apply link to selection with attributes
+        // Note: need to use custom HTML since Quill only supports href in its link format
+        const selectedText = editor.getText(editorSelection.index, editorSelection.length);
+        editor.deleteText(editorSelection.index, editorSelection.length);
+        
+        const attributesStr = Object.entries(linkAttributes)
+          .map(([key, value]) => `${key}="${value}"`)
+          .join(' ');
+        
+        const linkHTML = `<a ${attributesStr}>${selectedText}</a>`;
+        editor.clipboard.dangerouslyPasteHTML(editorSelection.index, linkHTML);
       } else {
         // No text selected, insert new link
-        editor.insertText(editorSelection.index, linkConfig.text || linkConfig.url);
-        editor.setSelection(editorSelection.index, (linkConfig.text || linkConfig.url).length);
-        editor.format('link', linkConfig.url);
+        const displayText = linkConfig.text || linkConfig.url;
+        editor.insertText(editorSelection.index, displayText);
+        
+        // Select the inserted text
+        editor.setSelection(editorSelection.index, displayText.length);
+        
+        // Apply the link attributes
+        const attributesStr = Object.entries(linkAttributes)
+          .map(([key, value]) => `${key}="${value}"`)
+          .join(' ');
+        
+        const linkHTML = `<a ${attributesStr}>${displayText}</a>`;
+        editor.deleteText(editorSelection.index, displayText.length);
+        editor.clipboard.dangerouslyPasteHTML(editorSelection.index, linkHTML);
       }
       
+      // Set cursor position after the link
       editor.setSelection(editorSelection.index + (linkConfig.text || linkConfig.url).length);
+      
+      // Reset state
       setLinkConfig({ text: '', url: '', title: '', newTab: true });
       setShowLinkConfig(false);
     } else {
@@ -362,6 +436,19 @@ const RichTextEditor = ({
                   <Badge variant="outline" className="font-normal">
                     {characterCount} chars
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleFullscreen}
+                    className="ml-2 h-7 w-7 p-0"
+                    title={isFullscreen ? "Exit fullscreen" : "Fullscreen mode"}
+                  >
+                    {isFullscreen ? (
+                      <Minimize className="h-4 w-4" />
+                    ) : (
+                      <Maximize className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
