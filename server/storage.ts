@@ -458,24 +458,24 @@ export class MemStorage implements IStorage {
   
   private async createDefaultAdmin() {
     try {
-      // Use static password hash for admin123
-      // This is pre-computed using bcrypt.hash('admin123', 10)
-      const hashedPassword = '$2b$10$qy3JxhHXFmgpOaS3brF83O2VKE26jtJnJG4eP3KHxCi1JQ85tFVF.';
+      // Use static password hash for password123
+      // This is pre-computed using bcrypt.hash('password123', 10)
+      const hashedPassword = '$2b$10$MhMpHSVh3hV/qV6QGcSJdutMOA5biJDjdm5UmSNL.fSURJQnmi1g.';
       
-      // Create a default admin user
-      const adminExists = await this.getAdminByUsername('admin');
+      // Create a default admin user with the previously used credentials
+      const adminExists = await this.getAdminByUsername('newadmin');
       
       if (!adminExists) {
         // Create admin
         const admin = {
-          username: 'admin',
+          username: 'newadmin',
           password: hashedPassword,
           email: 'admin@obsessiontrigger.com',
           role: 'admin'
         };
         
         await this.createAdmin(admin);
-        console.log('Default admin user created with username: admin, password: admin123');
+        console.log('Default admin user created with username: newadmin, password: password123');
       }
     } catch (error) {
       console.error('Error creating default admin:', error);

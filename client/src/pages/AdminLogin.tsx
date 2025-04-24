@@ -166,6 +166,11 @@ const AdminLogin: React.FC = () => {
               ? 'Create a new admin account' 
               : 'Enter your credentials to access the admin dashboard'}
           </CardDescription>
+          {!showRegister && (
+            <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded text-xs text-center">
+              <p>Default login: <span className="font-bold">newadmin</span> / <span className="font-bold">password123</span></p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {showRegister ? (
