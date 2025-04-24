@@ -54,7 +54,13 @@ import {
   AlertCircle,
   Link as LinkIcon,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  Clock,
+  RefreshCw,
+  Settings,
+  FileText2,
+  CalendarClock,
+  FileEdit
 } from 'lucide-react';
 
 // Dashboard analytics data types
