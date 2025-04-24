@@ -113,6 +113,19 @@ const RichTextEditor = ({
     setMounted(true);
   }, []);
 
+  // Track word & character count - order of hooks matters
+  useEffect(() => {
+    // Strip HTML and count words
+    if (value) {
+      const textOnly = value.replace(/<[^>]*>/g, '');
+      setCharacterCount(textOnly.length);
+      setWordCount(textOnly.trim().split(/\s+/).filter(Boolean).length);
+    } else {
+      setCharacterCount(0);
+      setWordCount(0);
+    }
+  }, [value]);
+
   // Custom toolbar handlers
   const imageHandler = () => {
     setShowImageUpload(true);
@@ -299,18 +312,7 @@ const RichTextEditor = ({
     </div>;
   }
 
-  // Track word & character count
-  useEffect(() => {
-    // Strip HTML and count words
-    if (value) {
-      const textOnly = value.replace(/<[^>]*>/g, '');
-      setCharacterCount(textOnly.length);
-      setWordCount(textOnly.trim().split(/\s+/).filter(Boolean).length);
-    } else {
-      setCharacterCount(0);
-      setWordCount(0);
-    }
-  }, [value]);
+  // The word & character count useEffect has been moved earlier in the component to maintain hook order
 
   // Sync HTML source with editor value
   useEffect(() => {
