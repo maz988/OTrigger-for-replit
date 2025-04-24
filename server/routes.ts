@@ -764,6 +764,384 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // WordPress-like Admin Dashboard API Routes
+  
+  // Dashboard Overview
+  app.get("/api/admin/dashboard", authenticateAdmin, async (req, res) => {
+    try {
+      const dashboardData = await storage.getDashboardOverview();
+      
+      res.status(200).json({
+        success: true,
+        data: dashboardData
+      });
+    } catch (err: any) {
+      console.error(`Error getting dashboard overview: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Email Subscribers
+  app.get("/api/admin/subscribers", authenticateAdmin, async (req, res) => {
+    try {
+      const subscribers = await storage.getAllSubscribers();
+      
+      res.status(200).json({
+        success: true,
+        data: subscribers
+      });
+    } catch (err: any) {
+      console.error(`Error getting subscribers: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/subscribers", authenticateAdmin, async (req, res) => {
+    try {
+      const subscriberData = req.body;
+      
+      if (!subscriberData.email || !subscriberData.firstName) {
+        return res.status(400).json({
+          success: false,
+          error: "Email and first name are required"
+        });
+      }
+      
+      const subscriber = await storage.saveSubscriber(subscriberData);
+      
+      res.status(201).json({
+        success: true,
+        data: subscriber
+      });
+    } catch (err: any) {
+      console.error(`Error creating subscriber: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.patch("/api/admin/subscribers/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedSubscriber = await storage.updateSubscriber(id, updates);
+      
+      if (!updatedSubscriber) {
+        return res.status(404).json({
+          success: false,
+          error: "Subscriber not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: updatedSubscriber
+      });
+    } catch (err: any) {
+      console.error(`Error updating subscriber: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/subscribers/:email/unsubscribe", authenticateAdmin, async (req, res) => {
+    try {
+      const email = req.params.email;
+      
+      const success = await storage.unsubscribeByEmail(email);
+      
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          error: "Subscriber not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true
+      });
+    } catch (err: any) {
+      console.error(`Error unsubscribing subscriber: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Lead Magnets
+  app.get("/api/admin/lead-magnets", authenticateAdmin, async (req, res) => {
+    try {
+      const leadMagnets = await storage.getAllLeadMagnets();
+      
+      res.status(200).json({
+        success: true,
+        data: leadMagnets
+      });
+    } catch (err: any) {
+      console.error(`Error getting lead magnets: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/lead-magnets", authenticateAdmin, async (req, res) => {
+    try {
+      const leadMagnetData = req.body;
+      
+      if (!leadMagnetData.name || !leadMagnetData.description || !leadMagnetData.filePath) {
+        return res.status(400).json({
+          success: false,
+          error: "Name, description and file path are required"
+        });
+      }
+      
+      const leadMagnet = await storage.saveLeadMagnet(leadMagnetData);
+      
+      res.status(201).json({
+        success: true,
+        data: leadMagnet
+      });
+    } catch (err: any) {
+      console.error(`Error creating lead magnet: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.patch("/api/admin/lead-magnets/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedLeadMagnet = await storage.updateLeadMagnet(id, updates);
+      
+      if (!updatedLeadMagnet) {
+        return res.status(404).json({
+          success: false,
+          error: "Lead magnet not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: updatedLeadMagnet
+      });
+    } catch (err: any) {
+      console.error(`Error updating lead magnet: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.delete("/api/admin/lead-magnets/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const success = await storage.deleteLeadMagnet(id);
+      
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          error: "Lead magnet not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true
+      });
+    } catch (err: any) {
+      console.error(`Error deleting lead magnet: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // System Settings
+  app.get("/api/admin/settings", authenticateAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAllSettings();
+      
+      res.status(200).json({
+        success: true,
+        data: settings
+      });
+    } catch (err: any) {
+      console.error(`Error getting settings: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.patch("/api/admin/settings/:key", authenticateAdmin, async (req, res) => {
+    try {
+      const key = req.params.key;
+      const { value } = req.body;
+      
+      if (value === undefined) {
+        return res.status(400).json({
+          success: false,
+          error: "Value is required"
+        });
+      }
+      
+      const updatedSetting = await storage.updateSetting(key, value);
+      
+      if (!updatedSetting) {
+        return res.status(404).json({
+          success: false,
+          error: "Setting not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: updatedSetting
+      });
+    } catch (err: any) {
+      console.error(`Error updating setting: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Keywords
+  app.get("/api/admin/keywords", authenticateAdmin, async (req, res) => {
+    try {
+      const keywords = await storage.getAllKeywords();
+      
+      res.status(200).json({
+        success: true,
+        data: keywords
+      });
+    } catch (err: any) {
+      console.error(`Error getting keywords: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/keywords", authenticateAdmin, async (req, res) => {
+    try {
+      const { keyword } = req.body;
+      
+      if (!keyword) {
+        return res.status(400).json({
+          success: false,
+          error: "Keyword is required"
+        });
+      }
+      
+      const success = await storage.addKeyword(keyword);
+      
+      res.status(201).json({
+        success: true,
+        data: { keyword }
+      });
+    } catch (err: any) {
+      console.error(`Error adding keyword: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.delete("/api/admin/keywords/:keyword", authenticateAdmin, async (req, res) => {
+    try {
+      const keyword = req.params.keyword;
+      
+      const success = await storage.deleteKeyword(keyword);
+      
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          error: "Keyword not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true
+      });
+    } catch (err: any) {
+      console.error(`Error deleting keyword: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Auto scheduling setting
+  app.patch("/api/admin/blog/auto-scheduling", authenticateAdmin, async (req, res) => {
+    try {
+      const { enabled } = req.body;
+      
+      if (enabled === undefined) {
+        return res.status(400).json({
+          success: false,
+          error: "Enabled flag is required"
+        });
+      }
+      
+      const success = await storage.toggleAutoScheduling(enabled);
+      
+      res.status(200).json({
+        success: true,
+        data: { enabled }
+      });
+    } catch (err: any) {
+      console.error(`Error updating auto scheduling: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Quiz responses export
+  app.get("/api/admin/quiz/export", authenticateAdmin, async (req, res) => {
+    try {
+      const csvData = await storage.exportQuizResponses();
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="quiz-responses.csv"');
+      
+      res.status(200).send(csvData);
+    } catch (err: any) {
+      console.error(`Error exporting quiz responses: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   
