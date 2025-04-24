@@ -206,16 +206,29 @@ const SettingsPage: React.FC = () => {
       });
     },
     onError: (error: any) => {
-      // The error message format might be coming from our throwIfResNotOk function
-      // Extract just the important part of the message for the user
+      console.log("Test service error received:", error);
+      
+      // Try to extract and parse the JSON error from the response
       let errorMessage = "Connection failed. Please check your API key.";
       
       if (error.message) {
-        // Try to extract useful part of the error
-        if (error.message.includes(":")) {
-          // Split by colon and take everything after the first colon
-          errorMessage = error.message.split(":").slice(1).join(":").trim();
-        } else {
+        try {
+          // If we're getting a JSON response embedded in the error message, let's extract it
+          const jsonMatch = error.message.match(/{.*}/);
+          if (jsonMatch) {
+            const jsonData = JSON.parse(jsonMatch[0]);
+            if (jsonData.error) {
+              errorMessage = jsonData.error;
+            }
+          } else if (error.message.includes(":")) {
+            // Split by colon and take everything after the first colon
+            errorMessage = error.message.split(":").slice(1).join(":").trim();
+          } else {
+            errorMessage = error.message;
+          }
+        } catch (parseError) {
+          console.error("Error parsing error message:", parseError);
+          // Just use the raw error message if we can't parse it
           errorMessage = error.message;
         }
       }

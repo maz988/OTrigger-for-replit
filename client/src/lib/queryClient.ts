@@ -9,8 +9,35 @@ interface ApiResponse<T> {
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    // Try to parse as JSON first
+    let errorText;
+    try {
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorJson = await res.json();
+        if (errorJson.error) {
+          // If we have a specific error message, use that
+          throw new Error(errorJson.error);
+        } else {
+          // Otherwise stringify the whole JSON
+          errorText = JSON.stringify(errorJson);
+        }
+      } else {
+        // Not JSON, just get the text
+        errorText = await res.text();
+      }
+    } catch (e) {
+      if (e instanceof Error) {
+        // If the error has a message (like the specific error we throw above),
+        // rethrow it directly
+        throw e;
+      }
+      // If something went wrong parsing, fall back to raw text
+      errorText = await res.text();
+    }
+    
+    errorText = errorText || res.statusText; // Fallback if everything else fails
+    throw new Error(`${res.status}: ${errorText}`);
   }
 }
 
