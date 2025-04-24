@@ -1,0 +1,87 @@
+Upgrade the auto-blogging system to generate **1–2 daily articles** using OpenAI (GPT-4) and Google Gemini AI, focused on love and relationships. Create a **standardized article structure** optimized for Google, Bing, and other search engines to rank quickly and consistently.
+
+📌 GOAL:
+Build a high-quality, automated blogging engine that produces content formatted with the **ideal layout, metadata, and semantic SEO structure**. Each post must target specific keywords (provided via keywords.txt), include media, and follow best practices for search visibility and engagement.
+
+🧱 TECH STACK:
+- Article Generator: GPT-4 + Gemini AI combo (use Gemini to enhance facts, structure, examples)
+- CMS: Store articles as Markdown or HTML files
+- Image Integration: Unsplash or Pexels API (for royalty-free images)
+- Scheduler: Trigger post creation/publish once or twice daily (cronjob or Replit timer)
+
+🧠 CONTENT & SEO STRATEGY:
+Each article must follow this **standardized template structure** optimized for SEO and readability:
+
+---
+
+### ✅ 🧾 **Standard SEO Article Template for Ranking**
+
+- **Word Count:** 900–1400 words  
+- **Article Structure:**
+  1. **Title (H1)** – Keyword-rich, compelling, 60–70 characters  
+  2. **Meta Title** – Similar to H1 but can vary slightly (for Google)  
+  3. **Meta Description** – 150–160 characters, emotional + keyword included  
+  4. **Intro Paragraph**  
+     - Short (3–4 lines) and emotionally compelling  
+     - Include primary keyword in first 100 words  
+  5. **H2 Section #1** – “What You Need to Know” (problem-focused)
+  6. **H2 Section #2** – “Why This Happens” or “What Science Says”  
+     - **H3 Subpoints** under each H2  
+     - Add bullet lists, numbered tips where helpful
+  7. **H2 Section #3** – “What You Can Do Next”  
+     - Include internal links to:
+       - Your **quiz** page
+       - Your **lead magnet download**
+  8. **H2 Section #4 (Optional)** – “Expert Opinions” or “Real-Life Stories”  
+  9. **Conclusion** – Motivational + soft CTA to take the quiz or download free guide  
+  10. **FAQ Block (Structured as H2 + H3)** – optional but preferred for extra ranking
+
+- **Images:**
+  - 1 Featured Image (Header)
+  - 2 In-content relevant images
+  - Images must have:
+    - SEO-optimized filenames
+    - Descriptive **alt text** (include keyword or semantic variant)
+    - Lazy-loading enabled if possible
+
+- **Links:**
+  - **Internal Links:**
+    - Link to Quiz (e.g. “Take the Free Obsession Trigger Quiz”)
+    - Link to Lead Magnet (“Download the Free Guide”)
+    - Link to at least 1 other blog post
+  - **External Links:**
+    - 1–2 links to trusted sources (e.g., PsychologyToday, Healthline, WebMD)
+    - Open in new tab, `rel="nofollow"`
+
+- **Tags & Metadata:**
+  - Generate 4–7 SEO tags per article
+  - Auto-generate `meta title`, `meta description`, and slug
+  - Store post date, author, category
+
+- **Schema Markup (JSON-LD):**
+  - Use [schema.org/Article](https://schema.org/Article) format
+  - Include: headline, image, author, datePublished, description, keywords, articleSection
+
+- **Optional Elements:**
+  - Breadcrumb schema (for enhanced SERP visibility)
+  - CTA button or quiz link with animation or hover effect
+  - Social sharing icons (optional)
+
+🗂 FILE FORMAT & DEPLOYMENT:
+- Save each article as Markdown or HTML in `/content/articles`
+- Include meta block with all metadata + schema
+- Publish to frontend homepage + article URL
+- Add sitemap entry (auto-generated)
+
+⚙️ AUTOMATION WORKFLOW:
+- Pull unused keyword from `keywords.txt`
+- Generate article using template above
+- Fetch and insert 2 images based on topic
+- Save + publish article
+- Log article in Firestore or JSON database
+
+🧠 BONUS FEATURE:
+- Add option to trigger manual article creation from admin dashboard
+- Allow admin to edit or schedule publish
+
+Let me know when you're ready with the keywords.txt file and Unsplash API key for image integration.

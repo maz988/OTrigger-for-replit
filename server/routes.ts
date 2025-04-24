@@ -751,7 +751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Generate blog post content with AI
+  // Generate blog post content with AI (OpenAI + Gemini)
   app.post("/api/admin/blog/generate", authenticateAdmin, async (req, res) => {
     try {
       const { keyword } = req.body;
@@ -763,108 +763,246 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Create a fallback blog post structure
+      // Import Gemini functionality
+      const geminiAI = await import('./gemini').then(module => module.default).catch(() => null);
+      
+      // Create a SEO-optimized fallback blog post structure
       const fallbackPost = {
-        title: `${keyword}: How to Understand and Connect Better`,
-        slug: `${keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-how-to-understand-and-connect-better`,
-        content: `<h2>Understanding ${keyword}</h2><p>Relationships can be complex, especially when it comes to ${keyword}. When you experience this in your relationship, it's important to understand the underlying male psychology at play.</p><p>Men often respond to emotional triggers in ways that confuse women, but there's usually a pattern to these behaviors that relates to their need for appreciation and respect.</p><h2>The Connection Between ${keyword} and His Inner Hero</h2><p>Research shows that men have a natural instinct to protect and provide. When you understand how to connect with this instinct through the right words and actions, you'll see tremendous changes in how he responds to you.</p><p>Try these techniques to create a stronger bond and watch how quickly things improve in your relationship.</p>`,
+        title: `${keyword}: How to Understand and Connect Better in Relationships`,
+        slug: `${keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-relationship-guide`,
+        content: `
+          <h1>${keyword}: How to Understand and Connect Better in Relationships</h1>
+          
+          <p>Relationships can be complex, especially when it comes to ${keyword}. When you experience this in your relationship, it's important to understand the underlying male psychology at play.</p>
+          
+          <h2>Understanding ${keyword} in Relationships</h2>
+          <p>Men often respond to emotional triggers in ways that confuse women, but there's usually a pattern to these behaviors that relates to their need for appreciation and respect.</p>
+          <p>Research has shown that men's communication styles differ significantly from women's, especially when dealing with ${keyword}.</p>
+          
+          <h3>Why He Responds This Way</h3>
+          <p>Men are socialized to process emotions differently, which affects how they handle situations involving ${keyword}.</p>
+          
+          <h2>The Psychology Behind ${keyword}</h2>
+          <p>Research shows that men have a natural instinct to protect and provide. When you understand how to connect with this instinct through the right words and actions, you'll see tremendous changes in how he responds to you.</p>
+          
+          <h3>The Connection To His Inner Hero</h3>
+          <p>Every man has what psychologists call the "hero instinct" - a desire to feel needed and valued in a relationship. This is particularly relevant when discussing ${keyword}.</p>
+          
+          <h2>Practical Steps You Can Take</h2>
+          <p>Try these techniques to create a stronger bond and watch how quickly things improve in your relationship:</p>
+          <ul>
+            <li>Focus on appreciation rather than criticism</li>
+            <li>Create space for him to step up and support you</li>
+            <li>Acknowledge his efforts, even the small ones</li>
+          </ul>
+          
+          <h3>Communication Strategies That Work</h3>
+          <p>When discussing ${keyword}, timing and approach matter more than the specific words used.</p>
+          
+          <h2>What Our Relationship Quiz Reveals</h2>
+          <p>Our <a href="/quiz">relationship assessment quiz</a> has helped thousands of women understand their specific situation with ${keyword} and get personalized advice.</p>
+          
+          <h2>FAQ About ${keyword}</h2>
+          <h3>How long does it take to see changes?</h3>
+          <p>Most women report seeing positive changes within 2-3 weeks of applying these principles consistently.</p>
+          
+          <h3>Does this work for all relationship types?</h3>
+          <p>Yes, these psychological principles have been shown to work across different relationship types and stages.</p>
+          
+          <h3>What if he's completely resistant?</h3>
+          <p>In some cases, professional counseling might be needed. Our <a href="/free-guide">free relationship guide</a> covers more challenging scenarios.</p>
+        `,
         imageUrls: [],
-        tags: ["relationships", keyword.toLowerCase(), "communication", "psychology"],
+        tags: ["relationships", keyword.toLowerCase(), "communication", "psychology", "dating advice"],
         autoGenerated: true,
-        keyword: keyword
+        keyword: keyword,
+        metaDescription: `Discover the psychology behind ${keyword} in relationships and learn practical strategies to create deeper connection and understanding with your partner.`,
+        schema: {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": `${keyword}: How to Understand and Connect Better in Relationships`,
+          "description": `Discover the psychology behind ${keyword} in relationships and learn practical strategies to create deeper connection and understanding with your partner.`,
+          "keywords": ["relationships", keyword.toLowerCase(), "communication", "psychology", "dating advice"],
+          "articleSection": "Relationship Advice",
+          "datePublished": new Date().toISOString()
+        }
       };
       
-      // IMPORTANT: For any API error, just return the fallback post
-      // This way, the UI always gets a valid response
+      // Define an enhanced content structure based on the standard SEO template
+      const createEnhancedPostStructure = (openAIContent: any, isOpenAIOnly: boolean = true) => {
+        // Build a more structured blog post that follows SEO best practices
+        const title = openAIContent.title || `${keyword}: Relationship Guide`;
+        const slug = openAIContent.slug || 
+          (keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-') + "-relationship-guide");
+        const tags = openAIContent.tags || ["relationships", keyword.toLowerCase()];
+        
+        // Generate meta description from content if not present
+        const metaDescription = openAIContent.metaDescription || 
+          `Learn about ${keyword} in relationships and discover practical strategies to improve your connection and understanding. Expert advice for women.`.substring(0, 160);
+        
+        // Add schema markup for SEO
+        const schemaMarkup = {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": title,
+          "description": metaDescription,
+          "keywords": tags.join(", "),
+          "articleSection": "Relationship Advice",
+          "datePublished": new Date().toISOString()
+        };
+        
+        // Return the enhanced structure
+        return {
+          ...openAIContent,
+          title,
+          slug,
+          tags,
+          metaDescription,
+          schema: schemaMarkup,
+          aiSource: isOpenAIOnly ? "openai" : "openai+gemini"
+        };
+      };
       
-      // If OpenAI API key is missing, use fallback immediately
-      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === "default_key") {
-        console.warn("Using fallback content (OpenAI API key not configured)");
-        return res.status(200).json({
-          success: true,
-          data: fallbackPost,
-          note: "Using fallback content (OpenAI API key not available)"
-        });
-      }
+      // MULTI-AI STRATEGY
+      // First, try using OpenAI to generate the content
+      // If Gemini API is available, use it to enhance the content
+      // If both fail, use the fallback content
       
-      // Try to use OpenAI but catch ALL errors
-      try {
-        // Generate content with OpenAI
-        const prompt = `
-          Write a blog post about "${keyword}" in the context of relationship advice for women.
-          Focus on how understanding male psychology can help women create better relationships.
-          Include mentions of concepts like emotional triggers and the hero instinct.
-          Make the post engaging, thoughtful, and around 500 words.
-          Format the content with appropriate heading tags (h1, h2, h3) and paragraph tags.
+      let openAIContent = null;
+      let geminiEnhanced = false;
+      
+      // Step 1: Try to generate with OpenAI if available
+      if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "default_key") {
+        try {
+          // Generate content with OpenAI
+          const prompt = `
+            Write a comprehensive, SEO-optimized blog post about "${keyword}" for women seeking relationship advice.
+            
+            Follow this exact structure:
+            1. Start with an H1 title that includes the keyword
+            2. Begin with a compelling introduction (3-4 sentences)
+            3. Create 3-4 H2 sections:
+               - "Understanding ${keyword}" (explain the concept)
+               - "Why This Happens in Relationships" (psychological explanation)
+               - "What You Can Do About ${keyword}" (practical advice)
+               - "Expert Insights on ${keyword}" (optional)
+            4. Include 2-3 H3 subsections under each H2
+            5. Add a FAQ section with 3 common questions about ${keyword}
+            6. Write a brief conclusion with a call to action to take a relationship quiz
+            
+            Important guidelines:
+            - Make the content 900-1200 words in total
+            - Use proper HTML tags (h1, h2, h3, p, ul, li, etc.)
+            - Include links to a quiz page (/quiz) and a free guide (/free-guide)
+            - Make the writing conversational yet authoritative
+            - Include emotional triggers that resonate with women
+            
+            Return your response in the following JSON format:
+            {
+              "title": "SEO-optimized title (include keyword)",
+              "slug": "url-friendly-slug",
+              "content": "Full HTML content with proper heading structure",
+              "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+              "metaDescription": "Compelling meta description under 160 characters"
+            }
+          `;
           
-          Also generate:
-          1. A compelling blog post title (include the keyword)
-          2. A URL-friendly slug
-          3. 4-5 relevant tags
+          // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: "You are an expert relationship blogger specializing in female relationship advice with deep knowledge of male psychology and SEO best practices." },
+              { role: "user", content: prompt }
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.7
+          });
           
-          Return your response in the following JSON format:
-          {
-            "title": "The blog post title",
-            "slug": "url-friendly-slug",
-            "content": "Full HTML content with heading and paragraph tags",
-            "tags": ["tag1", "tag2", "tag3", "tag4"]
+          const contentText = response.choices[0].message.content;
+          if (!contentText) throw new Error("Empty response from OpenAI");
+          
+          openAIContent = JSON.parse(contentText);
+          openAIContent.keyword = keyword;
+          openAIContent.autoGenerated = true;
+          openAIContent.imageUrls = [];
+          
+          // Step 2: Try to enhance with Gemini if available
+          if (geminiAI && geminiAI.isGeminiAvailable && geminiAI.isGeminiAvailable()) {
+            try {
+              console.log("Enhancing OpenAI content with Gemini...");
+              const enhanced = await geminiAI.enhanceOpenAIContent(openAIContent);
+              openAIContent = enhanced;
+              geminiEnhanced = true;
+              console.log("Successfully enhanced content with Gemini");
+            } catch (geminiError) {
+              console.warn(`Could not enhance with Gemini: ${geminiError.message}`);
+              // Continue with OpenAI-only content
+            }
           }
-        `;
-        
-        // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: "You are an expert relationship blogger specializing in female relationship advice with deep knowledge of male psychology." },
-            { role: "user", content: prompt }
-          ],
-          response_format: { type: "json_object" },
-          temperature: 0.7
-        });
-        
-        const contentText = response.choices[0].message.content;
-        if (!contentText) throw new Error("Empty response from OpenAI");
-        
-        const content = JSON.parse(contentText);
-        
-        // Add a few more fields needed by our application
-        content.autoGenerated = true;
-        content.imageUrls = [];
-        content.keyword = keyword;
-        
-        // Return the AI-generated content
-        return res.status(200).json({
-          success: true,
-          data: content
-        });
-      } catch (aiError: any) {
-        // Log the AI error but continue with fallback content
-        console.error(`Error generating blog content with AI: ${aiError.message}`);
-        
-        // Return the fallback content with a 200 response
-        // This ensures the UI always gets a valid post even if AI fails
-        return res.status(200).json({
-          success: true,
-          data: fallbackPost,
-          note: "Using fallback content due to AI generation error"
-        });
+          
+          // Apply the enhanced structure
+          const finalContent = createEnhancedPostStructure(openAIContent, !geminiEnhanced);
+          
+          // Return the AI-generated content
+          return res.status(200).json({
+            success: true,
+            data: finalContent,
+            note: geminiEnhanced ? "Content enhanced with OpenAI + Gemini" : undefined
+          });
+        } catch (openaiError: any) {
+          console.error(`Error generating blog content with OpenAI: ${openaiError.message}`);
+          
+          // Step 3: Try to use Gemini alone if OpenAI failed
+          if (geminiAI && geminiAI.isGeminiAvailable && geminiAI.isGeminiAvailable()) {
+            try {
+              console.log("Attempting to generate content with Gemini after OpenAI failure");
+              const geminiContent = await geminiAI.generateBlogContent(keyword);
+              
+              // Apply our enhanced structure
+              const finalGeminiContent = createEnhancedPostStructure({
+                ...geminiContent,
+                autoGenerated: true,
+                imageUrls: [],
+                keyword: keyword
+              }, false);
+              
+              return res.status(200).json({
+                success: true,
+                data: finalGeminiContent,
+                note: "Content generated with Gemini (OpenAI unavailable)"
+              });
+            } catch (geminiError) {
+              console.error(`Gemini generation also failed: ${geminiError.message}`);
+              // Fall back to template content
+            }
+          }
+        }
       }
+      
+      // If we got here, both APIs failed or weren't available
+      console.warn("Using fallback content due to AI unavailability or errors");
+      return res.status(200).json({
+        success: true,
+        data: fallbackPost,
+        note: "Using fallback content due to AI generation limitations"
+      });
+      
     } catch (err: any) {
       // Handle unexpected errors not caught above
       console.error(`Unexpected error in blog generation endpoint: ${err.message}`);
       
-      // Even for unexpected errors, return fallback content with 200
-      // This provides a better user experience than showing an error
+      // Return fallback content with 200 status for better UX
       return res.status(200).json({
         success: true,
         data: {
-          title: `Blog Post About ${req.body.keyword || 'Relationships'}`,
-          slug: `blog-post-about-${(req.body.keyword || 'relationships').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-          content: "<p>Blog content goes here.</p>",
+          title: `${req.body.keyword || 'Relationships'}: Essential Guide`,
+          slug: `${(req.body.keyword || 'relationships').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-essential-guide`,
+          content: `<h1>${req.body.keyword || 'Relationships'}: Essential Guide</h1><p>Understanding the dynamics of relationships is key to creating lasting connections.</p>`,
           imageUrls: [],
           tags: ["relationships"],
           autoGenerated: true,
-          keyword: req.body.keyword || 'relationships'
+          keyword: req.body.keyword || 'relationships',
+          metaDescription: `Practical relationship advice about ${req.body.keyword || 'relationships'} to help you navigate common challenges and build a stronger connection.`
         },
         note: "Using emergency fallback content due to unexpected error"
       });

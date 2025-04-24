@@ -1,0 +1,69 @@
+Upgrade the auto-blogging system to generate **1–2 high-quality articles per day** using a combination of GPT-4 (OpenAI) and Gemini (Google) models. The system should produce **SEO-optimized, rank-ready articles** in the love and relationship niche that follow best search engine practices.
+
+📌 PURPOSE:
+Generate blog posts that can **rank fast on Google and Bing** by applying all major on-page SEO techniques and publishing them automatically. These articles must be relevant, valuable, and written in a style that appeals to women seeking relationship advice.
+
+🧱 AI INTEGRATION:
+- Use GPT-4 or GPT-3.5 for core writing
+- Use Gemini to cross-check facts, suggest improvements, or enhance outline structure
+- Combine outputs for maximum quality and relevance
+
+📝 ARTICLE STRUCTURE & SEO REQUIREMENTS:
+
+1. 📏 **Length**: 900 to 1400 words per post
+
+2. 🖼 **Images**:
+   - 1 feature image (header banner)
+   - 2 in-content images (fetched using Unsplash or Pexels API based on topic/keyword)
+   - Include descriptive alt text + optimized filenames
+
+3. 🔗 **Internal Links**:
+   - Insert 1–2 links to the quiz (anchor text: “relationship quiz”, “what he’s thinking” etc.)
+   - Insert 1–2 links to lead magnet opt-ins (e.g., “Free guide to get him back”)
+
+4. 🌐 **External Links**:
+   - Add 1–2 links to **high-authority sites** in the love/relationship niche (e.g., PsychologyToday, Healthline, WebMD)
+   - Always open external links in a new tab and use `rel="nofollow"`
+
+5. 🏷️ **Meta & Tags**:
+   - Auto-generate meta title & meta description for each article (150–160 characters)
+   - Auto-generate 4–7 tags per article based on topic
+   - Auto-assign SEO-friendly slug (kebab-case based on keyword/title)
+
+6. 📑 **Schema Markup**:
+   - Use `Article` schema from [schema.org](https://schema.org/Article)
+   - Include:
+     - headline, description, image, author, datePublished, articleSection, keywords
+   - Implement JSON-LD in article HTML head or within CMS integration
+
+7. 🏗️ **Article Layout (HTML or Markdown)**:
+   Use SEO-friendly structure:
+   - **H1**: Main title of article
+   - **Intro paragraph** (enticing hook)
+   - **H2**: Major sections (e.g., “Why He Pulls Away”)
+   - **H3**: Supporting sub-points or psychology explanations
+   - Bullet points and numbered lists when needed
+   - End with a CTA block (e.g., “Try this free relationship quiz…”)
+
+8. 📈 **Other SEO Enhancements**:
+   - Use target keyword naturally in:
+     - Title, meta title, intro, H2s, image alt text, first 100 words, conclusion
+   - Use synonyms/semantic keywords (LSI terms)
+   - Ensure fast loading: compress images, lazy-load if applicable
+   - Optimize for mobile readability
+
+🗂 OUTPUT FORMAT:
+- Save as `.md` or `.html` file
+- Include metadata block (title, slug, description, tags, schema JSON-LD)
+- Automatically push to blog feed on publish
+
+⚙️ SCHEDULING:
+- Auto-publish 1 or 2 articles daily (cron or timestamp-based trigger)
+- Pull next unused keyword from `keywords.txt` or Firestore
+- Track which keywords have been used
+
+💡 OPTIONAL:
+- Add a manual “Generate Article” button in the admin dashboard
+- Allow admin to edit article before publish
+
+Let me know when ready, and I’ll provide the keyword list and Unsplash API key.
