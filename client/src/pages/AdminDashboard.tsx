@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   Card, 
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle 
+  CardTitle, 
+  CardFooter 
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import {
   BarChart,
   Bar,
@@ -21,14 +33,25 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { getQueryFn } from '@/lib/queryClient';
+import { getQueryFn, apiRequest, queryClient } from '@/lib/queryClient';
 import { 
   UserCheck, 
   FileText, 
   BarChart3, 
   Users, 
   ArrowUpRight, 
-  ArrowDownRight
+  ArrowDownRight,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  ExternalLink,
+  Pencil,
+  Save,
+  AlertCircle,
+  Link,
+  Calendar,
+  ChevronRight
 } from 'lucide-react';
 
 // Dashboard analytics data types
@@ -51,12 +74,55 @@ interface BlogAnalytics {
   keywordPerformance: Array<{ keyword: string; posts: number; views: number; clicks: number }>;
 }
 
+// Blog post types
+interface BlogPost {
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  keyword: string;
+  category: string;
+  publishedAt: string;
+  updatedAt: string | null;
+}
+
+interface BlogPostAnalytics {
+  id: number;
+  postId: number;
+  viewDate: string;
+  uniqueViews: number;
+  totalViews: number;
+  quizClicks: number;
+  referrers: Record<string, number>;
+}
+
+interface BlogPostWithAnalytics {
+  post: BlogPost;
+  analytics: BlogPostAnalytics | null;
+}
+
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#4CAF50', '#FF5722'];
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
-
+  const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  
+  // Form states for creating/editing posts
+  const [formData, setFormData] = useState({
+    title: '',
+    slug: '',
+    keyword: '',
+    category: 'Relationships',
+    content: ''
+  });
+  
+  const { toast } = useToast();
+  
   // Get the admin token from localStorage
   const token = localStorage.getItem('adminToken');
   
@@ -176,6 +242,234 @@ const AdminDashboard: React.FC = () => {
     ],
   };
 
+  // Fetch all blog posts for content management
+  const { data: blogPostsResponse, isLoading: postsLoading, refetch: refetchPosts } = useQuery({
+    queryKey: ['/api/admin/blog/posts'],
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/blog/posts', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    enabled: activeTab === 'content',
+  });
+  
+  // Get specific blog post
+  const { data: selectedPostResponse, isLoading: selectedPostLoading, refetch: refetchSelectedPost } = useQuery({
+    queryKey: ['/api/admin/blog/posts', selectedPostId],
+    queryFn: async () => {
+      if (!token || !selectedPostId) {
+        throw new Error('No authentication token or post ID found');
+      }
+      
+      const response = await fetch(`/api/admin/blog/posts/${selectedPostId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    enabled: !!selectedPostId,
+  });
+  
+  // Create blog post mutation
+  const createPostMutation = useMutation({
+    mutationFn: async (postData: Omit<BlogPost, 'id' | 'publishedAt' | 'updatedAt'>) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/blog/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(postData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create blog post');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Blog post created successfully',
+        variant: 'default',
+      });
+      refetchPosts();
+      setIsCreateDialogOpen(false);
+      resetFormData();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Update blog post mutation
+  const updatePostMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: Partial<Omit<BlogPost, 'id' | 'publishedAt' | 'updatedAt'>> }) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/admin/blog/posts/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update blog post');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Blog post updated successfully',
+        variant: 'default',
+      });
+      refetchPosts();
+      refetchSelectedPost();
+      setIsEditDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Delete blog post mutation
+  const deletePostMutation = useMutation({
+    mutationFn: async (id: number) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/admin/blog/posts/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete blog post');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Blog post deleted successfully',
+        variant: 'default',
+      });
+      refetchPosts();
+      setIsDeleteDialogOpen(false);
+      setSelectedPostId(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Helper functions
+  const resetFormData = () => {
+    setFormData({
+      title: '',
+      slug: '',
+      keyword: '',
+      category: 'Relationships',
+      content: ''
+    });
+  };
+  
+  // Handler for edit post
+  const handleEditPost = (post: BlogPost) => {
+    setSelectedPostId(post.id);
+    setFormData({
+      title: post.title,
+      slug: post.slug,
+      keyword: post.keyword,
+      category: post.category,
+      content: post.content
+    });
+    setIsEditDialogOpen(true);
+  };
+  
+  // Handler for view post
+  const handleViewPost = (postId: number) => {
+    setSelectedPostId(postId);
+    setIsViewDialogOpen(true);
+  };
+  
+  // Handler for delete post
+  const handleDeletePost = (postId: number) => {
+    setSelectedPostId(postId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Auto-generate slug from title
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '') // Remove special chars
+      .replace(/\s+/g, '-');   // Replace spaces with hyphens
+  };
+  
+  // Handle title change and auto-generate slug
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const title = e.target.value;
+    setFormData({
+      ...formData,
+      title,
+      slug: generateSlug(title)
+    });
+  };
+  
+  // Extract blog post data
+  const blogPosts: BlogPost[] = blogPostsResponse?.data || [];
+  const selectedPostWithAnalytics: BlogPostWithAnalytics | undefined = selectedPostResponse?.data;
+  
   // Use real data if available, fallback to mock data for development
   const quizData = quizAnalytics || mockQuizAnalytics;
   const blogData = blogAnalytics || mockBlogAnalytics;
@@ -188,10 +482,11 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="quiz">Quiz Analytics</TabsTrigger>
           <TabsTrigger value="blog">Blog Analytics</TabsTrigger>
+          <TabsTrigger value="content">Content Management</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -620,6 +915,388 @@ const AdminDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        {/* Content Management Tab */}
+        <TabsContent value="content" className="space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">Blog Content Management</h2>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => resetFormData()} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" /> Add New Post
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Blog Post</DialogTitle>
+                  <DialogDescription>
+                    Create a new blog post that will be published on your website
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input 
+                        id="title" 
+                        value={formData.title} 
+                        onChange={handleTitleChange} 
+                        placeholder="How to Create Emotional Intimacy" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="slug">Slug</Label>
+                      <Input 
+                        id="slug" 
+                        value={formData.slug} 
+                        onChange={(e) => setFormData({...formData, slug: e.target.value})} 
+                        placeholder="how-to-create-emotional-intimacy" 
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="keyword">Keyword</Label>
+                      <Input 
+                        id="keyword" 
+                        value={formData.keyword} 
+                        onChange={(e) => setFormData({...formData, keyword: e.target.value})} 
+                        placeholder="emotional intimacy" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Category</Label>
+                      <Select 
+                        value={formData.category} 
+                        onValueChange={(value) => setFormData({...formData, category: value})}
+                      >
+                        <SelectTrigger id="category">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Relationships">Relationships</SelectItem>
+                          <SelectItem value="Communication">Communication</SelectItem>
+                          <SelectItem value="Attraction">Attraction</SelectItem>
+                          <SelectItem value="Dating">Dating</SelectItem>
+                          <SelectItem value="Marriage">Marriage</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="content">Content</Label>
+                    <Textarea 
+                      id="content" 
+                      value={formData.content} 
+                      onChange={(e) => setFormData({...formData, content: e.target.value})} 
+                      placeholder="Write your blog post content here..." 
+                      className="min-h-[300px] resize-y"
+                    />
+                  </div>
+                </div>
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                  <Button 
+                    onClick={() => createPostMutation.mutate(formData)}
+                    disabled={!formData.title || !formData.content || !formData.keyword}
+                  >
+                    {createPostMutation.isPending ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Creating...</span>
+                      </div>
+                    ) : 'Create Post'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+          {/* Blog posts table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Blog Posts</CardTitle>
+              <CardDescription>Manage all blog posts on your website</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {postsLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : blogPosts.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No blog posts yet</h3>
+                  <p className="text-muted-foreground mb-4">Start creating engaging content for your audience</p>
+                  <Button onClick={() => setIsCreateDialogOpen(true)}>Create Your First Post</Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableCaption>A list of all your blog posts</TableCaption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[350px]">Title</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Published</TableHead>
+                        <TableHead>Views</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {blogPosts.map((post) => (
+                        <TableRow key={post.id}>
+                          <TableCell className="font-medium">{post.title}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{post.category}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(post.publishedAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {/* We'd use real analytics here, using mock for now */}
+                            {Math.floor(Math.random() * 1000) + 100}
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => handleViewPost(post.id)}>
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleEditPost(post)}>
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDeletePost(post.id)}>
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Edit dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Blog Post</DialogTitle>
+                <DialogDescription>
+                  Make changes to your blog post
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-title">Title</Label>
+                    <Input 
+                      id="edit-title" 
+                      value={formData.title} 
+                      onChange={handleTitleChange} 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-slug">Slug</Label>
+                    <Input 
+                      id="edit-slug" 
+                      value={formData.slug} 
+                      onChange={(e) => setFormData({...formData, slug: e.target.value})} 
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-keyword">Keyword</Label>
+                    <Input 
+                      id="edit-keyword" 
+                      value={formData.keyword} 
+                      onChange={(e) => setFormData({...formData, keyword: e.target.value})} 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-category">Category</Label>
+                    <Select 
+                      value={formData.category} 
+                      onValueChange={(value) => setFormData({...formData, category: value})}
+                    >
+                      <SelectTrigger id="edit-category">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Relationships">Relationships</SelectItem>
+                        <SelectItem value="Communication">Communication</SelectItem>
+                        <SelectItem value="Attraction">Attraction</SelectItem>
+                        <SelectItem value="Dating">Dating</SelectItem>
+                        <SelectItem value="Marriage">Marriage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-content">Content</Label>
+                  <Textarea 
+                    id="edit-content" 
+                    value={formData.content} 
+                    onChange={(e) => setFormData({...formData, content: e.target.value})} 
+                    className="min-h-[300px] resize-y"
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                <Button 
+                  onClick={() => updatePostMutation.mutate({
+                    id: selectedPostId as number,
+                    data: formData
+                  })}
+                  disabled={!formData.title || !formData.content || !formData.keyword || !selectedPostId}
+                >
+                  {updatePostMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Updating...</span>
+                    </div>
+                  ) : 'Update Post'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* View dialog */}
+          <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              {selectedPostLoading ? (
+                <div className="flex justify-center items-center py-10">
+                  <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : selectedPostWithAnalytics ? (
+                <>
+                  <DialogHeader>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <Badge variant="outline">{selectedPostWithAnalytics.post.category}</Badge>
+                      <span>·</span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(selectedPostWithAnalytics.post.publishedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <DialogTitle className="text-2xl">{selectedPostWithAnalytics.post.title}</DialogTitle>
+                    <DialogDescription>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="secondary">Keyword: {selectedPostWithAnalytics.post.keyword}</Badge>
+                        <Badge variant="secondary">Slug: {selectedPostWithAnalytics.post.slug}</Badge>
+                      </div>
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="mt-4 space-y-6">
+                    <div className="prose max-w-none dark:prose-invert">
+                      {selectedPostWithAnalytics.post.content.split("\n").map((paragraph, idx) => (
+                        <p key={idx}>{paragraph}</p>
+                      ))}
+                    </div>
+                    
+                    {selectedPostWithAnalytics.analytics && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Post Analytics</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <div className="text-sm text-muted-foreground">Total Views</div>
+                              <div className="text-2xl font-bold">{selectedPostWithAnalytics.analytics.totalViews}</div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="text-sm text-muted-foreground">Unique Views</div>
+                              <div className="text-2xl font-bold">{selectedPostWithAnalytics.analytics.uniqueViews}</div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="text-sm text-muted-foreground">Quiz Clicks</div>
+                              <div className="text-2xl font-bold">{selectedPostWithAnalytics.analytics.quizClicks}</div>
+                            </div>
+                          </div>
+                          
+                          {Object.keys(selectedPostWithAnalytics.analytics.referrers).length > 0 && (
+                            <>
+                              <div className="mt-6 mb-2 font-medium">Link Clicks</div>
+                              <div className="space-y-2">
+                                {Object.entries(selectedPostWithAnalytics.analytics.referrers).map(([url, count], idx) => (
+                                  <div key={idx} className="flex justify-between items-center">
+                                    <div className="text-sm truncate max-w-[400px]">
+                                      <Link className="h-4 w-4 inline mr-2" />
+                                      {url}
+                                    </div>
+                                    <Badge>{count} clicks</Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                    <Button onClick={() => {
+                      setIsViewDialogOpen(false);
+                      handleEditPost(selectedPostWithAnalytics.post);
+                    }}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit Post
+                    </Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <div className="text-center py-10">
+                  <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">Post not found</h3>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+          
+          {/* Delete confirmation dialog */}
+          <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the blog post
+                  and all its analytics data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deletePostMutation.mutate(selectedPostId as number)}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  {deletePostMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Deleting...</span>
+                    </div>
+                  ) : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
       </Tabs>
     </div>
