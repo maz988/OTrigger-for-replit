@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import RichTextEditor from '@/components/RichTextEditor';
 import {
   BarChart,
   Bar,
@@ -989,13 +990,15 @@ const AdminDashboard: React.FC = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="content">Content</Label>
-                    <Textarea 
-                      id="content" 
+                    <RichTextEditor 
                       value={formData.content} 
-                      onChange={(e) => setFormData({...formData, content: e.target.value})} 
-                      placeholder="Write your blog post content here..." 
-                      className="min-h-[300px] resize-y"
+                      onChange={(value) => setFormData({...formData, content: value})} 
+                      placeholder="Write your blog post content here..."
+                      minHeight="400px"
                     />
+                    <p className="text-xs text-gray-500">
+                      Use the toolbar to format text, add links, images, and buttons to make your content engaging.
+                    </p>
                   </div>
                 </div>
                 
@@ -1146,12 +1149,14 @@ const AdminDashboard: React.FC = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="edit-content">Content</Label>
-                  <Textarea 
-                    id="edit-content" 
+                  <RichTextEditor 
                     value={formData.content} 
-                    onChange={(e) => setFormData({...formData, content: e.target.value})} 
-                    className="min-h-[300px] resize-y"
+                    onChange={(value) => setFormData({...formData, content: value})} 
+                    minHeight="400px"
                   />
+                  <p className="text-xs text-gray-500">
+                    Use the toolbar to format text, add links, images, and buttons to make your content engaging.
+                  </p>
                 </div>
               </div>
               
