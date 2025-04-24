@@ -124,6 +124,8 @@ const RichTextEditor = ({
 
   // Track word & character count - order of hooks matters
   useEffect(() => {
+    if (!mounted) return; // Skip this effect until mounted
+    
     // Strip HTML and count words
     if (value) {
       const textOnly = value.replace(/<[^>]*>/g, '');
@@ -133,7 +135,7 @@ const RichTextEditor = ({
       setCharacterCount(0);
       setWordCount(0);
     }
-  }, [value]);
+  }, [value, mounted]);
 
   // Custom toolbar handlers
   const imageHandler = () => {
@@ -325,10 +327,12 @@ const RichTextEditor = ({
 
   // Sync HTML source with editor value
   useEffect(() => {
+    if (!mounted) return; // Skip until mounted
+    
     if (activeTab === 'visual') {
       setHtmlSource(value);
     }
-  }, [value, activeTab]);
+  }, [value, activeTab, mounted]);
 
   // Handle HTML source change
   const handleHtmlSourceChange = (newHtmlSource: string) => {
