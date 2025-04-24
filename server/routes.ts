@@ -2052,22 +2052,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
             
-            const testOpenAI = new OpenAI({ apiKey });
-            const response = await testOpenAI.chat.completions.create({
-              model: "gpt-4o",
-              messages: [{ role: "user", content: "Hello, just testing the connection" }],
-              max_tokens: 10
-            });
-            
-            if (response.choices && response.choices.length > 0) {
+            // Use a simple models list endpoint to verify the API key
+            try {
+              const testOpenAI = new OpenAI({ apiKey });
+              const response = await testOpenAI.models.list();
+              
+              // If we get here, the API key is valid
               return res.status(200).json({
                 success: true,
                 message: "Successfully connected to OpenAI API!"
               });
-            } else {
-              throw new Error("Invalid response from OpenAI API");
+            } catch (apiError: any) {
+              console.error("OpenAI API error:", apiError);
+              // Check if it's an authentication error
+              if (apiError.status === 401) {
+                return res.status(400).json({
+                  success: false,
+                  error: "Invalid API key. Please check your OpenAI API key and try again."
+                });
+              } else {
+                throw apiError; // Re-throw for the outer catch block
+              }
             }
           } catch (error) {
+            console.error("Error testing OpenAI connection:", error);
             return res.status(400).json({
               success: false,
               error: error instanceof Error ? error.message : "Unknown error connecting to OpenAI"
@@ -2076,7 +2084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         case 'gemini': {
-          // Test Gemini connection
+          // Test Gemini connection - using a simpler approach
           try {
             const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) {
@@ -2086,32 +2094,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
             
-            // First try to check if the API key is valid by using a safer endpoint
-            const modelListResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-            );
-            
-            if (!modelListResponse.ok) {
-              const errorText = await modelListResponse.text();
-              try {
-                // Try to parse as JSON, but handle gracefully if it's not valid JSON
-                const errorData = JSON.parse(errorText);
-                throw new Error(errorData.error?.message || `API error: ${modelListResponse.status}`);
-              } catch (jsonError) {
-                // If we can't parse the error as JSON, just use the status code
-                throw new Error(`API returned status ${modelListResponse.status}`);
+            // Check if we can access the models endpoint (this is a simpler, reliable request that works with valid keys)
+            try {
+              const response = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+                { method: 'GET' }
+              );
+              
+              if (response.ok) {
+                return res.status(200).json({
+                  success: true,
+                  message: "Successfully connected to Google Gemini API!"
+                });
+              } else {
+                // For API errors, get the status code
+                if (response.status === 400) {
+                  return res.status(400).json({
+                    success: false,
+                    error: "Invalid API key or request format"
+                  });
+                } else if (response.status === 403) {
+                  return res.status(400).json({
+                    success: false,
+                    error: "API key doesn't have permission to access Gemini API"
+                  });
+                } else {
+                  return res.status(400).json({
+                    success: false,
+                    error: `API error: ${response.status}`
+                  });
+                }
               }
+            } catch (apiError) {
+              console.error("Error checking Gemini API:", apiError);
+              return res.status(400).json({
+                success: false,
+                error: "Network error when connecting to Gemini API"
+              });
             }
-            
-            return res.status(200).json({
-              success: true,
-              message: "Successfully connected to Google Gemini API!"
-            });
-            
           } catch (error) {
+            console.error("Error in Gemini connection test:", error);
             return res.status(400).json({
               success: false,
-              error: error instanceof Error ? error.message : "Unknown error connecting to Gemini"
+              error: "Failed to check Gemini API connection"
             });
           }
         }
