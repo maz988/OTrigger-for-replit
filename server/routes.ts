@@ -6,6 +6,8 @@ import * as bcrypt from "bcrypt";
 import express from "express";
 import cron from 'node-cron';
 import { randomBytes } from 'crypto';
+import fetch from 'node-fetch';
+import { InsertSystemSetting } from '@shared/schema';
 
 // Initialize OpenAI
 const openai = new OpenAI({ 
@@ -1887,6 +1889,329 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (err: any) {
       console.error(`Error getting dashboard overview: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Helper functions for settings management
+  function getCategoryForSetting(settingKey: string): 'ai' | 'image' | 'email' | 'storage' | 'blog' | 'other' {
+    if (settingKey.includes('AI') || settingKey.includes('OPENAI') || settingKey.includes('GEMINI')) {
+      return 'ai';
+    } else if (settingKey.includes('IMAGE') || settingKey.includes('PEXELS') || settingKey.includes('UNSPLASH')) {
+      return 'image';
+    } else if (settingKey.includes('EMAIL') || settingKey.includes('MAIL') || settingKey.includes('SENDGRID')) {
+      return 'email';
+    } else if (settingKey.includes('STORAGE') || settingKey.includes('S3') || settingKey.includes('FILE')) {
+      return 'storage';
+    } else if (settingKey.includes('BLOG') || settingKey.includes('POST') || settingKey.includes('KEYWORD')) {
+      return 'blog';
+    } else {
+      return 'other';
+    }
+  }
+  
+  function getDescriptionForSetting(settingKey: string): string {
+    const descriptions: Record<string, string> = {
+      'openaiApiKey': 'OpenAI API Key for AI content generation',
+      'geminiApiKey': 'Google Gemini API Key for AI content enhancement',
+      'defaultAiProvider': 'Default AI provider to use for content generation',
+      'pexelsApiKey': 'Pexels API Key for blog images',
+      'unsplashApiKey': 'Unsplash API Key for alternative blog images',
+      'defaultImageProvider': 'Default image provider to use',
+      'sendgridApiKey': 'SendGrid API Key for email delivery',
+      'mailerliteApiKey': 'MailerLite API Key for email marketing',
+      'brevoApiKey': 'Brevo API Key for alternative email delivery',
+      'activeEmailService': 'Currently active email service provider',
+      'senderEmail': 'Default sender email address',
+      'leadMagnetFolder': 'Folder where lead magnets are stored',
+      'autoEmailDelivery': 'Enable automatic email delivery for lead magnets',
+      'useExternalStorage': 'Use external storage for media assets',
+      'externalStorageProvider': 'External storage provider to use',
+      'externalStorageKey': 'API Key or configuration for external storage',
+      'blogKeywordsFile': 'File path for blog keywords list',
+      'autoBlogPublishing': 'Enable automatic blog post generation and publishing'
+    };
+    
+    return descriptions[settingKey] || `Setting for ${settingKey}`;
+  }
+  
+  // Settings Management Endpoints
+  app.get("/api/admin/settings", authenticateAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAllSettings();
+      
+      // Map the settings to match the ServiceSettings interface that the frontend expects
+      const mappedSettings = settings.map(setting => ({
+        id: setting.id.toString(),
+        name: setting.description || setting.settingKey,
+        value: setting.settingValue || '',
+        active: setting.settingType === 'boolean' ? setting.settingValue === 'true' : true,
+        category: getCategoryForSetting(setting.settingKey),
+        updatedAt: setting.lastUpdated
+      }));
+      
+      res.status(200).json({
+        success: true,
+        data: mappedSettings
+      });
+    } catch (err: any) {
+      console.error(`Error retrieving settings: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/settings", authenticateAdmin, async (req, res) => {
+    try {
+      const settingsData = req.body;
+      
+      // Update each setting in the database
+      for (const [key, value] of Object.entries(settingsData)) {
+        const existing = await storage.getSettingByKey(key);
+        
+        // Convert boolean values to strings for storage
+        const stringValue = typeof value === 'boolean' ? value.toString() : value?.toString() || '';
+        
+        if (existing) {
+          await storage.updateSetting(key, stringValue);
+        } else {
+          const settingType = typeof value === 'boolean' ? 'boolean' : 'string';
+          await storage.saveSetting({
+            settingKey: key,
+            settingValue: stringValue,
+            settingType,
+            description: getDescriptionForSetting(key)
+          });
+        }
+      }
+      
+      // Update environment variables when applicable
+      if (settingsData.openaiApiKey && process.env.OPENAI_API_KEY !== settingsData.openaiApiKey) {
+        process.env.OPENAI_API_KEY = settingsData.openaiApiKey;
+        
+        // Reinitialize OpenAI with the new API key if needed
+        if (settingsData.openaiApiKey !== 'default_key') {
+          try {
+            const newOpenAI = new OpenAI({ apiKey: settingsData.openaiApiKey });
+            // Test if the key works before replacing
+            await newOpenAI.chat.completions.create({
+              model: "gpt-4o",
+              messages: [{ role: "user", content: "Hello, just testing the connection" }],
+              max_tokens: 10
+            });
+            // Only update if no error
+            openai.apiKey = settingsData.openaiApiKey;
+          } catch (error) {
+            console.warn("Error testing new OpenAI API key, not updating:", error);
+          }
+        }
+      }
+      
+      // Update Pexels API key
+      if (settingsData.pexelsApiKey && process.env.PEXELS_API_KEY !== settingsData.pexelsApiKey) {
+        process.env.PEXELS_API_KEY = settingsData.pexelsApiKey;
+      }
+      
+      // Update Gemini API key
+      if (settingsData.geminiApiKey && process.env.GEMINI_API_KEY !== settingsData.geminiApiKey) {
+        process.env.GEMINI_API_KEY = settingsData.geminiApiKey;
+      }
+      
+      res.status(200).json({
+        success: true,
+        message: "Settings updated successfully"
+      });
+    } catch (err: any) {
+      console.error(`Error updating settings: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Test connection to a service
+  app.post("/api/admin/settings/test/:serviceType", authenticateAdmin, async (req, res) => {
+    try {
+      const { serviceType } = req.params;
+      
+      switch(serviceType) {
+        case 'openai': {
+          // Test OpenAI connection
+          try {
+            const apiKey = process.env.OPENAI_API_KEY;
+            if (!apiKey || apiKey === 'default_key') {
+              return res.status(400).json({
+                success: false,
+                error: "API key not configured"
+              });
+            }
+            
+            const testOpenAI = new OpenAI({ apiKey });
+            const response = await testOpenAI.chat.completions.create({
+              model: "gpt-4o",
+              messages: [{ role: "user", content: "Hello, just testing the connection" }],
+              max_tokens: 10
+            });
+            
+            if (response.choices && response.choices.length > 0) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to OpenAI API!"
+              });
+            } else {
+              throw new Error("Invalid response from OpenAI API");
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to OpenAI"
+            });
+          }
+        }
+        
+        case 'gemini': {
+          // Test Gemini connection
+          try {
+            const apiKey = process.env.GEMINI_API_KEY;
+            if (!apiKey) {
+              return res.status(400).json({
+                success: false,
+                error: "API key not configured"
+              });
+            }
+            
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, 
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: "Hello, just testing the connection" }] }]
+                })
+              }
+            );
+            
+            const data = await response.json();
+            
+            if (response.ok && data.candidates) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to Google Gemini API!"
+              });
+            } else {
+              throw new Error(data.error?.message || "Invalid response from Gemini API");
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to Gemini"
+            });
+          }
+        }
+        
+        case 'pexels': {
+          // Test Pexels connection
+          try {
+            const apiKey = process.env.PEXELS_API_KEY;
+            if (!apiKey) {
+              return res.status(400).json({
+                success: false,
+                error: "API key not configured"
+              });
+            }
+            
+            const response = await fetch('https://api.pexels.com/v1/search?query=relationship&per_page=1', {
+              headers: { Authorization: apiKey }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.photos) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to Pexels API!"
+              });
+            } else {
+              throw new Error(data.error || "Invalid response from Pexels API");
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to Pexels"
+            });
+          }
+        }
+        
+        case 'unsplash': {
+          // Test Unsplash connection
+          try {
+            const apiKey = req.body.apiKey || process.env.UNSPLASH_API_KEY;
+            if (!apiKey) {
+              return res.status(400).json({
+                success: false,
+                error: "API key not configured"
+              });
+            }
+            
+            const response = await fetch(
+              `https://api.unsplash.com/search/photos?query=relationship&per_page=1&client_id=${apiKey}`
+            );
+            
+            const data = await response.json();
+            
+            if (response.ok && data.results) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to Unsplash API!"
+              });
+            } else {
+              throw new Error(data.errors?.[0] || "Invalid response from Unsplash API");
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to Unsplash"
+            });
+          }
+        }
+        
+        case 'sendgrid': {
+          // We'll just validate the API key format since we can't easily test without sending
+          const apiKey = req.body.apiKey || process.env.SENDGRID_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "API key not configured"
+            });
+          }
+          
+          if (apiKey.startsWith('SG.') && apiKey.length > 40) {
+            return res.status(200).json({
+              success: true,
+              message: "SendGrid API key appears valid. Full validation happens when sending emails."
+            });
+          } else {
+            return res.status(400).json({
+              success: false,
+              error: "SendGrid API key format appears invalid. It should start with 'SG.'"
+            });
+          }
+        }
+        
+        default:
+          return res.status(400).json({
+            success: false,
+            error: `Testing for service type "${serviceType}" is not supported`
+          });
+      }
+    } catch (err: any) {
+      console.error(`Error testing service connection: ${err.message}`);
       res.status(500).json({
         success: false,
         error: err.message
