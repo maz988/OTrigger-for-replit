@@ -1,54 +1,77 @@
-import fetch from 'node-fetch';
-import { EmailMessage } from '../emailDispatcher';
+/**
+ * MailerLite Email Provider
+ * 
+ * This service handles email sending through MailerLite API
+ */
 
-// MailerLite API URLs
-const API_BASE_URL = 'https://api.mailerlite.com/api/v2';
-const SUBSCRIBERS_URL = `${API_BASE_URL}/subscribers`;
-const CAMPAIGNS_URL = `${API_BASE_URL}/campaigns`;
+import { EmailMessage } from '../emailTemplates';
+
+/**
+ * Sanitize MailerLite API key for logging (to avoid exposing the full key in logs)
+ * @param apiKey MailerLite API key
+ * @returns Safely redacted API key for logging
+ */
+export function sanitizeApiKey(apiKey: string): string {
+  if (!apiKey) return '';
+  if (apiKey.length <= 8) return '***';
+  return apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4);
+}
+
+/**
+ * Validate MailerLite API key format (minimal validation)
+ * @param apiKey The API key to validate
+ * @returns True if the key appears to be valid
+ */
+export function validateApiKey(apiKey: string): boolean {
+  // MailerLite API keys are 64 character alphanumeric strings
+  return /^[a-zA-Z0-9]{64}$/.test(apiKey);
+}
 
 /**
  * Send email using MailerLite
+ * @param message Email message to send
+ * @param apiKey MailerLite API key
+ * @returns Success response with message ID or error
  */
 export async function sendWithMailerLite(
   message: EmailMessage,
   apiKey: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    // First, check if subscriber exists, or create one
-    const subscriber = await getOrCreateSubscriber(
-      message.to,
-      message.personalizations?.firstName || '',
-      message.personalizations?.lastName || '',
-      apiKey
-    );
+    // First, get or create the subscriber
+    const subscriberResult = await getOrCreateSubscriber(message.to, apiKey);
     
-    if (!subscriber.success) {
-      return { success: false, error: subscriber.error };
+    if (!subscriberResult.success) {
+      return subscriberResult;
     }
     
-    // Create a campaign to send the email
-    const campaign = await createCampaign(
-      message.subject,
-      message.from,
-      message.html,
-      apiKey
-    );
-    
-    if (!campaign.success) {
-      return { success: false, error: campaign.error };
+    // Now create a campaign for this specific email
+    const subscriberId = subscriberResult.subscriberId;
+    if (!subscriberId) {
+      return {
+        success: false,
+        error: 'Failed to get subscriber ID from MailerLite'
+      };
     }
     
-    // Send the campaign to the specific subscriber
-    const result = await sendCampaign(
-      campaign.campaignId,
-      [message.to],
-      apiKey
-    );
+    // Create a campaign
+    const campaignResult = await createCampaign(message, apiKey);
     
-    return result;
+    if (!campaignResult.success) {
+      return campaignResult;
+    }
+    
+    // Send the campaign
+    const campaignId = campaignResult.campaignId;
+    const sendResult = await sendCampaign(campaignId, [subscriberId], apiKey);
+    
+    return sendResult;
   } catch (error) {
-    console.error('MailerLite error:', error);
-    return { success: false, error: error.message || 'Failed to send email with MailerLite' };
+    console.error('Error sending email with MailerLite:', error);
+    return {
+      success: false,
+      error: `MailerLite exception: ${error.message}`
+    };
   }
 }
 
@@ -56,37 +79,81 @@ export async function sendWithMailerLite(
  * Get or create subscriber in MailerLite
  */
 async function getOrCreateSubscriber(
-  email: string,
-  firstName: string,
-  lastName: string,
+  email: string, 
   apiKey: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ 
+  success: boolean; 
+  subscriberId?: string; 
+  error?: string 
+}> {
   try {
-    const response = await fetch(SUBSCRIBERS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-MailerLite-ApiKey': apiKey
-      },
-      body: JSON.stringify({
-        email,
-        name: firstName,
-        fields: {
-          last_name: lastName
-        },
-        resubscribe: true
-      })
-    });
+    // First, try to find the subscriber
+    const searchResponse = await fetch(
+      `https://connect.mailerlite.com/api/subscribers?filter[email]=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        }
+      }
+    );
     
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return { success: false, error: data.error || 'Failed to create subscriber' };
+    if (searchResponse.ok) {
+      const data = await searchResponse.json();
+      
+      if (data.data && data.data.length > 0) {
+        // Subscriber exists
+        return {
+          success: true,
+          subscriberId: data.data[0].id
+        };
+      }
+      
+      // Subscriber doesn't exist, create one
+      const createResponse = await fetch(
+        'https://connect.mailerlite.com/api/subscribers',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            email,
+            status: 'active'
+          })
+        }
+      );
+      
+      if (createResponse.ok) {
+        const data = await createResponse.json();
+        return {
+          success: true,
+          subscriberId: data.data.id
+        };
+      } else {
+        const errorData = await createResponse.json();
+        return {
+          success: false,
+          error: `MailerLite API error: ${createResponse.status} - ${JSON.stringify(errorData)}`
+        };
+      }
+    } else {
+      const errorData = await searchResponse.json();
+      return {
+        success: false,
+        error: `MailerLite API error: ${searchResponse.status} - ${JSON.stringify(errorData)}`
+      };
     }
-    
-    return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error('Error getting or creating subscriber in MailerLite:', error);
+    return {
+      success: false,
+      error: `MailerLite exception: ${error.message}`
+    };
   }
 }
 
@@ -94,35 +161,69 @@ async function getOrCreateSubscriber(
  * Create a campaign in MailerLite
  */
 async function createCampaign(
-  subject: string,
-  from: string,
-  html: string,
+  message: EmailMessage,
   apiKey: string
-): Promise<{ success: boolean; campaignId?: number; error?: string }> {
+): Promise<{ 
+  success: boolean; 
+  campaignId?: string; 
+  error?: string 
+}> {
   try {
-    const response = await fetch(CAMPAIGNS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-MailerLite-ApiKey': apiKey
-      },
-      body: JSON.stringify({
-        subject,
-        from: from,
-        type: 'regular',
-        html
-      })
-    });
+    // Parse from name and email from the from field
+    let fromName = 'Obsession Trigger';
+    let fromEmail = message.from;
     
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return { success: false, error: data.error || 'Failed to create campaign' };
+    const fromMatch = message.from.match(/(.+?)\s*<(.+?)>/);
+    if (fromMatch) {
+      fromName = fromMatch[1].trim();
+      fromEmail = fromMatch[2];
     }
     
-    return { success: true, campaignId: data.id };
+    const campaignResponse = await fetch(
+      'https://connect.mailerlite.com/api/campaigns',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          name: `${message.subject} (${new Date().toISOString()})`,
+          type: 'regular',
+          emails: [
+            {
+              subject: message.subject,
+              from_name: fromName,
+              from_email: fromEmail,
+              content: {
+                html: message.html
+              }
+            }
+          ]
+        })
+      }
+    );
+    
+    if (campaignResponse.ok) {
+      const data = await campaignResponse.json();
+      return {
+        success: true,
+        campaignId: data.data.id
+      };
+    } else {
+      const errorData = await campaignResponse.json();
+      return {
+        success: false,
+        error: `MailerLite API error: ${campaignResponse.status} - ${JSON.stringify(errorData)}`
+      };
+    }
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error('Error creating campaign in MailerLite:', error);
+    return {
+      success: false,
+      error: `MailerLite exception: ${error.message}`
+    };
   }
 }
 
@@ -130,92 +231,97 @@ async function createCampaign(
  * Send a campaign to specific subscribers
  */
 async function sendCampaign(
-  campaignId: number,
-  emails: string[],
+  campaignId: string,
+  subscriberIds: string[],
   apiKey: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ 
+  success: boolean; 
+  messageId?: string; 
+  error?: string 
+}> {
   try {
-    const response = await fetch(`${CAMPAIGNS_URL}/${campaignId}/actions/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-MailerLite-ApiKey': apiKey
-      },
-      body: JSON.stringify({
-        filter: {
-          type: 'email',
-          emails
-        }
-      })
-    });
+    const sendResponse = await fetch(
+      `https://connect.mailerlite.com/api/campaigns/${campaignId}/schedule`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          delivery: 'instant',
+          subscriber_ids: subscriberIds
+        })
+      }
+    );
     
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return { success: false, error: data.error || 'Failed to send campaign' };
+    if (sendResponse.ok) {
+      const data = await sendResponse.json();
+      console.log(`MailerLite campaign ${campaignId} scheduled successfully`);
+      return {
+        success: true,
+        messageId: data.data.id
+      };
+    } else {
+      const errorData = await sendResponse.json();
+      return {
+        success: false,
+        error: `MailerLite API error: ${sendResponse.status} - ${JSON.stringify(errorData)}`
+      };
     }
-    
-    return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error('Error sending campaign in MailerLite:', error);
+    return {
+      success: false,
+      error: `MailerLite exception: ${error.message}`
+    };
   }
 }
 
 /**
- * Validate MailerLite API key format
- */
-export function validateApiKey(apiKey: string): boolean {
-  // MailerLite API keys are alphanumeric and have a specific length
-  const apiKeyRegex = /^[a-zA-Z0-9]{32}$/;
-  return apiKeyRegex.test(apiKey);
-}
-
-/**
  * Test MailerLite connection with API key
+ * @param apiKey The API key to test
+ * @returns Success response or error
  */
 export async function testConnection(apiKey: string): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
-    // Check API key format
+    // API key format validation
     if (!validateApiKey(apiKey)) {
-      return { 
-        success: false, 
-        error: 'Invalid MailerLite API key format. It should be a 32-character alphanumeric string.' 
+      return {
+        success: false,
+        error: 'Invalid MailerLite API key format. It should be a 64 character alphanumeric string.'
       };
     }
-    
-    // Test with a simple API call to get account info
-    const response = await fetch(`${API_BASE_URL}/me`, {
+
+    // Test API key by making a request to the MailerLite API
+    const response = await fetch('https://connect.mailerlite.com/api/subscribers?limit=1', {
       method: 'GET',
       headers: {
-        'X-MailerLite-ApiKey': apiKey
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       }
     });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      if (response.status === 401) {
-        return { 
-          success: false, 
-          error: 'Invalid MailerLite API key. Please check your credentials.' 
-        };
-      } else {
-        return { 
-          success: false, 
-          error: data.error || 'Failed to connect to MailerLite API' 
-        };
-      }
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        success: true,
+        message: `Successfully connected to MailerLite API! Found ${data.meta?.total || 0} subscribers.`
+      };
+    } else {
+      const errorData = await response.json();
+      console.error('MailerLite API test error:', errorData);
+      return {
+        success: false,
+        error: `MailerLite API error: ${response.status} - ${JSON.stringify(errorData)}`
+      };
     }
-    
-    return { 
-      success: true, 
-      message: `MailerLite API key is valid. Connected to account: ${data.account.company || 'Unknown'}` 
-    };
   } catch (error) {
-    console.error('MailerLite test connection error:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Failed to connect to MailerLite API' 
+    console.error('Error testing MailerLite connection:', error);
+    return {
+      success: false,
+      error: `MailerLite connection error: ${error.message}`
     };
   }
 }

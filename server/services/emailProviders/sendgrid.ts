@@ -1,138 +1,164 @@
-import sgMail from '@sendgrid/mail';
-import { EmailMessage } from '../emailDispatcher';
+/**
+ * SendGrid Email Provider
+ * 
+ * This service handles email sending through SendGrid API
+ */
+
+import { EmailMessage } from '../emailTemplates';
 
 /**
- * Create SendGrid transporter with API key
+ * Sanitize SendGrid API key for logging (to avoid exposing the full key in logs)
+ * @param apiKey SendGrid API key
+ * @returns Safely redacted API key for logging
  */
-export function createTransporter(apiKey: string) {
-  sgMail.setApiKey(apiKey);
-  return sgMail;
+export function sanitizeApiKey(apiKey: string): string {
+  if (!apiKey) return '';
+  if (apiKey.length <= 8) return '***';
+  return apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4);
+}
+
+/**
+ * Validate SendGrid API key format (minimal validation)
+ * @param apiKey The API key to validate
+ * @returns True if the key appears to be valid
+ */
+export function validateApiKey(apiKey: string): boolean {
+  return /^SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}$/.test(apiKey);
 }
 
 /**
  * Send email using SendGrid
+ * @param message Email message to send
+ * @param apiKey SendGrid API key
+ * @returns Success response with message ID or error
  */
 export async function sendWithSendGrid(
-  message: EmailMessage, 
+  message: EmailMessage,
   apiKey: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    // Set API key
-    sgMail.setApiKey(apiKey);
-    
-    // Format message for SendGrid
-    const sgMessage = {
-      to: message.to,
-      from: message.from,
-      subject: message.subject,
-      text: message.text,
-      html: message.html,
+    // Configure request to SendGrid API
+    const body = {
+      personalizations: [
+        {
+          to: [{ email: message.to }],
+          subject: message.subject,
+        },
+      ],
+      from: { email: message.from.match(/<(.+)>$/)?.[1] || message.from },
+      content: [
+        {
+          type: 'text/plain',
+          value: message.text,
+        },
+        {
+          type: 'text/html',
+          value: message.html,
+        },
+      ],
     };
-    
+
     // Add attachments if present
     if (message.attachments && message.attachments.length > 0) {
-      sgMessage.attachments = message.attachments.map(attachment => ({
+      body['attachments'] = message.attachments.map(attachment => ({
+        content: Buffer.from(attachment.path).toString('base64'),
         filename: attachment.filename,
-        content: attachment.path, // SendGrid can handle file paths
-        contentType: attachment.contentType,
+        type: attachment.contentType,
         disposition: 'attachment'
       }));
     }
-    
-    // Add custom arguments for tracking
-    if (message.personalizations) {
-      sgMessage.customArgs = {
-        ...message.personalizations
+
+    // Add custom arguments for tracking if metadata is present
+    if (message.metadata) {
+      body['custom_args'] = message.metadata;
+    }
+
+    // Setup tracking settings 
+    body['tracking_settings'] = {
+      click_tracking: { enable: true },
+      open_tracking: { enable: true }
+    };
+
+    // Send request to SendGrid API
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (response.ok) {
+      console.log(`SendGrid email sent successfully to ${message.to}`);
+      return {
+        success: true,
+        messageId: response.headers.get('X-Message-Id') || undefined,
+      };
+    } else {
+      const errorData = await response.json();
+      console.error('SendGrid API error:', errorData);
+      return {
+        success: false,
+        error: `SendGrid error: ${response.status} - ${
+          errorData.errors?.[0]?.message || response.statusText
+        }`,
       };
     }
-    
-    // Add unsubscribe link in tracking settings
-    if (message.unsubscribeUrl) {
-      sgMessage.trackingSettings = {
-        subscription_tracking: {
-          enable: true,
-          substitution_tag: "{{unsubscribeUrl}}",
-          url: message.unsubscribeUrl
-        }
-      };
-    }
-    
-    // Send email
-    await sgMail.send(sgMessage);
-    
-    return { success: true };
   } catch (error) {
-    console.error('SendGrid error:', error);
-    return { success: false, error: error.message || 'Failed to send email with SendGrid' };
+    console.error('Error sending email with SendGrid:', error);
+    return {
+      success: false,
+      error: `SendGrid exception: ${error.message}`,
+    };
   }
 }
 
 /**
- * Validate SendGrid API key format
- */
-export function validateApiKey(apiKey: string): boolean {
-  // SendGrid API keys start with SG. and have a specific length
-  return apiKey.startsWith('SG.') && apiKey.length > 40;
-}
-
-/**
  * Test SendGrid connection with API key
+ * @param apiKey The API key to test
+ * @returns Success response or error
  */
 export async function testConnection(apiKey: string): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
-    // Check API key format
+    // API key format validation
     if (!validateApiKey(apiKey)) {
-      return { 
-        success: false, 
-        error: 'Invalid SendGrid API key format. It should start with "SG."' 
+      return {
+        success: false,
+        error: 'Invalid SendGrid API key format. It should start with "SG." followed by alphanumeric characters.'
       };
     }
-    
-    // Set API key
-    sgMail.setApiKey(apiKey);
-    
-    // Test with a simple operation that doesn't send an email
-    // We'll validate the API key by checking scopes (requires API key)
-    // This is a workaround since SendGrid doesn't have a simple validation endpoint
-    
-    // Create a test message (but don't send it)
-    const testMessage = {
-      to: 'test@example.com',
-      from: 'test@example.com',
-      subject: 'SendGrid API Test',
-      text: 'Testing SendGrid API key validation',
-      mail_settings: {
-        sandbox_mode: {
-          enable: true // This prevents the email from actually being sent
-        }
+
+    // Test API key by making a request to the SendGrid API
+    // Get the first 10 emails to verify API access
+    const response = await fetch('https://api.sendgrid.com/v3/stats/global?limit=1', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
       }
-    };
-    
-    // Attempt to validate the message (will throw if API key is invalid)
-    await sgMail.send(testMessage as any);
-    
-    return { 
-      success: true, 
-      message: 'SendGrid API key is valid.' 
-    };
-  } catch (error) {
-    // Check for specific error codes
-    if (error.code === 401) {
-      return { 
-        success: false, 
-        error: 'Invalid SendGrid API key. Please check your credentials.' 
+    });
+
+    if (response.ok) {
+      return {
+        success: true,
+        message: 'Successfully connected to SendGrid API!'
       };
-    } else if (error.code === 403) {
-      return { 
-        success: false, 
-        error: 'SendGrid API key does not have permission to send emails.' 
+    } else {
+      const errorData = await response.json();
+      console.error('SendGrid API test error:', errorData);
+      return {
+        success: false,
+        error: `SendGrid API error: ${response.status} - ${
+          errorData.errors?.[0]?.message || response.statusText
+        }`
       };
     }
-    
-    console.error('SendGrid test connection error:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Failed to connect to SendGrid API' 
+  } catch (error) {
+    console.error('Error testing SendGrid connection:', error);
+    return {
+      success: false,
+      error: `SendGrid connection error: ${error.message}`
     };
   }
 }

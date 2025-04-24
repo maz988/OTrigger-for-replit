@@ -210,6 +210,103 @@ export class MemStorage implements IStorage {
   private keywords: Set<string>;
   private autoSchedulingEnabled: boolean;
   
+  // Email queue methods
+  async getAllQueuedEmails(): Promise<EmailQueue[]> {
+    return Array.from(this.emailQueue.values());
+  }
+  
+  async getQueuedEmailById(id: number): Promise<EmailQueue | undefined> {
+    return this.emailQueue.get(id);
+  }
+  
+  async getQueuedEmailsBySubscriberId(subscriberId: number): Promise<EmailQueue[]> {
+    return Array.from(this.emailQueue.values())
+      .filter(queue => queue.subscriberId === subscriberId);
+  }
+  
+  async getDueQueuedEmails(): Promise<EmailQueue[]> {
+    const now = new Date();
+    return Array.from(this.emailQueue.values())
+      .filter(queue => 
+        queue.status === 'pending' && 
+        queue.scheduledFor <= now
+      );
+  }
+  
+  async queueEmail(insertQueuedEmail: InsertEmailQueue): Promise<EmailQueue> {
+    const id = this.emailQueueCurrentId++;
+    
+    const queuedEmail: EmailQueue = {
+      ...insertQueuedEmail,
+      id,
+      createdAt: new Date(),
+      processedAt: null,
+      status: 'pending',
+      statusMessage: null
+    };
+    
+    this.emailQueue.set(id, queuedEmail);
+    return queuedEmail;
+  }
+  
+  async updateQueuedEmailStatus(id: number, status: string, message?: string): Promise<EmailQueue | undefined> {
+    const queuedEmail = this.emailQueue.get(id);
+    
+    if (!queuedEmail) {
+      return undefined;
+    }
+    
+    const updatedQueuedEmail: EmailQueue = {
+      ...queuedEmail,
+      status,
+      statusMessage: message || null,
+      processedAt: status === 'pending' ? null : new Date()
+    };
+    
+    this.emailQueue.set(id, updatedQueuedEmail);
+    return updatedQueuedEmail;
+  }
+  
+  async deleteQueuedEmail(id: number): Promise<boolean> {
+    if (!this.emailQueue.has(id)) {
+      return false;
+    }
+    
+    this.emailQueue.delete(id);
+    return true;
+  }
+  
+  // Email history methods
+  async getAllEmailHistory(): Promise<EmailHistory[]> {
+    return Array.from(this.emailHistory.values());
+  }
+  
+  async getEmailHistoryBySubscriberId(subscriberId: number): Promise<EmailHistory[]> {
+    return Array.from(this.emailHistory.values())
+      .filter(history => history.subscriberId === subscriberId)
+      .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime()); // Most recent first
+  }
+  
+  async recordEmailSent(insertEmailHistory: InsertEmailHistory): Promise<EmailHistory> {
+    const id = this.emailHistoryCurrentId++;
+    
+    const emailHistory: EmailHistory = {
+      ...insertEmailHistory,
+      id,
+      sentAt: new Date()
+    };
+    
+    this.emailHistory.set(id, emailHistory);
+    
+    // Update subscriber's lastEmailSent date
+    const subscriber = this.emailSubscribers.get(insertEmailHistory.subscriberId);
+    if (subscriber) {
+      subscriber.lastEmailSent = new Date();
+    }
+    
+    return emailHistory;
+  }
+  
   private userCurrentId: number;
   private quizResponseCurrentId: number;
   private blogPostCurrentId: number;
@@ -269,6 +366,9 @@ export class MemStorage implements IStorage {
     
     // Initialize system settings
     this.initializeSystemSettings();
+    
+    // Initialize default email sequence and templates
+    this.initializeEmailSequences();
   }
 
   // User methods
@@ -1090,6 +1190,81 @@ If you'd like a personalized assessment of your unique relationship situation, t
     }
   }
   
+  // Email sequence methods
+  async getAllEmailSequences(): Promise<EmailSequence[]> {
+    return Array.from(this.emailSequences.values());
+  }
+  
+  async getEmailSequenceById(id: number): Promise<EmailSequence | undefined> {
+    return this.emailSequences.get(id);
+  }
+  
+  async getDefaultEmailSequence(): Promise<EmailSequence | undefined> {
+    return Array.from(this.emailSequences.values()).find(
+      sequence => sequence.isDefault === true
+    );
+  }
+  
+  async saveEmailSequence(insertSequence: InsertEmailSequence): Promise<EmailSequence> {
+    const id = this.emailSequenceCurrentId++;
+    
+    // Create a complete sequence record
+    const sequence: EmailSequence = {
+      ...insertSequence,
+      id,
+      createdAt: new Date(),
+      updatedAt: null,
+      // Set default values for optional fields if not provided
+      isActive: insertSequence.isActive ?? true,
+      isDefault: insertSequence.isDefault ?? false,
+      subscribersCount: 0
+    };
+    
+    this.emailSequences.set(id, sequence);
+    return sequence;
+  }
+  
+  async updateEmailSequence(id: number, updates: Partial<InsertEmailSequence>): Promise<EmailSequence | undefined> {
+    const sequence = this.emailSequences.get(id);
+    
+    if (!sequence) {
+      return undefined;
+    }
+    
+    // Update the sequence with new values
+    const updatedSequence: EmailSequence = {
+      ...sequence,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.emailSequences.set(id, updatedSequence);
+    return updatedSequence;
+  }
+  
+  async deleteEmailSequence(id: number): Promise<boolean> {
+    if (!this.emailSequences.has(id)) {
+      return false;
+    }
+    
+    // Don't allow deleting default sequence
+    const sequence = this.emailSequences.get(id);
+    if (sequence && sequence.isDefault) {
+      return false;
+    }
+    
+    // Delete related templates
+    const templatesForSequence = Array.from(this.emailTemplates.entries())
+      .filter(([_, template]) => template.sequenceId === id);
+      
+    for (const [templateId, _] of templatesForSequence) {
+      this.emailTemplates.delete(templateId);
+    }
+    
+    this.emailSequences.delete(id);
+    return true;
+  }
+  
   // Email template methods
   async getAllEmailTemplates(): Promise<EmailTemplate[]> {
     return Array.from(this.emailTemplates.values());
@@ -1099,14 +1274,27 @@ If you'd like a personalized assessment of your unique relationship situation, t
     return this.emailTemplates.get(id);
   }
   
+  async getEmailTemplatesBySequenceId(sequenceId: number): Promise<EmailTemplate[]> {
+    return Array.from(this.emailTemplates.values())
+      .filter(template => template.sequenceId === sequenceId)
+      .sort((a, b) => a.delayDays - b.delayDays);
+  }
+  
   async saveEmailTemplate(insertTemplate: InsertEmailTemplate): Promise<EmailTemplate> {
     const id = this.emailTemplateCurrentId++;
     
+    // Create a complete template record
     const template: EmailTemplate = {
       ...insertTemplate,
       id,
       createdAt: new Date(),
-      updatedAt: null
+      updatedAt: null,
+      // Set default values for optional fields if not provided
+      emailType: insertTemplate.emailType || 'standard',
+      delayDays: insertTemplate.delayDays || 0,
+      attachLeadMagnet: insertTemplate.attachLeadMagnet || false,
+      leadMagnetPath: insertTemplate.leadMagnetPath || null,
+      isActive: true
     };
     
     this.emailTemplates.set(id, template);
@@ -1403,13 +1591,119 @@ If you'd like a personalized assessment of your unique relationship situation, t
     }
   }
   
+  // Helper method to initialize email sequences and templates
+  private async initializeEmailSequences(): Promise<void> {
+    // Create default welcome sequence if no sequences exist
+    if (this.emailSequences.size === 0) {
+      // Create default welcome sequence
+      const welcomeSequence: EmailSequence = {
+        id: this.emailSequenceCurrentId++,
+        name: 'Welcome Sequence',
+        description: 'Default welcome sequence for new subscribers',
+        isDefault: true,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: null,
+        subscribersCount: 0
+      };
+      
+      this.emailSequences.set(welcomeSequence.id, welcomeSequence);
+      
+      // Create a few email templates for the welcome sequence
+      const welcomeEmail: EmailTemplate = {
+        id: this.emailTemplateCurrentId++,
+        name: 'Welcome Email',
+        subject: 'Welcome to Obsession Trigger!',
+        content: `<p>Dear {{firstName}},</p>
+<p>Welcome to Obsession Trigger! We're excited to have you join our community.</p>
+<p>Over the next few days, you'll receive a series of emails with valuable relationship advice and insights that can help transform your love life.</p>
+<p>If you have any questions, feel free to reply to this email.</p>
+<p>Warm regards,<br>The Obsession Trigger Team</p>`,
+        sequenceId: welcomeSequence.id,
+        emailType: 'welcome',
+        delayDays: 0,
+        createdAt: new Date(),
+        updatedAt: null,
+        attachLeadMagnet: false,
+        leadMagnetPath: null,
+        isActive: true
+      };
+      
+      this.emailTemplates.set(welcomeEmail.id, welcomeEmail);
+      
+      const heroInstinctGuide: EmailTemplate = {
+        id: this.emailTemplateCurrentId++,
+        name: 'Hero Instinct Guide',
+        subject: 'Understanding His Hero Instinct [GUIDE]',
+        content: `<p>Dear {{firstName}},</p>
+<p>Today I wanted to share something powerful with you - understanding the hero instinct in men.</p>
+<p>The hero instinct is a biological drive that all men have. It's a desire to feel needed, to feel important, and to provide for those he cares about.</p>
+<p>When you know how to trigger this instinct, you can create a deep, passionate connection with any man.</p>
+<p>Here are three simple ways to activate his hero instinct:</p>
+<ol>
+  <li>Ask for his help on something specific</li>
+  <li>Express your appreciation when he does something for you</li>
+  <li>Support his goals and ambitions</li>
+</ol>
+<p>Try these techniques and see how he responds - you might be surprised at the results!</p>
+<p>Warm regards,<br>The Obsession Trigger Team</p>`,
+        sequenceId: welcomeSequence.id,
+        emailType: 'content',
+        delayDays: 2,
+        createdAt: new Date(),
+        updatedAt: null,
+        attachLeadMagnet: false,
+        leadMagnetPath: null,
+        isActive: true
+      };
+      
+      this.emailTemplates.set(heroInstinctGuide.id, heroInstinctGuide);
+      
+      const communicationTips: EmailTemplate = {
+        id: this.emailTemplateCurrentId++,
+        name: 'Communication Tips',
+        subject: 'The Secret to Better Communication With Him',
+        content: `<p>Hi {{firstName}},</p>
+<p>Communication is the foundation of any healthy relationship, but men and women often communicate differently.</p>
+<p>Understanding these differences can help you connect more deeply with your partner and avoid unnecessary conflicts.</p>
+<p>Here are some key insights about male communication patterns:</p>
+<ul>
+  <li>Men tend to be more direct and solution-focused</li>
+  <li>Men often need time to process emotional information</li>
+  <li>Men sometimes express emotions through actions rather than words</li>
+</ul>
+<p>When you adapt your communication style to accommodate these differences, you'll find that your conversations become more productive and your connection grows stronger.</p>
+<p>In our next email, I'll share some practical techniques for creating emotional intimacy with your partner.</p>
+<p>Until then,<br>The Obsession Trigger Team</p>`,
+        sequenceId: welcomeSequence.id,
+        emailType: 'content',
+        delayDays: 4,
+        createdAt: new Date(),
+        updatedAt: null,
+        attachLeadMagnet: false,
+        leadMagnetPath: null,
+        isActive: true
+      };
+      
+      this.emailTemplates.set(communicationTips.id, communicationTips);
+      
+      console.log('Default email sequence created with 3 templates');
+    }
+  }
+  
   private async initializeSystemSettings(): Promise<void> {
     const defaultSettings = [
       { key: 'OPENAI_API_KEY', value: process.env.OPENAI_API_KEY || '', type: 'string', description: 'API key for OpenAI integration' },
+      { key: 'GEMINI_API_KEY', value: process.env.GEMINI_API_KEY || '', type: 'string', description: 'API key for Google Gemini integration' },
       { key: 'PEXELS_API_KEY', value: process.env.PEXELS_API_KEY || '', type: 'string', description: 'API key for Pexels image integration' },
       { key: 'BLOG_AUTO_SCHEDULE', value: 'true', type: 'boolean', description: 'Automatically schedule blog posts' },
-      { key: 'EMAIL_SERVICE', value: 'sendgrid', type: 'string', description: 'Email service provider' },
+      { key: 'EMAIL_SERVICE', value: 'sendgrid', type: 'string', description: 'Primary email service provider' },
       { key: 'EMAIL_FROM', value: 'info@obsessiontrigger.com', type: 'string', description: 'Default from email address' },
+      { key: 'EMAIL_FROM_NAME', value: 'Obsession Trigger Team', type: 'string', description: 'Default from name for emails' },
+      { key: 'EMAIL_REPLY_TO', value: 'support@obsessiontrigger.com', type: 'string', description: 'Default reply-to email address' },
+      { key: 'SENDGRID_API_KEY', value: process.env.SENDGRID_API_KEY || '', type: 'string', description: 'API key for SendGrid integration' },
+      { key: 'MAILERLITE_API_KEY', value: process.env.MAILERLITE_API_KEY || '', type: 'string', description: 'API key for MailerLite integration' },
+      { key: 'BREVO_API_KEY', value: process.env.BREVO_API_KEY || '', type: 'string', description: 'API key for Brevo integration' },
       { key: 'DEFAULT_LEAD_MAGNET', value: '1', type: 'number', description: 'Default lead magnet ID for new subscribers' },
       { key: 'QUIZ_LEAD_MAGNET', value: '1', type: 'number', description: 'Lead magnet ID for quiz completions' },
       { key: 'BLOG_LEAD_MAGNET', value: '2', type: 'number', description: 'Lead magnet ID for blog opt-ins' },
