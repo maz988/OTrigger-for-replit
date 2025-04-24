@@ -3322,6 +3322,450 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Email Sequences
+  app.get("/api/admin/email/sequences", authenticateAdmin, async (req, res) => {
+    try {
+      const sequences = await storage.getAllEmailSequences();
+      
+      res.status(200).json({
+        success: true,
+        data: sequences
+      });
+    } catch (err: any) {
+      console.error(`Error getting email sequences: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.get("/api/admin/email/sequences/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const sequence = await storage.getEmailSequenceById(id);
+      
+      if (!sequence) {
+        return res.status(404).json({
+          success: false,
+          error: "Email sequence not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: sequence
+      });
+    } catch (err: any) {
+      console.error(`Error getting email sequence: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/email/sequences", authenticateAdmin, async (req, res) => {
+    try {
+      const sequence = await storage.saveEmailSequence(req.body);
+      
+      res.status(201).json({
+        success: true,
+        data: sequence
+      });
+    } catch (err: any) {
+      console.error(`Error creating email sequence: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.put("/api/admin/email/sequences/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updatedSequence = await storage.updateEmailSequence(id, req.body);
+      
+      if (!updatedSequence) {
+        return res.status(404).json({
+          success: false,
+          error: "Email sequence not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: updatedSequence
+      });
+    } catch (err: any) {
+      console.error(`Error updating email sequence: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.delete("/api/admin/email/sequences/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteEmailSequence(id);
+      
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          error: "Email sequence not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true
+      });
+    } catch (err: any) {
+      console.error(`Error deleting email sequence: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Email Templates
+  app.get("/api/admin/email/templates", authenticateAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getAllEmailTemplates();
+      
+      res.status(200).json({
+        success: true,
+        data: templates
+      });
+    } catch (err: any) {
+      console.error(`Error getting email templates: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.get("/api/admin/email/templates/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const template = await storage.getEmailTemplateById(id);
+      
+      if (!template) {
+        return res.status(404).json({
+          success: false,
+          error: "Email template not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: template
+      });
+    } catch (err: any) {
+      console.error(`Error getting email template: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.get("/api/admin/email/templates/sequence/:sequenceId", authenticateAdmin, async (req, res) => {
+    try {
+      const sequenceId = parseInt(req.params.sequenceId);
+      const templates = await storage.getEmailTemplatesBySequenceId(sequenceId);
+      
+      res.status(200).json({
+        success: true,
+        data: templates
+      });
+    } catch (err: any) {
+      console.error(`Error getting templates by sequence: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/email/templates", authenticateAdmin, async (req, res) => {
+    try {
+      const template = await storage.saveEmailTemplate(req.body);
+      
+      res.status(201).json({
+        success: true,
+        data: template
+      });
+    } catch (err: any) {
+      console.error(`Error creating email template: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.put("/api/admin/email/templates/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updatedTemplate = await storage.updateEmailTemplate(id, req.body);
+      
+      if (!updatedTemplate) {
+        return res.status(404).json({
+          success: false,
+          error: "Email template not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: updatedTemplate
+      });
+    } catch (err: any) {
+      console.error(`Error updating email template: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.delete("/api/admin/email/templates/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteEmailTemplate(id);
+      
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          error: "Email template not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true
+      });
+    } catch (err: any) {
+      console.error(`Error deleting email template: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.put("/api/admin/email/templates/:id/toggle", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      if (isActive === undefined) {
+        return res.status(400).json({
+          success: false,
+          error: "isActive field is required"
+        });
+      }
+      
+      const success = await storage.toggleEmailTemplateStatus(id, isActive);
+      
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          error: "Email template not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true
+      });
+    } catch (err: any) {
+      console.error(`Error toggling email template status: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Email Queue
+  app.get("/api/admin/email/queue", authenticateAdmin, async (req, res) => {
+    try {
+      const emailQueue = await storage.getAllQueuedEmails();
+      
+      res.status(200).json({
+        success: true,
+        data: emailQueue
+      });
+    } catch (err: any) {
+      console.error(`Error getting email queue: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/email/queue/process", authenticateAdmin, async (req, res) => {
+    try {
+      // Import dynamically to avoid circular dependencies
+      const { processEmailQueue } = await import('./services/emailDispatcher');
+      await processEmailQueue();
+      
+      res.status(200).json({
+        success: true,
+        message: "Email queue processing initiated"
+      });
+    } catch (err: any) {
+      console.error(`Error processing email queue: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.delete("/api/admin/email/queue/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteQueuedEmail(id);
+      
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          error: "Queued email not found"
+        });
+      }
+      
+      res.status(200).json({
+        success: true
+      });
+    } catch (err: any) {
+      console.error(`Error deleting queued email: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Email Subscribers Sequence Management
+  app.post("/api/admin/email/subscribers/:id/sequence", authenticateAdmin, async (req, res) => {
+    try {
+      const subscriberId = parseInt(req.params.id);
+      const { sequenceId, startImmediately } = req.body;
+      
+      if (!sequenceId) {
+        return res.status(400).json({
+          success: false,
+          error: "sequenceId is required"
+        });
+      }
+      
+      // Import dynamically to avoid circular dependencies
+      const { subscribeToSequence } = await import('./services/emailDispatcher');
+      const success = await subscribeToSequence(
+        subscriberId, 
+        parseInt(sequenceId), 
+        !!startImmediately
+      );
+      
+      if (!success) {
+        return res.status(400).json({
+          success: false,
+          error: "Failed to subscribe to email sequence"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        message: "Subscriber added to email sequence"
+      });
+    } catch (err: any) {
+      console.error(`Error subscribing to sequence: ${err.message}`);
+      res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Email Test
+  app.post("/api/admin/email/test", authenticateAdmin, async (req, res) => {
+    try {
+      const { email, provider, apiKey } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: "Email address is required"
+        });
+      }
+      
+      // Import dynamically to avoid circular dependencies
+      const { sendTestEmail } = await import('./services/emailDispatcher');
+      const result = await sendTestEmail(email, provider, apiKey);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: result.error
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        message: "Test email sent successfully",
+        data: { messageId: result.messageId }
+      });
+    } catch (err: any) {
+      console.error(`Error sending test email: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Email History
+  app.get("/api/admin/email/history", authenticateAdmin, async (req, res) => {
+    try {
+      const emailHistory = await storage.getAllEmailHistory();
+      
+      res.status(200).json({
+        success: true,
+        data: emailHistory
+      });
+    } catch (err: any) {
+      console.error(`Error getting email history: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.get("/api/admin/email/history/subscriber/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const subscriberId = parseInt(req.params.id);
+      const emailHistory = await storage.getEmailHistoryBySubscriberId(subscriberId);
+      
+      res.status(200).json({
+        success: true,
+        data: emailHistory
+      });
+    } catch (err: any) {
+      console.error(`Error getting subscriber email history: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
   // Initialize the blog scheduling system
   setupBlogScheduleJobs().catch(error => {
     console.error('Error setting up blog scheduling system:', error);

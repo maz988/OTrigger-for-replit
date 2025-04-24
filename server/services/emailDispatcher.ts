@@ -1,401 +1,498 @@
+/**
+ * Email Dispatcher Service
+ * 
+ * This service handles dispatching emails through various providers,
+ * processing email queue, and managing email sequences.
+ */
+
+import { EmailMessage, processTemplate } from './emailTemplates';
 import { storage } from '../storage';
-import * as emailTemplates from './emailTemplates';
-import { EmailTemplate, EmailSubscriber } from '@shared/schema';
-import { createTransporter } from './emailProviders/sendgrid';
-import { sendWithMailerLite } from './emailProviders/mailerlite';
-import { sendWithBrevo } from './emailProviders/brevo';
+import { sendWithSendGrid, validateApiKey as validateSendGridApiKey } from './emailProviders/sendgrid';
+import { sendWithMailerLite, validateApiKey as validateMailerLiteApiKey } from './emailProviders/mailerlite';
+import { sendWithBrevo, validateApiKey as validateBrevoApiKey } from './emailProviders/brevo';
+import { EmailSubscriber, EmailTemplate, EmailQueue, InsertEmailQueue } from '@shared/schema';
 
 /**
- * Email Service Configuration
- * This interface defines the structure for email service configuration
+ * Provider configuration
  */
-export interface EmailServiceConfig {
-  activeService: 'sendgrid' | 'mailerlite' | 'brevo' | 'none';
-  senderEmail: string;
-  sendgridApiKey?: string;
-  mailerliteApiKey?: string;
-  brevoApiKey?: string;
-  autoEmailDelivery: boolean;
+export interface EmailProviderConfig {
+  apiKey: string;
+  fromEmail: string;
+  fromName: string;
+  replyToEmail: string;
 }
 
 /**
- * Email Message Structure
- * Standardized format for sending emails across different providers
+ * Result of sending an email
  */
-export interface EmailMessage {
-  to: string;
-  from: string;
-  subject: string;
-  text: string;
-  html: string;
-  templateId?: string;
-  personalizations?: {
-    firstName?: string;
-    lastName?: string;
-    [key: string]: any;
-  };
-  attachments?: {
-    filename: string;
-    path: string;
-    contentType: string;
-  }[];
-  unsubscribeUrl?: string;
+export interface SendResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
 }
 
 /**
- * Get current email configuration from settings
+ * Initialize email provider configuration from system settings
  */
-export async function getEmailConfig(): Promise<EmailServiceConfig> {
-  const activeServiceSetting = await storage.getSettingByKey('activeEmailService');
-  const senderEmailSetting = await storage.getSettingByKey('senderEmail');
-  const sendgridApiKeySetting = await storage.getSettingByKey('sendgridApiKey');
-  const mailerliteApiKeySetting = await storage.getSettingByKey('mailerliteApiKey');
-  const brevoApiKeySetting = await storage.getSettingByKey('brevoApiKey');
-  const autoEmailDeliverySetting = await storage.getSettingByKey('autoEmailDelivery');
+export async function getProviderConfig(): Promise<EmailProviderConfig> {
+  // Get system settings
+  const emailServiceSetting = await storage.getSettingByKey('EMAIL_SERVICE');
+  const fromEmailSetting = await storage.getSettingByKey('EMAIL_FROM');
+  const fromNameSetting = await storage.getSettingByKey('EMAIL_FROM_NAME');
+  const replyToSetting = await storage.getSettingByKey('EMAIL_REPLY_TO');
+  
+  // Get the correct API key based on selected service
+  const service = emailServiceSetting?.settingValue || 'sendgrid';
+  let apiKeySetting;
+  
+  if (service === 'mailerlite') {
+    apiKeySetting = await storage.getSettingByKey('MAILERLITE_API_KEY');
+  } else if (service === 'brevo') {
+    apiKeySetting = await storage.getSettingByKey('BREVO_API_KEY');
+  } else {
+    // Default to SendGrid
+    apiKeySetting = await storage.getSettingByKey('SENDGRID_API_KEY');
+  }
   
   return {
-    activeService: (activeServiceSetting?.value as 'sendgrid' | 'mailerlite' | 'brevo' | 'none') || 'none',
-    senderEmail: senderEmailSetting?.value || 'noreply@example.com',
-    sendgridApiKey: sendgridApiKeySetting?.value,
-    mailerliteApiKey: mailerliteApiKeySetting?.value,
-    brevoApiKey: brevoApiKeySetting?.value,
-    autoEmailDelivery: autoEmailDeliverySetting?.value === 'true'
+    apiKey: apiKeySetting?.settingValue || '',
+    fromEmail: fromEmailSetting?.settingValue || 'info@obsessiontrigger.com',
+    fromName: fromNameSetting?.settingValue || 'Obsession Trigger Team',
+    replyToEmail: replyToSetting?.settingValue || ''
   };
 }
 
 /**
- * Prepare and send email using the active email provider
+ * Send an email using the configured provider
  */
 export async function sendEmail(
-  subscriber: EmailSubscriber,
-  template: EmailTemplate,
-  config?: EmailServiceConfig
-): Promise<{ success: boolean; message?: string; error?: string }> {
-  try {
-    // Get email configuration if not provided
-    const emailConfig = config || await getEmailConfig();
-    
-    // Check if email delivery is enabled
-    if (!emailConfig.autoEmailDelivery) {
-      console.log('Automatic email delivery is disabled. Email not sent.');
-      return { success: false, message: 'Automatic email delivery is disabled' };
-    }
-    
-    // Check if an active service is selected
-    if (emailConfig.activeService === 'none') {
-      console.log('No active email service selected. Email not sent.');
-      return { success: false, message: 'No active email service selected' };
-    }
-    
-    // Prepare the email content
-    const htmlContent = await emailTemplates.prepareEmailContent(template, {
-      firstName: subscriber.firstName,
-      lastName: subscriber.lastName,
-      email: subscriber.email,
-      unsubscribeUrl: `${process.env.PUBLIC_URL || 'http://localhost:5000'}/unsubscribe?email=${encodeURIComponent(subscriber.email)}&token=${subscriber.unsubscribeToken}`
-    });
-    
-    // Prepare the standard email message format
-    const message: EmailMessage = {
-      to: subscriber.email,
-      from: emailConfig.senderEmail,
-      subject: template.subject,
-      text: emailTemplates.stripHtml(htmlContent), // Plain text version
-      html: htmlContent,
-      personalizations: {
-        firstName: subscriber.firstName,
-        lastName: subscriber.lastName || '',
-        email: subscriber.email
-      },
-      unsubscribeUrl: `${process.env.PUBLIC_URL || 'http://localhost:5000'}/unsubscribe?email=${encodeURIComponent(subscriber.email)}&token=${subscriber.unsubscribeToken}`
-    };
-    
-    // Add lead magnet attachment if specified
-    if (template.attachLeadMagnet && template.leadMagnetPath) {
-      message.attachments = [{
-        filename: template.leadMagnetPath.split('/').pop() || 'download.pdf',
-        path: template.leadMagnetPath,
-        contentType: 'application/pdf'
-      }];
-    }
-    
-    let result;
-    
-    // Send email with the selected provider
-    switch (emailConfig.activeService) {
-      case 'sendgrid':
-        if (!emailConfig.sendgridApiKey) {
-          return { success: false, error: 'SendGrid API key is not configured' };
-        }
-        result = await sendWithSendGrid(message, emailConfig.sendgridApiKey);
-        break;
-        
-      case 'mailerlite':
-        if (!emailConfig.mailerliteApiKey) {
-          return { success: false, error: 'MailerLite API key is not configured' };
-        }
-        result = await sendWithMailerLite(message, emailConfig.mailerliteApiKey);
-        break;
-        
-      case 'brevo':
-        if (!emailConfig.brevoApiKey) {
-          return { success: false, error: 'Brevo API key is not configured' };
-        }
-        result = await sendWithBrevo(message, emailConfig.brevoApiKey);
-        break;
-        
-      default:
-        return { success: false, error: 'Invalid email service selected' };
-    }
-    
-    // Record email sent in database
-    if (result.success) {
-      await recordEmailSent(subscriber.id, template.id, emailConfig.activeService);
-      return { success: true, message: 'Email sent successfully' };
-    } else {
-      return { success: false, error: result.error || 'Failed to send email' };
-    }
-    
-  } catch (error: any) {
-    console.error('Error sending email:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-/**
- * Send email using SendGrid
- */
-async function sendWithSendGrid(
   message: EmailMessage,
-  apiKey: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    // Get SendGrid transporter
-    const transporter = createTransporter(apiKey);
-    
-    // Prepare message format for SendGrid
-    const sendgridMessage = {
-      to: message.to,
-      from: message.from,
-      subject: message.subject,
-      text: message.text,
-      html: message.html,
-      attachments: message.attachments,
-      customArgs: {
-        unsubscribeUrl: message.unsubscribeUrl
-      }
-    };
-    
-    // Send email
-    await transporter.send(sendgridMessage);
-    return { success: true };
-  } catch (error: any) {
-    console.error('SendGrid error:', error);
-    return { success: false, error: error.message };
+  config?: EmailProviderConfig
+): Promise<SendResult> {
+  // Get config if not provided
+  const providerConfig = config || await getProviderConfig();
+  
+  // Determine which service to use
+  const emailServiceSetting = await storage.getSettingByKey('EMAIL_SERVICE');
+  const service = emailServiceSetting?.settingValue || 'sendgrid';
+  
+  // Update from field with the configured values if needed
+  if (!message.from.includes('<')) {
+    message.from = `${providerConfig.fromName} <${providerConfig.fromEmail}>`;
   }
-}
-
-/**
- * Record email sent in the database
- */
-async function recordEmailSent(
-  subscriberId: number,
-  templateId: number,
-  provider: string
-): Promise<void> {
+  
+  // Send using the appropriate provider
   try {
-    await storage.recordEmailSent({
-      subscriberId,
-      templateId,
-      sentAt: new Date().toISOString(),
-      provider,
-      status: 'sent'
-    });
-  } catch (error) {
-    console.error('Error recording email sent:', error);
-  }
-}
-
-/**
- * Send test email to verify service configuration
- */
-export async function sendTestEmail(
-  emailAddress: string,
-  service: 'sendgrid' | 'mailerlite' | 'brevo',
-  apiKey: string
-): Promise<{ success: boolean; message?: string; error?: string }> {
-  try {
-    // Get email configuration
-    const emailConfig = await getEmailConfig();
+    let result: SendResult;
     
-    // Prepare test email message
-    const message: EmailMessage = {
-      to: emailAddress,
-      from: emailConfig.senderEmail || 'test@example.com',
-      subject: 'Test Email from Obsession Trigger AI',
-      text: 'This is a test email to verify your email service configuration.',
-      html: '<h1>Email Service Test</h1><p>This is a test email to verify your email service configuration.</p>'
-    };
-    
-    let result;
-    
-    // Send email with the specified provider
     switch (service) {
-      case 'sendgrid':
-        result = await sendWithSendGrid(message, apiKey);
-        break;
-        
       case 'mailerlite':
-        result = await sendWithMailerLite(message, apiKey);
+        result = await sendWithMailerLite(message, providerConfig.apiKey);
         break;
-        
       case 'brevo':
-        result = await sendWithBrevo(message, apiKey);
+        result = await sendWithBrevo(message, providerConfig.apiKey);
         break;
-        
+      case 'sendgrid':
       default:
-        return { success: false, error: 'Invalid email service specified' };
+        result = await sendWithSendGrid(message, providerConfig.apiKey);
+        break;
     }
     
+    // Log outcome
     if (result.success) {
-      return { success: true, message: `Test email sent successfully with ${service}` };
+      console.log(`Email sent successfully to ${message.to} using ${service}`);
     } else {
-      return { success: false, error: result.error || `Failed to send test email with ${service}` };
+      console.error(`Failed to send email to ${message.to} using ${service}: ${result.error}`);
     }
     
-  } catch (error: any) {
-    console.error('Error sending test email:', error);
-    return { success: false, error: error.message };
+    return result;
+  } catch (error) {
+    console.error(`Error in sendEmail: ${error.message}`);
+    return {
+      success: false,
+      error: `Email dispatch error: ${error.message}`
+    };
   }
 }
 
 /**
- * Queue an email sequence for a subscriber
+ * Send a specific email template to a subscriber
  */
-export async function queueEmailSequence(
-  subscriberId: number,
-  sequenceId?: number
-): Promise<{ success: boolean; message?: string; error?: string }> {
+export async function sendTemplateToSubscriber(
+  template: EmailTemplate,
+  subscriber: EmailSubscriber
+): Promise<SendResult> {
   try {
-    // Get the subscriber
-    const subscriber = await storage.getSubscriberById(subscriberId);
-    if (!subscriber) {
-      return { success: false, error: 'Subscriber not found' };
-    }
+    // Process template
+    const emailMessage = await processTemplate(template, subscriber);
     
-    // Get the sequence (default to sequence 1 if not specified)
-    const sequence = sequenceId 
-      ? await storage.getEmailSequenceById(sequenceId)
-      : await storage.getDefaultEmailSequence();
+    // Send the email
+    const result = await sendEmail(emailMessage);
     
-    if (!sequence) {
-      return { success: false, error: 'Email sequence not found' };
-    }
-    
-    // Get the templates in the sequence
-    const templates = await storage.getEmailTemplatesBySequenceId(sequence.id);
-    if (!templates || templates.length === 0) {
-      return { success: false, error: 'No email templates found in sequence' };
-    }
-    
-    // Create scheduled emails for each template
-    const now = new Date();
-    for (let i = 0; i < templates.length; i++) {
-      const template = templates[i];
-      
-      // Calculate send date based on delay
-      const sendDate = new Date(now.getTime() + (template.delayDays * 24 * 60 * 60 * 1000));
-      
-      // Queue the email
-      await storage.queueEmail({
+    // Record the email in history if successful
+    if (result.success) {
+      await storage.recordEmailSent({
         subscriberId: subscriber.id,
         templateId: template.id,
-        scheduledFor: sendDate.toISOString(),
-        status: 'queued'
+        status: 'delivered',
+        sentAt: new Date(),
+        provider: (await storage.getSettingByKey('EMAIL_SERVICE'))?.settingValue || 'sendgrid',
+        metadata: {
+          messageId: result.messageId,
+          subject: emailMessage.subject
+        }
+      });
+      
+      // Update subscriber's last email sent date
+      await storage.updateSubscriber(subscriber.id, {
+        lastEmailSent: new Date()
       });
     }
     
-    return { success: true, message: `Successfully queued ${templates.length} emails for subscriber` };
-    
-  } catch (error: any) {
-    console.error('Error queueing email sequence:', error);
-    return { success: false, error: error.message };
+    return result;
+  } catch (error) {
+    console.error(`Error sending template to subscriber: ${error.message}`);
+    return {
+      success: false,
+      error: `Template processing error: ${error.message}`
+    };
   }
 }
 
 /**
- * Process queued emails that are due to be sent
+ * Process the email queue, sending any due emails
  */
-export async function processQueuedEmails(): Promise<{ 
-  success: boolean; 
-  sent: number; 
-  failed: number; 
-  message?: string; 
-  error?: string 
-}> {
+export async function processEmailQueue(): Promise<void> {
   try {
-    // Get email configuration
-    const emailConfig = await getEmailConfig();
-    
-    // Skip if auto email delivery is disabled
-    if (!emailConfig.autoEmailDelivery) {
-      return { success: true, sent: 0, failed: 0, message: 'Automatic email delivery is disabled' };
-    }
-    
-    // Get due emails
+    // Get emails that are due to be sent
     const dueEmails = await storage.getDueQueuedEmails();
-    if (!dueEmails || dueEmails.length === 0) {
-      return { success: true, sent: 0, failed: 0, message: 'No emails due for sending' };
+    
+    if (dueEmails.length === 0) {
+      return;
     }
     
-    let sent = 0;
-    let failed = 0;
+    console.log(`Processing ${dueEmails.length} emails in queue`);
     
-    // Process each due email
+    // Process each email
     for (const queuedEmail of dueEmails) {
       try {
-        // Get subscriber and template
+        // Update status to processing
+        await storage.updateQueuedEmailStatus(queuedEmail.id, 'processing');
+        
+        // Get the subscriber and template
         const subscriber = await storage.getSubscriberById(queuedEmail.subscriberId);
         const template = await storage.getEmailTemplateById(queuedEmail.templateId);
         
-        if (!subscriber || !template) {
-          await storage.updateQueuedEmailStatus(queuedEmail.id, 'error', 'Subscriber or template not found');
-          failed++;
+        if (!subscriber) {
+          await storage.updateQueuedEmailStatus(
+            queuedEmail.id, 
+            'failed', 
+            'Subscriber not found'
+          );
           continue;
         }
         
-        // Skip if subscriber is unsubscribed
+        if (!template) {
+          await storage.updateQueuedEmailStatus(
+            queuedEmail.id, 
+            'failed', 
+            'Template not found'
+          );
+          continue;
+        }
+        
+        // Check if subscriber is still subscribed
         if (!subscriber.isSubscribed) {
-          await storage.updateQueuedEmailStatus(queuedEmail.id, 'skipped', 'Subscriber is unsubscribed');
+          await storage.updateQueuedEmailStatus(
+            queuedEmail.id, 
+            'cancelled', 
+            'Subscriber is unsubscribed'
+          );
           continue;
         }
         
         // Send the email
-        const result = await sendEmail(subscriber, template, emailConfig);
+        const result = await sendTemplateToSubscriber(template, subscriber);
         
         if (result.success) {
-          await storage.updateQueuedEmailStatus(queuedEmail.id, 'sent');
-          sent++;
+          await storage.updateQueuedEmailStatus(
+            queuedEmail.id, 
+            'sent', 
+            result.messageId
+          );
+          
+          // Check for sequence and queue next email if needed
+          if (template.sequenceId) {
+            await queueNextSequenceEmail(subscriber.id, template.sequenceId, template.id);
+          }
         } else {
-          await storage.updateQueuedEmailStatus(queuedEmail.id, 'failed', result.error);
-          failed++;
+          await storage.updateQueuedEmailStatus(
+            queuedEmail.id, 
+            'failed', 
+            result.error
+          );
         }
-      } catch (emailError: any) {
-        console.error('Error processing queued email:', emailError);
-        await storage.updateQueuedEmailStatus(queuedEmail.id, 'error', emailError.message);
-        failed++;
+      } catch (error) {
+        console.error(`Error processing queued email ${queuedEmail.id}:`, error);
+        await storage.updateQueuedEmailStatus(
+          queuedEmail.id, 
+          'failed', 
+          `Processing error: ${error.message}`
+        );
       }
     }
+  } catch (error) {
+    console.error('Error processing email queue:', error);
+  }
+}
+
+/**
+ * Subscribe a user to an email sequence
+ */
+export async function subscribeToSequence(
+  subscriberId: number,
+  sequenceId: number,
+  startImmediately = false
+): Promise<boolean> {
+  try {
+    const subscriber = await storage.getSubscriberById(subscriberId);
+    const sequence = await storage.getEmailSequenceById(sequenceId);
     
-    return { 
-      success: true, 
-      sent, 
-      failed, 
-      message: `Processed ${dueEmails.length} emails: ${sent} sent, ${failed} failed` 
+    if (!subscriber || !sequence) {
+      return false;
+    }
+    
+    // Find the first email in the sequence (welcome email)
+    const templates = await storage.getEmailTemplatesBySequenceId(sequenceId);
+    const welcomeEmail = templates.find(t => 
+      t.emailType === 'welcome' && t.isActive
+    );
+    
+    if (!welcomeEmail) {
+      console.error(`No welcome email found for sequence ${sequenceId}`);
+      return false;
+    }
+    
+    // Queue the welcome email
+    const scheduleDate = startImmediately ? new Date() : 
+      new Date(Date.now() + 1000 * 60 * 60); // 1 hour from now if not immediate
+    
+    const queuedEmail: InsertEmailQueue = {
+      subscriberId,
+      templateId: welcomeEmail.id,
+      scheduledFor: scheduleDate,
+      status: 'pending',
+      metadata: {
+        sequenceId,
+        isFirst: true
+      }
     };
     
-  } catch (error: any) {
-    console.error('Error processing queued emails:', error);
-    return { success: false, sent: 0, failed: 0, error: error.message };
+    await storage.queueEmail(queuedEmail);
+    return true;
+  } catch (error) {
+    console.error(`Error subscribing to sequence: ${error.message}`);
+    return false;
+  }
+}
+
+/**
+ * Queue the next email in a sequence
+ */
+async function queueNextSequenceEmail(
+  subscriberId: number,
+  sequenceId: number,
+  currentTemplateId: number
+): Promise<boolean> {
+  try {
+    // Get all templates in the sequence
+    const templates = await storage.getEmailTemplatesBySequenceId(sequenceId);
+    const currentTemplate = templates.find(t => t.id === currentTemplateId);
+    
+    if (!currentTemplate) {
+      return false;
+    }
+    
+    // Find templates with a higher delay
+    const nextTemplates = templates
+      .filter(t => t.isActive && t.delayDays > currentTemplate.delayDays)
+      .sort((a, b) => a.delayDays - b.delayDays);
+    
+    if (nextTemplates.length === 0) {
+      // End of sequence
+      return false;
+    }
+    
+    // Get the next template (with the lowest delay higher than current)
+    const nextTemplate = nextTemplates[0];
+    
+    // Calculate delay
+    const delayDays = nextTemplate.delayDays - currentTemplate.delayDays;
+    const scheduleDate = new Date();
+    scheduleDate.setDate(scheduleDate.getDate() + delayDays);
+    
+    // Queue the next email
+    const queuedEmail: InsertEmailQueue = {
+      subscriberId,
+      templateId: nextTemplate.id,
+      scheduledFor: scheduleDate,
+      status: 'pending',
+      metadata: {
+        sequenceId,
+        previousTemplateId: currentTemplateId
+      }
+    };
+    
+    await storage.queueEmail(queuedEmail);
+    return true;
+  } catch (error) {
+    console.error(`Error queuing next sequence email: ${error.message}`);
+    return false;
+  }
+}
+
+/**
+ * Test connection with the configured email provider
+ */
+export async function testEmailProviderConnection(
+  provider: string,
+  apiKey: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    switch (provider) {
+      case 'mailerlite':
+        if (!validateMailerLiteApiKey(apiKey)) {
+          return {
+            success: false,
+            error: 'Invalid MailerLite API key format'
+          };
+        }
+        return await import('./emailProviders/mailerlite').then(module => 
+          module.testConnection(apiKey)
+        );
+        
+      case 'brevo':
+        if (!validateBrevoApiKey(apiKey)) {
+          return {
+            success: false,
+            error: 'Invalid Brevo API key format'
+          };
+        }
+        return await import('./emailProviders/brevo').then(module => 
+          module.testConnection(apiKey)
+        );
+        
+      case 'sendgrid':
+      default:
+        if (!validateSendGridApiKey(apiKey)) {
+          return {
+            success: false,
+            error: 'Invalid SendGrid API key format'
+          };
+        }
+        return await import('./emailProviders/sendgrid').then(module => 
+          module.testConnection(apiKey)
+        );
+    }
+  } catch (error) {
+    console.error(`Error testing email provider connection: ${error.message}`);
+    return {
+      success: false,
+      error: `Connection test error: ${error.message}`
+    };
+  }
+}
+
+/**
+ * Send a test email
+ */
+export async function sendTestEmail(
+  email: string,
+  provider?: string,
+  apiKey?: string
+): Promise<SendResult> {
+  try {
+    // Create test subscriber data
+    const testSubscriber: EmailSubscriber = {
+      id: 0,
+      firstName: 'Test',
+      lastName: 'User',
+      email,
+      source: 'test',
+      createdAt: new Date(),
+      isSubscribed: true,
+      unsubscribeToken: 'test-token',
+      lastEmailSent: null
+    };
+    
+    // Create test template
+    const testTemplate: EmailTemplate = {
+      id: 0,
+      name: 'Test Email',
+      subject: 'Test Email from Obsession Trigger',
+      content: `
+        <h1>This is a test email</h1>
+        <p>Hello {{firstName}},</p>
+        <p>This is a test email from Obsession Trigger.</p>
+        <p>If you're receiving this, the email system is working correctly!</p>
+        <p>Sent at: ${new Date().toISOString()}</p>
+      `,
+      sequenceId: 0,
+      emailType: 'test',
+      delayDays: 0,
+      createdAt: new Date(),
+      updatedAt: null,
+      isActive: true,
+      attachLeadMagnet: false,
+      leadMagnetPath: null
+    };
+    
+    // Process template
+    const emailMessage = await processTemplate(testTemplate, testSubscriber);
+    
+    // Use custom provider if specified
+    let config: EmailProviderConfig | undefined;
+    
+    if (provider && apiKey) {
+      const fromEmailSetting = await storage.getSettingByKey('EMAIL_FROM');
+      const fromNameSetting = await storage.getSettingByKey('EMAIL_FROM_NAME');
+      
+      config = {
+        apiKey,
+        fromEmail: fromEmailSetting?.settingValue || 'info@obsessiontrigger.com',
+        fromName: fromNameSetting?.settingValue || 'Obsession Trigger Team',
+        replyToEmail: fromEmailSetting?.settingValue || 'info@obsessiontrigger.com'
+      };
+    }
+    
+    // Send the email
+    let result: SendResult;
+    
+    if (provider && config) {
+      // Use specified provider
+      switch (provider) {
+        case 'mailerlite':
+          result = await sendWithMailerLite(emailMessage, config.apiKey);
+          break;
+        case 'brevo':
+          result = await sendWithBrevo(emailMessage, config.apiKey);
+          break;
+        case 'sendgrid':
+        default:
+          result = await sendWithSendGrid(emailMessage, config.apiKey);
+          break;
+      }
+    } else {
+      // Use default provider
+      result = await sendEmail(emailMessage);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error(`Error sending test email: ${error.message}`);
+    return {
+      success: false,
+      error: `Test email error: ${error.message}`
+    };
   }
 }

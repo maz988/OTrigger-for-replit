@@ -1,31 +1,66 @@
-import fetch from 'node-fetch';
-import { EmailMessage } from '../emailDispatcher';
+/**
+ * Brevo (formerly Sendinblue) Email Provider
+ * 
+ * This service handles email sending through Brevo API
+ */
 
-// Brevo API URLs
-const API_BASE_URL = 'https://api.brevo.com/v3';
-const SEND_EMAIL_URL = `${API_BASE_URL}/smtp/email`;
-const GET_ACCOUNT_URL = `${API_BASE_URL}/account`;
+import { EmailMessage } from '../emailTemplates';
+
+/**
+ * Sanitize Brevo API key for logging (to avoid exposing the full key in logs)
+ * @param apiKey Brevo API key
+ * @returns Safely redacted API key for logging
+ */
+export function sanitizeApiKey(apiKey: string): string {
+  if (!apiKey) return '';
+  if (apiKey.length <= 8) return '***';
+  return apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4);
+}
+
+/**
+ * Validate Brevo API key format (minimal validation)
+ * @param apiKey The API key to validate
+ * @returns True if the key appears to be valid
+ */
+export function validateApiKey(apiKey: string): boolean {
+  // Brevo API keys are alphanumeric, 64 characters
+  // xkeysib-... format is common but not enforced by us
+  return apiKey.length >= 20;
+}
 
 /**
  * Send email using Brevo
+ * @param message Email message to send
+ * @param apiKey Brevo API key
+ * @returns Success response with message ID or error
  */
 export async function sendWithBrevo(
   message: EmailMessage,
   apiKey: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    // Format message for Brevo API
-    const brevoMessage = {
+    // Parse sender name and email from the from field
+    let senderName = 'Obsession Trigger';
+    let senderEmail = message.from;
+    
+    const fromMatch = message.from.match(/(.+?)\s*<(.+?)>/);
+    if (fromMatch) {
+      senderName = fromMatch[1].trim();
+      senderEmail = fromMatch[2];
+    }
+    
+    // Build Brevo email request
+    const body = {
       sender: {
-        name: message.from.split('@')[0], // Extract name from email
-        email: message.from
+        name: senderName,
+        email: senderEmail
       },
-      to: [{
-        email: message.to,
-        name: message.personalizations?.firstName
-          ? `${message.personalizations.firstName} ${message.personalizations.lastName || ''}`
-          : message.to.split('@')[0]
-      }],
+      to: [
+        {
+          email: message.to,
+          name: message.to
+        }
+      ],
       subject: message.subject,
       htmlContent: message.html,
       textContent: message.text
@@ -33,103 +68,103 @@ export async function sendWithBrevo(
     
     // Add attachments if present
     if (message.attachments && message.attachments.length > 0) {
-      brevoMessage.attachment = message.attachments.map(attachment => ({
-        name: attachment.filename,
+      body['attachment'] = message.attachments.map(attachment => ({
         url: attachment.path,
-        content: null // Will be handled by url
+        name: attachment.filename
       }));
     }
     
-    // Add contact attributes for personalization
-    if (message.personalizations) {
-      brevoMessage.params = {
-        ...message.personalizations,
-        UNSUBSCRIBE: message.unsubscribeUrl
-      };
+    // Add custom parameters for tracking if metadata is present
+    if (message.metadata) {
+      body['params'] = message.metadata;
     }
     
-    // Send email via Brevo API
-    const response = await fetch(SEND_EMAIL_URL, {
+    // Send request to Brevo API
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'api-key': apiKey
       },
-      body: JSON.stringify(brevoMessage)
+      body: JSON.stringify(body)
     });
     
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return { 
-        success: false, 
-        error: data.message || `Failed to send email (${response.status})` 
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`Brevo email sent successfully to ${message.to}`);
+      return {
+        success: true,
+        messageId: data.messageId
+      };
+    } else {
+      const errorData = await response.json();
+      console.error('Brevo API error:', errorData);
+      return {
+        success: false,
+        error: `Brevo error: ${response.status} - ${
+          errorData.message || response.statusText
+        }`
       };
     }
-    
-    return { success: true };
   } catch (error) {
-    console.error('Brevo error:', error);
-    return { success: false, error: error.message || 'Failed to send email with Brevo' };
+    console.error('Error sending email with Brevo:', error);
+    return {
+      success: false,
+      error: `Brevo exception: ${error.message}`
+    };
   }
 }
 
 /**
- * Validate Brevo API key format
- */
-export function validateApiKey(apiKey: string): boolean {
-  // Brevo API keys start with xkeysib- and are followed by alphanumeric chars
-  return apiKey.startsWith('xkeysib-') && apiKey.length > 20;
-}
-
-/**
  * Test Brevo connection with API key
+ * @param apiKey The API key to test
+ * @returns Success response or error
  */
 export async function testConnection(apiKey: string): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
-    // Check API key format
+    // API key format validation
     if (!validateApiKey(apiKey)) {
-      return { 
-        success: false, 
-        error: 'Invalid Brevo API key format. It should start with "xkeysib-".' 
+      return {
+        success: false,
+        error: 'Invalid Brevo API key format. It should be at least 20 characters long.'
       };
     }
-    
-    // Test with a simple API call to get account info
-    const response = await fetch(GET_ACCOUNT_URL, {
+
+    // Test API key by making a request to the Brevo API
+    // Get account information
+    const response = await fetch('https://api.brevo.com/v3/account', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'api-key': apiKey
       }
     });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      if (response.status === 401) {
-        return { 
-          success: false, 
-          error: 'Invalid Brevo API key. Please check your credentials.' 
-        };
-      } else {
-        return { 
-          success: false, 
-          error: data.message || 'Failed to connect to Brevo API' 
-        };
-      }
+
+    if (response.ok) {
+      const data = await response.json();
+      const accountInfo = data.plan?.[0]?.type || 'Unknown';
+      const credits = data.plan?.[0]?.credits || 0;
+      
+      return {
+        success: true,
+        message: `Successfully connected to Brevo API! Account type: ${accountInfo}, Credits: ${credits}`
+      };
+    } else {
+      const errorData = await response.json();
+      console.error('Brevo API test error:', errorData);
+      return {
+        success: false,
+        error: `Brevo API error: ${response.status} - ${
+          errorData.message || response.statusText
+        }`
+      };
     }
-    
-    return { 
-      success: true, 
-      message: `Brevo API key is valid. Connected to account: ${data.firstName || ''} ${data.lastName || ''} (${data.email || 'Unknown'})` 
-    };
   } catch (error) {
-    console.error('Brevo test connection error:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Failed to connect to Brevo API' 
+    console.error('Error testing Brevo connection:', error);
+    return {
+      success: false,
+      error: `Brevo connection error: ${error.message}`
     };
   }
 }
