@@ -539,7 +539,7 @@ const AdminDashboard: React.FC = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{blogData.clickThroughRate}%</div>
+                <div className="text-2xl font-bold">{blogData.clickThroughRate.toFixed(2)}%</div>
                 <div className="flex items-center pt-1">
                   <ArrowUpRight className="mr-1 h-3 w-3 text-emerald-500" />
                   <span className="text-xs text-emerald-500">+0.8% this week</span>
@@ -615,7 +615,7 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-sm text-muted-foreground">{post.views.toLocaleString()} views</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{post.clickThrough}%</span>
+                        <span className="text-sm font-medium">{post.clickThrough.toFixed(2)}%</span>
                         <div className={`w-10 h-2 rounded-full ${
                           post.clickThrough > 20 ? 'bg-emerald-500' : 
                           post.clickThrough > 15 ? 'bg-amber-500' : 'bg-red-500'
@@ -809,7 +809,7 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Click-Through Rate</span>
-                    <span className="font-medium">{blogData.clickThroughRate}%</span>
+                    <span className="font-medium">{blogData.clickThroughRate.toFixed(2)}%</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Avg. Views Per Post</span>
@@ -873,8 +873,8 @@ const AdminDashboard: React.FC = () => {
                       <tr key={i} className="border-b">
                         <td className="py-3 px-2">{post.title}</td>
                         <td className="text-right py-3 px-2">{post.views.toLocaleString()}</td>
-                        <td className="text-right py-3 px-2">{post.clickThrough}%</td>
-                        <td className="text-right py-3 px-2">{post.conversion}%</td>
+                        <td className="text-right py-3 px-2">{post.clickThrough.toFixed(2)}%</td>
+                        <td className="text-right py-3 px-2">{post.conversion.toFixed(2)}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -906,7 +906,7 @@ const AdminDashboard: React.FC = () => {
                         <td className="text-right py-3 px-2">{item.posts}</td>
                         <td className="text-right py-3 px-2">{item.views.toLocaleString()}</td>
                         <td className="text-right py-3 px-2">
-                          {Math.round((item.clicks / item.views) * 100)}%
+                          {((item.clicks / item.views) * 100).toFixed(2)}%
                         </td>
                       </tr>
                     ))}
