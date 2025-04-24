@@ -1206,13 +1206,21 @@ const BlogManagement: React.FC = () => {
             </DialogContent>
           </Dialog>
           
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetFormData}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Blog Post
-              </Button>
-            </DialogTrigger>
+          {/* "New Post" button separate from dialog for better state management */}
+          <Button 
+            onClick={() => {
+              resetFormData();  // Reset form data first
+              setTimeout(() => setIsCreateDialogOpen(true), 0); // Open dialog in next tick
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Blog Post
+          </Button>
+
+          {/* Create post dialog */}
+          <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+            if (!open) setIsCreateDialogOpen(false);
+          }}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create New Blog Post</DialogTitle>

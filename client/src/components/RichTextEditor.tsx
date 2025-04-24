@@ -111,6 +111,15 @@ const RichTextEditor = ({
   // Wait for component to mount to avoid SSR issues with Quill
   useEffect(() => {
     setMounted(true);
+    
+    // Cleanup function to ensure proper resource management
+    return () => {
+      // Clear any pending auto-save timer
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
   }, []);
 
   // Track word & character count - order of hooks matters
@@ -335,20 +344,23 @@ const RichTextEditor = ({
     const cleanup = () => {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
       }
     };
     
-    if (autoSaveEnabled && onAutoSave) {
+    if (autoSaveEnabled && onAutoSave && mounted) {
       cleanup(); // Clear previous timer
       
       autoSaveTimerRef.current = setTimeout(() => {
-        onAutoSave(value);
-        setLastSaved(new Date());
+        if (mounted) { // Double-check component is still mounted
+          onAutoSave(value);
+          setLastSaved(new Date());
+        }
       }, 10000); // Auto-save after 10 seconds of inactivity
     }
 
     return cleanup;
-  }, [value, autoSaveEnabled, onAutoSave]);
+  }, [value, autoSaveEnabled, onAutoSave, mounted]);
 
   // Toggle fullscreen mode
   const toggleFullscreen = () => {
