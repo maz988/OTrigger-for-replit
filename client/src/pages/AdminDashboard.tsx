@@ -682,6 +682,30 @@ const AdminDashboard: React.FC = () => {
                 </Link>
               </CardContent>
             </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Integration Control Panel</CardTitle>
+                <CardDescription>Manage API keys and service integrations</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center justify-center space-y-4 py-6">
+                <div className="rounded-full bg-primary/10 p-6">
+                  <Settings2 className="h-12 w-12 text-primary" />
+                </div>
+                <div className="text-center space-y-2">
+                  <h3 className="text-lg font-medium">Settings & Integrations</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Configure external services, API keys, and system settings for the entire platform
+                  </p>
+                </div>
+                <Link href="/admin/settings">
+                  <Button className="w-full">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Access Control Panel
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>

@@ -1,0 +1,62 @@
+Enhance the existing "Settings" section of the admin dashboard to become a full **Integration Control Panel** for managing all external services and API keys. This panel should be modular, secure, and expandable.
+
+📍 Page: `/admin/settings`
+
+🧰 STRUCTURE:
+Use tabbed sections or accordion panels for the following integration groups:
+
+---
+
+### 🔐 AI Providers
+- **OpenAI API Key** (`OPENAI_API_KEY`)
+- **Gemini API Key** (`GEMINI_API_KEY`)
+- Select default provider (radio or dropdown)
+- Option to test connection (send a dummy prompt to verify)
+
+---
+
+### 🖼 Image Providers
+- **Unsplash API Key** (`UNSPLASH_API_KEY`)
+- **Pexels API Key** (`PEXELS_API_KEY`)
+- Select default image source
+- Optional: Toggle randomization between both
+
+---
+
+### 📧 Email Marketing / Sending
+- Add 3 input groups for:
+  - **SendGrid API Key** (`SENDGRID_API_KEY`)
+  - **MailerLite API Key** (`MAILERLITE_API_KEY`)
+  - **Brevo API Key** (`BREVO_API_KEY`)
+- Dropdown to select the **active email service**
+- Each provider panel should include:
+  - Input for sender email address
+  - Test connection button (send test email to admin)
+
+---
+
+### 📂 Lead Magnet Delivery
+- Default folder for lead magnets (PDFs)
+- Toggle: Enable auto-email delivery after form submission
+- Optional: Connect to file hosting API (like Firebase Storage or Cloudinary)
+
+---
+
+### 🧠 Auto-Blogging Settings
+- Text area to paste/edit `keywords.txt` directly in admin panel
+- Toggle: Enable/Disable auto-blog publishing
+- Button: Trigger “Generate New Article Now”
+
+---
+
+🛡️ TECH REQUIREMENTS:
+- Store API keys in Replit Secrets or encrypted Firebase config
+- Use environment variables in code (no keys hardcoded)
+- Add visual confirmation when a key is saved or updated
+- If any key is missing, disable its related features elsewhere in the app
+
+🎨 UI Suggestions:
+- Clean card or form-based layout
+- Use badges/icons to show which service is active
+- Inline validation + tooltip helper text for each field
+
