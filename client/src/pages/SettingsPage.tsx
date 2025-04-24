@@ -157,8 +157,11 @@ const SettingsPage: React.FC = () => {
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: ApiKeySettings) => {
       try {
-        // apiRequest already handles parsing the JSON response
-        return await apiRequest('POST', '/api/admin/settings', newSettings);
+        // apiRequest expects (url, options) not (method, url, options)
+        return await apiRequest('/api/admin/settings', {
+          method: 'POST', 
+          body: JSON.stringify(newSettings)
+        });
       } catch (error) {
         console.error("Error updating settings:", error);
         throw error;
@@ -185,8 +188,11 @@ const SettingsPage: React.FC = () => {
   const testServiceMutation = useMutation({
     mutationFn: async (serviceType: string) => {
       try {
-        // apiRequest already returns a Promise<ApiResponse<T>> and handles the JSON parsing
-        const response = await apiRequest('POST', `/api/admin/settings/test/${serviceType}`, {});
+        // apiRequest expects (method, url, options) but we've been passing it incorrectly
+        const response = await apiRequest(`/api/admin/settings/test/${serviceType}`, {
+          method: 'POST',
+          body: JSON.stringify({}) // Add empty body for POST request
+        });
         return response; // This is already the parsed JSON response
       } catch (error) {
         console.error("Error testing service:", error);
