@@ -73,6 +73,7 @@ const BlogManagement: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isKeywordDialogOpen, setIsKeywordDialogOpen] = useState(false);
+  const [isAutoScheduleDialogOpen, setIsAutoScheduleDialogOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'auto' | 'manual'>('all');
@@ -80,6 +81,14 @@ const BlogManagement: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [newKeyword, setNewKeyword] = useState('');
   const [newKeywordCategory, setNewKeywordCategory] = useState('relationships');
+  
+  // Auto-scheduling state
+  const [schedulingEnabled, setSchedulingEnabled] = useState(false);
+  const [scheduleFrequency, setScheduleFrequency] = useState<'daily' | 'twice-daily' | 'every-other-day' | 'weekly'>('daily');
+  const [scheduleTime, setScheduleTime] = useState('10:00');
+  const [lastGenerated, setLastGenerated] = useState<string | null>(null);
+  const [lastGeneratedKeyword, setLastGeneratedKeyword] = useState<string | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
   
   // Form state for post editing/creation
   const [formData, setFormData] = useState<Partial<BlogPost>>({
