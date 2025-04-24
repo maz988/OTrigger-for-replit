@@ -2230,6 +2230,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
+        case 'mailerlite': {
+          const apiKey = req.body.apiKey || process.env.MAILERLITE_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "MailerLite API key not configured"
+            });
+          }
+          
+          try {
+            // Test with the groups endpoint which doesn't modify anything
+            const response = await fetch('https://api.mailerlite.com/api/v2/groups', {
+              headers: { 
+                'X-MailerLite-ApiKey': apiKey,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to MailerLite API!"
+              });
+            } else {
+              // Get response body to extract error message
+              const errorData = await response.json();
+              return res.status(400).json({
+                success: false,
+                error: errorData.error?.message || `API error: ${response.status}`
+              });
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to MailerLite"
+            });
+          }
+        }
+        
+        case 'brevo': {
+          const apiKey = req.body.apiKey || process.env.BREVO_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "Brevo API key not configured"
+            });
+          }
+          
+          try {
+            // Test with the account endpoint which doesn't modify anything
+            const response = await fetch('https://api.brevo.com/v3/account', {
+              headers: { 
+                'api-key': apiKey,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to Brevo API!"
+              });
+            } else {
+              // Get response body to extract error message
+              const errorData = await response.json();
+              return res.status(400).json({
+                success: false,
+                error: errorData.message || `API error: ${response.status}`
+              });
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to Brevo"
+            });
+          }
+        }
+        
         default:
           return res.status(400).json({
             success: false,
