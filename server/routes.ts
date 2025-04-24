@@ -439,6 +439,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all quiz responses for detailed analysis
+  app.get("/api/admin/quiz/responses", authenticateAdmin, async (req, res) => {
+    try {
+      const responses = await storage.getAllQuizResponses();
+      
+      // Filter responses based on date range if provided
+      const { timeRange } = req.query;
+      let filteredResponses = responses;
+      
+      if (timeRange) {
+        const now = new Date();
+        let cutoffDate = new Date();
+        
+        if (timeRange === '7days') {
+          cutoffDate.setDate(now.getDate() - 7);
+        } else if (timeRange === '30days') {
+          cutoffDate.setDate(now.getDate() - 30);
+        }
+        
+        if (timeRange === '7days' || timeRange === '30days') {
+          filteredResponses = responses.filter(response => 
+            new Date(response.createdAt) >= cutoffDate
+          );
+        }
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: filteredResponses
+      });
+    } catch (err: any) {
+      console.error(`Error getting quiz responses: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Export quiz responses as CSV
+  app.get("/api/admin/quiz/export", authenticateAdmin, async (req, res) => {
+    try {
+      const csvData = await storage.exportQuizResponses();
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="quiz-responses.csv"');
+      res.status(200).send(csvData);
+    } catch (err: any) {
+      console.error(`Error exporting quiz responses: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
   app.get("/api/admin/analytics/blog", authenticateAdmin, async (req, res) => {
     try {
       const analytics = await storage.getBlogAnalytics();
