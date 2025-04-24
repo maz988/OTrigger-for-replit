@@ -188,10 +188,36 @@ const SettingsPage: React.FC = () => {
   const testServiceMutation = useMutation({
     mutationFn: async (serviceType: string) => {
       try {
-        // apiRequest expects (method, url, options) but we've been passing it incorrectly
+        // Get the current value of the API key from the form
+        let apiKey;
+        switch(serviceType) {
+          case 'openai':
+            apiKey = form.getValues().openaiApiKey;
+            break;
+          case 'gemini':
+            apiKey = form.getValues().geminiApiKey;
+            break;
+          case 'pexels':
+            apiKey = form.getValues().pexelsApiKey;
+            break;
+          case 'unsplash':
+            apiKey = form.getValues().unsplashApiKey;
+            break;
+          case 'sendgrid':
+            apiKey = form.getValues().sendgridApiKey;
+            break;
+          case 'mailerlite':
+            apiKey = form.getValues().mailerliteApiKey;
+            break;
+          case 'brevo':
+            apiKey = form.getValues().brevoApiKey;
+            break;
+        }
+        
+        // apiRequest expects (url, options)
         const response = await apiRequest(`/api/admin/settings/test/${serviceType}`, {
           method: 'POST',
-          body: JSON.stringify({}) // Add empty body for POST request
+          body: JSON.stringify({ apiKey }) // Send the API key for testing
         });
         return response; // This is already the parsed JSON response
       } catch (error) {

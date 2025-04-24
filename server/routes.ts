@@ -2039,8 +2039,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Handle MailerLite API key
-      if (settingsData.mailerliteApiKey && process.env.MAILERLITE_API_KEY !== settingsData.mailerliteApiKey) {
-        process.env.MAILERLITE_API_KEY = settingsData.mailerliteApiKey;
+      if ((settingsData.mailerliteApiKey || settingsData.MAILERLITE_API_KEY) && 
+          process.env.MAILERLITE_API_KEY !== (settingsData.mailerliteApiKey || settingsData.MAILERLITE_API_KEY)) {
+        // Support both camelCase and uppercase naming conventions
+        const apiKey = settingsData.mailerliteApiKey || settingsData.MAILERLITE_API_KEY;
+        process.env.MAILERLITE_API_KEY = apiKey;
         console.log("Updated MailerLite API key in environment");
       }
       
@@ -2269,6 +2272,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         case 'mailerlite': {
+          // Log the request body to debug
+          console.log("MailerLite test request body:", req.body);
+          
           const apiKey = req.body.apiKey || process.env.MAILERLITE_API_KEY;
           if (!apiKey) {
             return res.status(400).json({
@@ -2276,6 +2282,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               error: "MailerLite API key not configured"
             });
           }
+          
+          // Log the API key (but redact most of it for security)
+          const redactedKey = apiKey.substring(0, 8) + "..." + apiKey.substring(apiKey.length - 4);
+          console.log(`Testing MailerLite with API key: ${redactedKey}`);
           
           try {
             // Test with the groups endpoint which doesn't modify anything
