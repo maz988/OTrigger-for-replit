@@ -863,7 +863,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Pexels API integration for image search
+  // Enhanced image processing function
+  const processImageForSEO = (imageUrl: string, keyword: string, title: string, photographer?: string) => {
+    // Generate SEO-optimized alt text
+    const generateAltText = (keyword: string, title: string) => {
+      // Create variations of alt text to avoid duplication
+      const variations = [
+        `${keyword} - relationship advice for women`,
+        `Image showing ${keyword} in relationships`,
+        `Visual representation of ${keyword}`,
+        `${title} - relationship guidance`,
+        `Emotional visualization of ${keyword}`,
+      ];
+      
+      // Return a random variation
+      return variations[Math.floor(Math.random() * variations.length)];
+    };
+    
+    // Generate structured data for each image
+    const generateImageSchema = (imageUrl: string, altText: string, photographer?: string) => {
+      return {
+        "@context": "https://schema.org/",
+        "@type": "ImageObject",
+        "contentUrl": imageUrl,
+        "description": altText,
+        "creditText": photographer ? `Photo by ${photographer}` : undefined
+      };
+    };
+    
+    // Generate responsive sizes based on the original URL
+    // Convert Pexels URL to include different size options
+    const generateResponsiveSizes = (originalUrl: string) => {
+      // Example URL: https://images.pexels.com/photos/1234/example.jpeg
+      // We'll create an array of different sizes for responsive loading
+      
+      // If it's not a Pexels URL, just return the original
+      if (!originalUrl.includes('pexels.com')) {
+        return {
+          originalUrl,
+          sizes: null
+        };
+      }
+      
+      try {
+        // Parse the URL to get the base components
+        const urlParts = originalUrl.split('?')[0].split('/');
+        const photoId = urlParts[urlParts.indexOf('photos') + 1];
+        const fileName = urlParts[urlParts.length - 1];
+        
+        // Create base URL for different sizes
+        const baseUrl = `https://images.pexels.com/photos/${photoId}/${fileName}`;
+        
+        return {
+          originalUrl: baseUrl,
+          small: `${baseUrl}?auto=compress&cs=tinysrgb&w=400`,
+          medium: `${baseUrl}?auto=compress&cs=tinysrgb&w=800`,
+          large: `${baseUrl}?auto=compress&cs=tinysrgb&w=1200`,
+          srcset: `${baseUrl}?auto=compress&cs=tinysrgb&w=400 400w, ${baseUrl}?auto=compress&cs=tinysrgb&w=800 800w, ${baseUrl}?auto=compress&cs=tinysrgb&w=1200 1200w`
+        };
+      } catch (error) {
+        console.error('Error parsing Pexels URL:', error);
+        return {
+          originalUrl,
+          sizes: null
+        };
+      }
+    };
+    
+    // Create the alt text
+    const altText = generateAltText(keyword, title);
+    
+    // Generate responsive sizes
+    const responsiveSizes = generateResponsiveSizes(imageUrl);
+    
+    // Generate structured data
+    const schema = generateImageSchema(imageUrl, altText, photographer);
+    
+    // Return the enhanced image object
+    return {
+      url: imageUrl,
+      alt: altText,
+      responsive: responsiveSizes,
+      schema,
+      lazyLoad: true,
+      photographer
+    };
+  };
+
+  // Pexels API integration for image search with enhanced SEO features
   app.get("/api/admin/pexels", authenticateAdmin, async (req, res) => {
     try {
       const { query } = req.query;
@@ -895,6 +982,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const data = await response.json();
+      
+      // Enhance the photo data with SEO features
+      if (data.photos && data.photos.length > 0) {
+        data.photos = data.photos.map(photo => {
+          return {
+            ...photo,
+            seo: processImageForSEO(
+              photo.src.original, 
+              query as string, 
+              `Photo related to ${query}`, 
+              photo.photographer
+            )
+          };
+        });
+      }
       
       res.status(200).json({
         success: true,
