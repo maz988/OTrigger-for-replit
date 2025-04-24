@@ -51,7 +51,7 @@ import {
   Pencil,
   Save,
   AlertCircle,
-  Link,
+  Link as LinkIcon,
   Calendar,
   ChevronRight
 } from 'lucide-react';
@@ -1109,59 +1109,202 @@ const AdminDashboard: React.FC = () => {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <h2 className="text-2xl font-bold mb-4">Admin Dashboard Overview</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Quiz Responses Card */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Quiz Responses</CardTitle>
                 <UserCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{quizData.totalResponses}</div>
-                <p className="text-xs text-muted-foreground">
-                  +{Math.round(quizData.responsesByDay[quizData.responsesByDay.length - 1].count / quizData.totalResponses * 100)}% from yesterday
-                </p>
+                {dashboardLoading ? (
+                  <div className="h-6 w-24 bg-muted animate-pulse rounded"></div>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold">
+                      {dashboardOverviewResponse?.data.totalQuizResponses.toLocaleString() || 0}
+                    </div>
+                    <div className="flex items-center mt-2">
+                      <span className={`text-xs flex items-center ${dashboardOverviewResponse?.data.newQuizResponsesLast7Days > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {dashboardOverviewResponse?.data.newQuizResponsesLast7Days > 0 ? (
+                          <ArrowUpRight className="h-3 w-3 mr-1" />
+                        ) : (
+                          <ArrowDownRight className="h-3 w-3 mr-1" />
+                        )}
+                        {dashboardOverviewResponse?.data.newQuizResponsesLast7Days} in last 7 days
+                      </span>
+                    </div>
+                    <div className="h-[80px] mt-4">
+                      {dashboardOverviewResponse && (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dashboardOverviewResponse.data.quizResponsesTrend}>
+                            <Bar dataKey="count" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
-
+            
+            {/* Quiz Completion Rate Card */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Quiz Completion Rate</CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{quizData.completionRate}%</div>
-                <div className="flex items-center pt-1">
-                  <ArrowUpRight className="mr-1 h-3 w-3 text-emerald-500" />
-                  <span className="text-xs text-emerald-500">+2.5% this week</span>
-                </div>
+                {dashboardLoading ? (
+                  <div className="h-6 w-24 bg-muted animate-pulse rounded"></div>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold">
+                      {dashboardOverviewResponse?.data.quizCompletionRate.toFixed(1)}%
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full mt-3">
+                      <div 
+                        className="h-2 rounded-full bg-primary" 
+                        style={{ 
+                          width: `${dashboardOverviewResponse?.data.quizCompletionRate}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
-
+            
+            {/* Blog Posts Card */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Blog Posts</CardTitle>
+                <CardTitle className="text-sm font-medium">Blog Posts Published</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{blogData.totalPosts}</div>
-                <div className="flex items-center pt-1">
-                  <ArrowUpRight className="mr-1 h-3 w-3 text-emerald-500" />
-                  <span className="text-xs text-emerald-500">+4 this week</span>
-                </div>
+                {dashboardLoading ? (
+                  <div className="h-6 w-24 bg-muted animate-pulse rounded"></div>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold">
+                      {dashboardOverviewResponse?.data.totalBlogPosts.toLocaleString() || 0}
+                    </div>
+                    <div className="flex items-center mt-2">
+                      <p className="text-xs text-muted-foreground flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Last post: {dashboardOverviewResponse?.data.blogViewsTrend && dashboardOverviewResponse.data.blogViewsTrend.length > 0 ? 
+                          new Date(dashboardOverviewResponse.data.blogViewsTrend[dashboardOverviewResponse.data.blogViewsTrend.length - 1].date).toLocaleDateString() : 
+                          'N/A'}
+                      </p>
+                    </div>
+                    <div className="h-[80px] mt-4">
+                      {dashboardOverviewResponse && (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dashboardOverviewResponse.data.blogViewsTrend}>
+                            <Bar dataKey="count" fill="#4CAF50" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
-
+            
+            {/* Blog CTR Card */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Blog CTR</CardTitle>
+                <LinkIcon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                {dashboardLoading ? (
+                  <div className="h-6 w-24 bg-muted animate-pulse rounded"></div>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold">
+                      {dashboardOverviewResponse?.data.blogCTR.toFixed(2)}%
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        {dashboardOverviewResponse?.data.totalBlogViews.toLocaleString() || 0} total views
+                      </p>
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full mt-3">
+                      <div 
+                        className="h-2 rounded-full bg-amber-500" 
+                        style={{ 
+                          width: `${Math.min(100, dashboardOverviewResponse?.data.blogCTR * 5)}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Email Subscribers Card */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Email Subscribers</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{blogData.clickThroughRate.toFixed(2)}%</div>
-                <div className="flex items-center pt-1">
-                  <ArrowUpRight className="mr-1 h-3 w-3 text-emerald-500" />
-                  <span className="text-xs text-emerald-500">+0.8% this week</span>
-                </div>
+                {dashboardLoading ? (
+                  <div className="h-6 w-24 bg-muted animate-pulse rounded"></div>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold">
+                      {dashboardOverviewResponse?.data.totalSubscribers.toLocaleString() || 0}
+                    </div>
+                    <div className="flex items-center mt-2">
+                      <span className={`text-xs flex items-center ${dashboardOverviewResponse?.data.newSubscribersLast7Days > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {dashboardOverviewResponse?.data.newSubscribersLast7Days > 0 ? (
+                          <ArrowUpRight className="h-3 w-3 mr-1" />
+                        ) : (
+                          <ArrowDownRight className="h-3 w-3 mr-1" />
+                        )}
+                        {dashboardOverviewResponse?.data.newSubscribersLast7Days} new in last 7 days
+                      </span>
+                    </div>
+                    <div className="h-[80px] mt-4">
+                      {dashboardOverviewResponse && (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dashboardOverviewResponse.data.subscribersTrend}>
+                            <Bar dataKey="count" fill="#00C49F" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Affiliate Clicks Card */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Affiliate Clicks</CardTitle>
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                {dashboardLoading ? (
+                  <div className="h-6 w-24 bg-muted animate-pulse rounded"></div>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold">
+                      {dashboardOverviewResponse?.data.totalAffiliateClicks.toLocaleString() || 0}
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        CTR: {dashboardOverviewResponse && dashboardOverviewResponse.data.totalBlogViews > 0 
+                        ? ((dashboardOverviewResponse.data.totalAffiliateClicks / dashboardOverviewResponse.data.totalBlogViews) * 100).toFixed(2) 
+                        : '0.00'}%
+                      </p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -1858,7 +2001,7 @@ const AdminDashboard: React.FC = () => {
                                 {Object.entries(selectedPostWithAnalytics.analytics.referrers).map(([url, count], idx) => (
                                   <div key={idx} className="flex justify-between items-center">
                                     <div className="text-sm truncate max-w-[400px]">
-                                      <Link className="h-4 w-4 inline mr-2" />
+                                      <LinkIcon className="h-4 w-4 inline mr-2" />
                                       {url}
                                     </div>
                                     <Badge>{count} clicks</Badge>
