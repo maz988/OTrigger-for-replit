@@ -1,7 +1,9 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 
 // We need to check for the API key in the environment
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "default_key";
+// When running on the client, we need to use import.meta.env
+// The API key should be formatted properly with no spaces
+const API_KEY = (import.meta.env.VITE_GEMINI_API_KEY || "default_key").trim();
 
 /**
  * Initialize the Gemini API client
@@ -26,8 +28,9 @@ export async function generateWithGemini(prompt: string): Promise<string> {
       throw new Error("Gemini API key not configured");
     }
 
-    // For most scenarios, we'll use the gemini-pro model
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    // For most scenarios, we'll use the Gemini model
+    // Note: The model name format has changed in newer versions of the API
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     
     const result = await model.generateContent(prompt);
     const response = result.response;
@@ -50,7 +53,7 @@ export async function enhanceContent(content: string, instructions: string): Pro
       throw new Error("Gemini API key not configured");
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     
     const prompt = `
       CONTENT TO ENHANCE:
@@ -82,7 +85,7 @@ export async function generateOutline(keyword: string): Promise<string> {
       throw new Error("Gemini API key not configured");
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     
     const prompt = `
       Create a detailed outline for a blog post about "${keyword}" focused on relationship advice.
@@ -116,7 +119,7 @@ export async function factCheckContent(content: string): Promise<string> {
       throw new Error("Gemini API key not configured");
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     
     const prompt = `
       Please fact-check the following relationship advice content:

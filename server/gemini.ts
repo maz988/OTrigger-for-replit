@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 
 // Check if API key is available
-const API_KEY = process.env.GEMINI_API_KEY || "default_key";
+// Make sure to trim the API key to remove any whitespace
+const API_KEY = (process.env.GEMINI_API_KEY || "default_key").trim();
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 /**
