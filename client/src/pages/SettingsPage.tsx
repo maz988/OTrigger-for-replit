@@ -156,8 +156,13 @@ const SettingsPage: React.FC = () => {
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: ApiKeySettings) => {
-      const response = await apiRequest('POST', '/api/admin/settings', newSettings);
-      return await response.json();
+      try {
+        // apiRequest already handles parsing the JSON response
+        return await apiRequest('POST', '/api/admin/settings', newSettings);
+      } catch (error) {
+        console.error("Error updating settings:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -179,8 +184,14 @@ const SettingsPage: React.FC = () => {
   // Test service connection mutation
   const testServiceMutation = useMutation({
     mutationFn: async (serviceType: string) => {
-      const response = await apiRequest('POST', `/api/admin/settings/test/${serviceType}`, {});
-      return await response.json();
+      try {
+        // apiRequest already returns a Promise<ApiResponse<T>> and handles the JSON parsing
+        const response = await apiRequest('POST', `/api/admin/settings/test/${serviceType}`, {});
+        return response; // This is already the parsed JSON response
+      } catch (error) {
+        console.error("Error testing service:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       setTestResults({
@@ -188,10 +199,24 @@ const SettingsPage: React.FC = () => {
         message: data.message || 'Connection successful!'
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      // The error message format might be coming from our throwIfResNotOk function
+      // Extract just the important part of the message for the user
+      let errorMessage = "Connection failed. Please check your API key.";
+      
+      if (error.message) {
+        // Try to extract useful part of the error
+        if (error.message.includes(":")) {
+          // Split by colon and take everything after the first colon
+          errorMessage = error.message.split(":").slice(1).join(":").trim();
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       setTestResults({
         success: false,
-        message: error.message || 'Connection failed. Please check your API key.'
+        message: errorMessage
       });
     }
   });
