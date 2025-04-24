@@ -1150,6 +1150,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
+        // Add additional related article links for internal linking
+        if (!enhancedContent.includes('related-articles')) {
+          // Add at the end of the content
+          enhancedContent += `
+            <div class="related-articles">
+              <h3>Related Articles You Might Enjoy</h3>
+              <ul>
+                <li><a href="/blog/posts/how-to-make-him-obsessed-with-you?utm_source=blog&utm_medium=related_post&utm_campaign=${slug}">How to Make Him Obsessed With You</a></li>
+                <li><a href="/blog/posts/how-to-trigger-his-hero-instinct?utm_source=blog&utm_medium=related_post&utm_campaign=${slug}">How to Trigger His Hero Instinct</a></li>
+                <li><a href="/blog/posts/how-to-create-emotional-intimacy?utm_source=blog&utm_medium=related_post&utm_campaign=${slug}">How to Create Emotional Intimacy</a></li>
+              </ul>
+            </div>
+          `;
+        }
+        
         // Add schema markup for SEO
         const schemaMarkup = {
           "@context": "https://schema.org",
@@ -1158,7 +1173,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "description": metaDescription,
           "keywords": tags.join(", "),
           "articleSection": "Relationship Advice",
-          "datePublished": new Date().toISOString()
+          "datePublished": new Date().toISOString(),
+          "author": {
+            "@type": "Person",
+            "name": "Obsession Trigger Team"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Obsession Trigger",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://www.obsessiontrigger.com/logo.png"
+            }
+          }
         };
         
         // Return the enhanced structure

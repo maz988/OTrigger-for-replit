@@ -168,6 +168,42 @@
   .lead-magnet-box a:hover {
     color: var(--obsession-dark-pink);
   }
+  
+  .related-articles {
+    background-color: #f9f9f9;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin: 3rem 0 1.5rem;
+    border-top: 3px solid var(--obsession-accent-pink);
+  }
+  
+  .related-articles h3 {
+    margin-top: 0 !important;
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+  
+  .related-articles ul {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+  
+  .related-articles li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .related-articles a {
+    color: var(--obsession-pink);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  
+  .related-articles a:hover {
+    color: var(--obsession-dark-pink);
+    text-decoration: underline;
+  }
 }
 
 :root {
