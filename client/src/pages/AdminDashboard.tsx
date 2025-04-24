@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -102,6 +103,65 @@ interface BlogPostWithAnalytics {
   analytics: BlogPostAnalytics | null;
 }
 
+interface EmailSubscriber {
+  id: number;
+  firstName: string;
+  email: string;
+  source: string;
+  createdAt: string;
+  unsubscribed: boolean;
+  lastEmailSent: string | null;
+}
+
+interface LeadMagnet {
+  id: number;
+  name: string;
+  description: string;
+  filePath: string;
+  downloadCount: number;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+interface EmailTemplate {
+  id: number;
+  name: string;
+  subject: string;
+  content: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+interface SystemSetting {
+  id: number;
+  settingKey: string;
+  settingValue: string;
+  settingType: string;
+  description: string;
+  lastUpdated: string;
+}
+
+interface DashboardOverview {
+  totalQuizResponses: number;
+  quizCompletionRate: number;
+  totalBlogPosts: number;
+  totalBlogViews: number;
+  blogCTR: number;
+  totalSubscribers: number;
+  activeSubscribers: number;
+  totalLeadMagnets: number;
+  leadMagnetDownloads: number;
+  totalAffiliateClicks: number;
+  quizResponsesTrend: Array<{ date: string; count: number }>;
+  subscribersTrend: Array<{ date: string; count: number }>;
+  blogViewsTrend: Array<{ date: string; count: number }>;
+  newQuizResponsesLast7Days: number;
+  newSubscribersLast7Days: number;
+  blogViewsLast7Days: number;
+  leadMagnetDownloadsLast7Days: number;
+}
+
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#4CAF50', '#FF5722'];
 
@@ -183,6 +243,121 @@ const AdminDashboard: React.FC = () => {
     (quizAnalyticsResponse as unknown as ApiResponse<QuizAnalytics>).data : undefined;
   const blogAnalytics: BlogAnalytics | undefined = blogAnalyticsResponse ? 
     (blogAnalyticsResponse as unknown as ApiResponse<BlogAnalytics>).data : undefined;
+    
+  // Fetch dashboard overview data
+  const { data: dashboardOverviewResponse, isLoading: dashboardLoading } = useQuery({
+    queryKey: ['/api/admin/dashboard'],
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    enabled: activeTab === 'overview',
+  });
+  
+  // Fetch subscribers
+  const { data: subscribersResponse, isLoading: subscribersLoading, refetch: refetchSubscribers } = useQuery({
+    queryKey: ['/api/admin/subscribers'],
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/subscribers', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    enabled: activeTab === 'subscribers',
+  });
+  
+  // Fetch lead magnets
+  const { data: leadMagnetsResponse, isLoading: leadMagnetsLoading, refetch: refetchLeadMagnets } = useQuery({
+    queryKey: ['/api/admin/lead-magnets'],
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/lead-magnets', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    enabled: activeTab === 'settings',
+  });
+  
+  // Fetch system settings
+  const { data: settingsResponse, isLoading: settingsLoading, refetch: refetchSettings } = useQuery({
+    queryKey: ['/api/admin/settings'],
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/settings', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    enabled: activeTab === 'settings',
+  });
+  
+  // Fetch keywords
+  const { data: keywordsResponse, isLoading: keywordsLoading, refetch: refetchKeywords } = useQuery({
+    queryKey: ['/api/admin/keywords'],
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/keywords', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    enabled: activeTab === 'settings',
+  });
 
   // Mock data for development
   const mockQuizAnalytics: QuizAnalytics = {
@@ -413,6 +588,394 @@ const AdminDashboard: React.FC = () => {
     },
   });
   
+  // Subscriber management mutations
+  const createSubscriberMutation = useMutation({
+    mutationFn: async (subscriberData: Omit<EmailSubscriber, 'id' | 'createdAt' | 'lastEmailSent'>) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/subscribers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(subscriberData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create subscriber');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Subscriber added successfully',
+        variant: 'default',
+      });
+      refetchSubscribers();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  const updateSubscriberMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: Partial<Omit<EmailSubscriber, 'id' | 'createdAt'>> }) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/admin/subscribers/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update subscriber');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Subscriber updated successfully',
+        variant: 'default',
+      });
+      refetchSubscribers();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  const unsubscribeEmailMutation = useMutation({
+    mutationFn: async (email: string) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/admin/subscribers/${email}/unsubscribe`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to unsubscribe email');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Email unsubscribed successfully',
+        variant: 'default',
+      });
+      refetchSubscribers();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Lead magnet mutations
+  const createLeadMagnetMutation = useMutation({
+    mutationFn: async (leadMagnetData: Omit<LeadMagnet, 'id' | 'createdAt' | 'updatedAt' | 'downloadCount'>) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/lead-magnets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(leadMagnetData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create lead magnet');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Lead magnet created successfully',
+        variant: 'default',
+      });
+      refetchLeadMagnets();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  const updateLeadMagnetMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: Partial<Omit<LeadMagnet, 'id' | 'createdAt' | 'updatedAt' | 'downloadCount'>> }) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/admin/lead-magnets/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update lead magnet');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Lead magnet updated successfully',
+        variant: 'default',
+      });
+      refetchLeadMagnets();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  const deleteLeadMagnetMutation = useMutation({
+    mutationFn: async (id: number) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/admin/lead-magnets/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete lead magnet');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Lead magnet deleted successfully',
+        variant: 'default',
+      });
+      refetchLeadMagnets();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // System settings mutations
+  const updateSettingMutation = useMutation({
+    mutationFn: async ({ key, value }: { key: string, value: string }) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/admin/settings/${key}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ value })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update setting');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Setting updated successfully',
+        variant: 'default',
+      });
+      refetchSettings();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Keywords mutations
+  const addKeywordMutation = useMutation({
+    mutationFn: async (keyword: string) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/keywords', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ keyword })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add keyword');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Keyword added successfully',
+        variant: 'default',
+      });
+      refetchKeywords();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  const deleteKeywordMutation = useMutation({
+    mutationFn: async (keyword: string) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch(`/api/admin/keywords/${encodeURIComponent(keyword)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete keyword');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Keyword deleted successfully',
+        variant: 'default',
+      });
+      refetchKeywords();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Auto scheduling mutations
+  const toggleAutoSchedulingMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await fetch('/api/admin/blog/auto-scheduling', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ enabled })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update auto scheduling');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Success',
+        description: `Auto scheduling ${data.data.enabled ? 'enabled' : 'disabled'} successfully`,
+        variant: 'default',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
   // Helper functions
   const resetFormData = () => {
     setFormData({
@@ -467,13 +1030,65 @@ const AdminDashboard: React.FC = () => {
     });
   };
   
-  // Extract blog post data
+  // Extract data from responses
   const blogPosts: BlogPost[] = blogPostsResponse?.data || [];
   const selectedPostWithAnalytics: BlogPostWithAnalytics | undefined = selectedPostResponse?.data;
+  const subscribers: EmailSubscriber[] = subscribersResponse?.data || [];
+  const leadMagnets: LeadMagnet[] = leadMagnetsResponse?.data || [];
+  const settings: SystemSetting[] = settingsResponse?.data || [];
+  const keywords: string[] = keywordsResponse?.data || [];
+  const dashboardOverview: DashboardOverview | undefined = dashboardOverviewResponse?.data;
   
   // Use real data if available, fallback to mock data for development
   const quizData = quizAnalytics || mockQuizAnalytics;
   const blogData = blogAnalytics || mockBlogAnalytics;
+  
+  // State for add subscriber form
+  const [subscriberFormData, setSubscriberFormData] = useState({
+    firstName: '',
+    email: '',
+    source: 'Admin',
+    unsubscribed: false
+  });
+  
+  // State for add lead magnet form
+  const [leadMagnetFormData, setLeadMagnetFormData] = useState({
+    name: '',
+    description: '',
+    filePath: ''
+  });
+  
+  // State for keyword form
+  const [newKeyword, setNewKeyword] = useState('');
+  
+  // State for modals and dialogs
+  const [isAddSubscriberDialogOpen, setIsAddSubscriberDialogOpen] = useState(false);
+  const [isEditSubscriberDialogOpen, setIsEditSubscriberDialogOpen] = useState(false);
+  const [isAddLeadMagnetDialogOpen, setIsAddLeadMagnetDialogOpen] = useState(false);
+  const [isEditLeadMagnetDialogOpen, setIsEditLeadMagnetDialogOpen] = useState(false);
+  const [isDeleteLeadMagnetDialogOpen, setIsDeleteLeadMagnetDialogOpen] = useState(false);
+  
+  // Selected items for editing
+  const [selectedSubscriberId, setSelectedSubscriberId] = useState<number | null>(null);
+  const [selectedLeadMagnetId, setSelectedLeadMagnetId] = useState<number | null>(null);
+  
+  // Helper functions for forms
+  const resetSubscriberFormData = () => {
+    setSubscriberFormData({
+      firstName: '',
+      email: '',
+      source: 'Admin',
+      unsubscribed: false
+    });
+  };
+  
+  const resetLeadMagnetFormData = () => {
+    setLeadMagnetFormData({
+      name: '',
+      description: '',
+      filePath: ''
+    });
+  };
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -483,11 +1098,13 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="quiz">Quiz Analytics</TabsTrigger>
           <TabsTrigger value="blog">Blog Analytics</TabsTrigger>
-          <TabsTrigger value="content">Content Management</TabsTrigger>
+          <TabsTrigger value="content">Blog Posts</TabsTrigger>
+          <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -1292,6 +1909,669 @@ const AdminDashboard: React.FC = () => {
                   className="bg-red-500 hover:bg-red-600"
                 >
                   {deletePostMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Deleting...</span>
+                    </div>
+                  ) : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </TabsContent>
+
+        {/* Subscribers Tab */}
+        <TabsContent value="subscribers" className="space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Email Subscribers</h2>
+              <p className="text-muted-foreground">Manage your email list and lead magnets</p>
+            </div>
+            <Button onClick={() => {
+              resetSubscriberFormData();
+              setIsAddSubscriberDialogOpen(true);
+            }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Subscriber
+            </Button>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscribers List</CardTitle>
+              <CardDescription>
+                Total Active Subscribers: {subscribers.filter(sub => !sub.unsubscribed).length}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {subscribersLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Source</TableHead>
+                        <TableHead>Joined</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {subscribers.map(subscriber => (
+                        <TableRow key={subscriber.id}>
+                          <TableCell className="font-medium">{subscriber.firstName}</TableCell>
+                          <TableCell>{subscriber.email}</TableCell>
+                          <TableCell>{subscriber.source}</TableCell>
+                          <TableCell>{new Date(subscriber.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {subscriber.unsubscribed ? (
+                              <Badge variant="destructive">Unsubscribed</Badge>
+                            ) : (
+                              <Badge variant="success">Active</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => {
+                                  const selected = subscribers.find(s => s.id === subscriber.id);
+                                  if (selected) {
+                                    setSelectedSubscriberId(selected.id);
+                                    setSubscriberFormData({
+                                      firstName: selected.firstName,
+                                      email: selected.email,
+                                      source: selected.source,
+                                      unsubscribed: selected.unsubscribed
+                                    });
+                                    setIsEditSubscriberDialogOpen(true);
+                                  }
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {!subscriber.unsubscribed && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => unsubscribeEmailMutation.mutate(subscriber.email)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Add Subscriber Dialog */}
+          <Dialog open={isAddSubscriberDialogOpen} onOpenChange={setIsAddSubscriberDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Add New Subscriber</DialogTitle>
+                <DialogDescription>
+                  Add a new subscriber to your email list
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="firstName" className="text-right">
+                    First Name
+                  </Label>
+                  <Input
+                    id="firstName"
+                    className="col-span-3"
+                    value={subscriberFormData.firstName}
+                    onChange={(e) => setSubscriberFormData({
+                      ...subscriberFormData,
+                      firstName: e.target.value
+                    })}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="email" className="text-right">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    className="col-span-3"
+                    value={subscriberFormData.email}
+                    onChange={(e) => setSubscriberFormData({
+                      ...subscriberFormData,
+                      email: e.target.value
+                    })}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="source" className="text-right">
+                    Source
+                  </Label>
+                  <Select 
+                    value={subscriberFormData.source}
+                    onValueChange={(value) => setSubscriberFormData({
+                      ...subscriberFormData,
+                      source: value
+                    })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="Quiz">Quiz</SelectItem>
+                      <SelectItem value="Blog">Blog</SelectItem>
+                      <SelectItem value="Lead Magnet">Lead Magnet</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAddSubscriberDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    createSubscriberMutation.mutate(subscriberFormData);
+                    setIsAddSubscriberDialogOpen(false);
+                  }}
+                  disabled={createSubscriberMutation.isPending}
+                >
+                  {createSubscriberMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </div>
+                  ) : 'Add Subscriber'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Subscriber Dialog */}
+          <Dialog open={isEditSubscriberDialogOpen} onOpenChange={setIsEditSubscriberDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Edit Subscriber</DialogTitle>
+                <DialogDescription>
+                  Update subscriber information
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-firstName" className="text-right">
+                    First Name
+                  </Label>
+                  <Input
+                    id="edit-firstName"
+                    className="col-span-3"
+                    value={subscriberFormData.firstName}
+                    onChange={(e) => setSubscriberFormData({
+                      ...subscriberFormData,
+                      firstName: e.target.value
+                    })}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-email" className="text-right">
+                    Email
+                  </Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    className="col-span-3"
+                    value={subscriberFormData.email}
+                    onChange={(e) => setSubscriberFormData({
+                      ...subscriberFormData,
+                      email: e.target.value
+                    })}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-source" className="text-right">
+                    Source
+                  </Label>
+                  <Select 
+                    value={subscriberFormData.source}
+                    onValueChange={(value) => setSubscriberFormData({
+                      ...subscriberFormData,
+                      source: value
+                    })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="Quiz">Quiz</SelectItem>
+                      <SelectItem value="Blog">Blog</SelectItem>
+                      <SelectItem value="Lead Magnet">Lead Magnet</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="status" className="text-right">
+                    Status
+                  </Label>
+                  <div className="flex items-center space-x-2 col-span-3">
+                    <Checkbox 
+                      id="status" 
+                      checked={!subscriberFormData.unsubscribed}
+                      onCheckedChange={(checked) => setSubscriberFormData({
+                        ...subscriberFormData,
+                        unsubscribed: !checked
+                      })}
+                    />
+                    <label
+                      htmlFor="status"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Active Subscriber
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditSubscriberDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (selectedSubscriberId) {
+                      updateSubscriberMutation.mutate({
+                        id: selectedSubscriberId,
+                        data: subscriberFormData
+                      });
+                      setIsEditSubscriberDialogOpen(false);
+                    }
+                  }}
+                  disabled={updateSubscriberMutation.isPending}
+                >
+                  {updateSubscriberMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </div>
+                  ) : 'Update Subscriber'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+        
+        {/* Settings Tab */}
+        <TabsContent value="settings" className="space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">System Settings</h2>
+              <p className="text-muted-foreground">Configure the application settings and integrations</p>
+            </div>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Lead Magnets</CardTitle>
+                <CardDescription>Manage downloadable materials for subscribers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {leadMagnetsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Button onClick={() => {
+                      resetLeadMagnetFormData();
+                      setIsAddLeadMagnetDialogOpen(true);
+                    }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Lead Magnet
+                    </Button>
+                    
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Downloads</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {leadMagnets.map(leadMagnet => (
+                            <TableRow key={leadMagnet.id}>
+                              <TableCell className="font-medium">{leadMagnet.name}</TableCell>
+                              <TableCell>{leadMagnet.downloadCount}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => {
+                                      const selected = leadMagnets.find(lm => lm.id === leadMagnet.id);
+                                      if (selected) {
+                                        setSelectedLeadMagnetId(selected.id);
+                                        setLeadMagnetFormData({
+                                          name: selected.name,
+                                          description: selected.description,
+                                          filePath: selected.filePath
+                                        });
+                                        setIsEditLeadMagnetDialogOpen(true);
+                                      }
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => {
+                                      setSelectedLeadMagnetId(leadMagnet.id);
+                                      setIsDeleteLeadMagnetDialogOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Blog Keywords</CardTitle>
+                <CardDescription>Manage keywords for blog post generation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {keywordsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="Enter new keyword"
+                        value={newKeyword}
+                        onChange={(e) => setNewKeyword(e.target.value)}
+                      />
+                      <Button 
+                        onClick={() => {
+                          if (newKeyword.trim()) {
+                            addKeywordMutation.mutate(newKeyword.trim());
+                            setNewKeyword('');
+                          }
+                        }}
+                        disabled={addKeywordMutation.isPending || !newKeyword.trim()}
+                      >
+                        {addKeywordMutation.isPending ? (
+                          <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Plus className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {keywords.map((keyword, index) => (
+                        <div key={index} className="flex items-center gap-1 bg-secondary text-secondary-foreground px-3 py-1 rounded-full">
+                          <span>{keyword}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5 rounded-full"
+                            onClick={() => deleteKeywordMutation.mutate(keyword)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Auto Blog Scheduling</CardTitle>
+                <CardDescription>Configure automated blog post generation settings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-4">
+                  <Label htmlFor="auto-scheduling" className="flex items-center gap-2">
+                    <Switch 
+                      id="auto-scheduling" 
+                      checked={settings.find(s => s.settingKey === 'auto_scheduling_enabled')?.settingValue === 'true'}
+                      onCheckedChange={(checked) => {
+                        toggleAutoSchedulingMutation.mutate(checked);
+                      }}
+                    />
+                    <span>Enable automatic blog post generation</span>
+                  </Label>
+                  {toggleAutoSchedulingMutation.isPending && (
+                    <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  When enabled, the system will automatically generate blog posts based on configured keywords.
+                  Posts will be scheduled daily according to the content calendar.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Add Lead Magnet Dialog */}
+          <Dialog open={isAddLeadMagnetDialogOpen} onOpenChange={setIsAddLeadMagnetDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Add New Lead Magnet</DialogTitle>
+                <DialogDescription>
+                  Create a new downloadable lead magnet
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    className="col-span-3"
+                    value={leadMagnetFormData.name}
+                    onChange={(e) => setLeadMagnetFormData({
+                      ...leadMagnetFormData,
+                      name: e.target.value
+                    })}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="description" className="text-right">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    className="col-span-3"
+                    value={leadMagnetFormData.description}
+                    onChange={(e) => setLeadMagnetFormData({
+                      ...leadMagnetFormData,
+                      description: e.target.value
+                    })}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="filePath" className="text-right">
+                    File Path
+                  </Label>
+                  <Input
+                    id="filePath"
+                    className="col-span-3"
+                    value={leadMagnetFormData.filePath}
+                    onChange={(e) => setLeadMagnetFormData({
+                      ...leadMagnetFormData,
+                      filePath: e.target.value
+                    })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAddLeadMagnetDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    createLeadMagnetMutation.mutate(leadMagnetFormData);
+                    setIsAddLeadMagnetDialogOpen(false);
+                  }}
+                  disabled={createLeadMagnetMutation.isPending}
+                >
+                  {createLeadMagnetMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </div>
+                  ) : 'Add Lead Magnet'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Edit Lead Magnet Dialog */}
+          <Dialog open={isEditLeadMagnetDialogOpen} onOpenChange={setIsEditLeadMagnetDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Edit Lead Magnet</DialogTitle>
+                <DialogDescription>
+                  Update lead magnet information
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="edit-name"
+                    className="col-span-3"
+                    value={leadMagnetFormData.name}
+                    onChange={(e) => setLeadMagnetFormData({
+                      ...leadMagnetFormData,
+                      name: e.target.value
+                    })}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-description" className="text-right">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="edit-description"
+                    className="col-span-3"
+                    value={leadMagnetFormData.description}
+                    onChange={(e) => setLeadMagnetFormData({
+                      ...leadMagnetFormData,
+                      description: e.target.value
+                    })}
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-filePath" className="text-right">
+                    File Path
+                  </Label>
+                  <Input
+                    id="edit-filePath"
+                    className="col-span-3"
+                    value={leadMagnetFormData.filePath}
+                    onChange={(e) => setLeadMagnetFormData({
+                      ...leadMagnetFormData,
+                      filePath: e.target.value
+                    })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditLeadMagnetDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (selectedLeadMagnetId) {
+                      updateLeadMagnetMutation.mutate({
+                        id: selectedLeadMagnetId,
+                        data: leadMagnetFormData
+                      });
+                      setIsEditLeadMagnetDialogOpen(false);
+                    }
+                  }}
+                  disabled={updateLeadMagnetMutation.isPending}
+                >
+                  {updateLeadMagnetMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </div>
+                  ) : 'Update Lead Magnet'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Delete Lead Magnet Dialog */}
+          <AlertDialog open={isDeleteLeadMagnetDialogOpen} onOpenChange={setIsDeleteLeadMagnetDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the lead magnet
+                  and remove it from all related subscriber data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={() => {
+                    if (selectedLeadMagnetId) {
+                      deleteLeadMagnetMutation.mutate(selectedLeadMagnetId);
+                      setIsDeleteLeadMagnetDialogOpen(false);
+                    }
+                  }}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  {deleteLeadMagnetMutation.isPending ? (
                     <div className="flex items-center gap-2">
                       <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       <span>Deleting...</span>
