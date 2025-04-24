@@ -942,19 +942,64 @@ const BlogManagement: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <Label htmlFor="content">Content</Label>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => generatePostMutation.mutate({ keyword: formData.keyword || '' })}
-                      disabled={!formData.keyword || generatePostMutation.isPending}
-                    >
-                      {generatePostMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => generatePostMutation.mutate({ keyword: formData.keyword || '' })}
+                        disabled={!formData.keyword || generatePostMutation.isPending}
+                      >
+                        {generatePostMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <FileText className="h-4 w-4 mr-2" />
+                        )}
+                        Generate with AI
+                      </Button>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="bg-green-100 hover:bg-green-200 text-green-900"
+                        onClick={async () => {
+                          if (!formData.keyword) return;
+                          
+                          toast({
+                            title: 'AI Engine Test',
+                            description: 'Testing AI engines for blog generation...',
+                          });
+                          
+                          try {
+                            // Test both engines
+                            const response = await fetch('/api/admin/blog/generate', {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({ keyword: formData.keyword, test: true })
+                            });
+                            
+                            const data = await response.json();
+                            
+                            toast({
+                              title: 'AI Test Results',
+                              description: data.note || 'Test completed successfully.',
+                            });
+                          } catch (error) {
+                            toast({
+                              title: 'Test Failed',
+                              description: 'Could not test AI engines. See console for details.',
+                              variant: 'destructive',
+                            });
+                            console.error(error);
+                          }
+                        }}
+                        disabled={!formData.keyword || generatePostMutation.isPending}
+                      >
                         <FileText className="h-4 w-4 mr-2" />
-                      )}
-                      Generate with AI
-                    </Button>
+                        Test AI Engines
+                      </Button>
+                    </div>
                   </div>
                   <RichTextEditor 
                     value={formData.content || ''} 

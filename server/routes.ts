@@ -754,7 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate blog post content with AI (OpenAI + Gemini)
   app.post("/api/admin/blog/generate", authenticateAdmin, async (req, res) => {
     try {
-      const { keyword } = req.body;
+      const { keyword, test = false } = req.body;
       
       if (!keyword) {
         return res.status(400).json({
@@ -765,6 +765,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Import Gemini functionality
       const geminiAI = await import('./gemini').then(module => module.default).catch(() => null);
+      
+      // If this is a test request, check which AI engines are available
+      if (test) {
+        let statusMessage = "";
+        
+        // Check OpenAI status
+        if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "default_key") {
+          statusMessage += "✅ OpenAI API is properly configured. ";
+        } else {
+          statusMessage += "❌ OpenAI API key is missing or invalid. ";
+        }
+        
+        // Check Gemini status
+        if (geminiAI && geminiAI.isGeminiAvailable && geminiAI.isGeminiAvailable()) {
+          statusMessage += "✅ Gemini API is properly configured. ";
+          
+          // Try a quick test call to Gemini
+          try {
+            const testResult = await geminiAI.generateText("Hello, this is a test.");
+            if (testResult && testResult.length > 0) {
+              statusMessage += "Gemini test call successful.";
+            }
+          } catch (error: any) {
+            statusMessage += `Gemini test call failed: ${error.message}`;
+          }
+        } else {
+          statusMessage += "❌ Gemini API key is missing or invalid.";
+        }
+        
+        return res.status(200).json({
+          success: true,
+          note: statusMessage,
+          data: {
+            openAIAvailable: process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "default_key",
+            geminiAvailable: geminiAI && geminiAI.isGeminiAvailable && geminiAI.isGeminiAvailable()
+          }
+        });
+      }
       
       // Create a SEO-optimized fallback blog post structure
       const fallbackPost = {
