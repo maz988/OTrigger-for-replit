@@ -4,6 +4,10 @@ import {
   adminUsers,
   blogPosts,
   blogPostAnalytics,
+  emailSubscribers,
+  leadMagnets,
+  emailTemplates,
+  systemSettings,
   type User, 
   type InsertUser,
   type QuizResponse,
@@ -12,7 +16,15 @@ import {
   type InsertBlogPost,
   type BlogPostAnalytics,
   type AdminUser,
-  type InsertAdminUser
+  type InsertAdminUser,
+  type EmailSubscriber,
+  type InsertEmailSubscriber,
+  type LeadMagnet,
+  type InsertLeadMagnet,
+  type EmailTemplate,
+  type InsertEmailTemplate,
+  type SystemSetting,
+  type InsertSystemSetting
 } from "@shared/schema";
 
 // Analytics summary types
@@ -45,6 +57,39 @@ export interface BlogAnalyticsSummary {
   }>;
 }
 
+export interface DashboardOverview {
+  // Quiz stats
+  totalQuizResponses: number;
+  quizCompletionRate: number;
+  
+  // Blog stats
+  totalBlogPosts: number;
+  totalBlogViews: number;
+  blogCTR: number;
+  
+  // Email stats
+  totalSubscribers: number;
+  activeSubscribers: number;
+  
+  // Lead magnet stats
+  totalLeadMagnets: number;
+  leadMagnetDownloads: number;
+  
+  // Affiliate stats
+  totalAffiliateClicks: number;
+  
+  // Trending data
+  quizResponsesTrend: Array<{ date: string; count: number }>;
+  subscribersTrend: Array<{ date: string; count: number }>;
+  blogViewsTrend: Array<{ date: string; count: number }>;
+  
+  // Quick stats (last 7 days)
+  newQuizResponsesLast7Days: number;
+  newSubscribersLast7Days: number;
+  blogViewsLast7Days: number;
+  leadMagnetDownloadsLast7Days: number;
+}
+
 export interface IStorage {
   // User management
   getUser(id: number): Promise<User | undefined>;
@@ -54,6 +99,8 @@ export interface IStorage {
   // Quiz response methods
   saveQuizResponse(response: InsertQuizResponse): Promise<QuizResponse>;
   getQuizResponseByEmail(email: string): Promise<QuizResponse[] | undefined>;
+  getAllQuizResponses(): Promise<QuizResponse[]>;
+  exportQuizResponses(): Promise<string>; // CSV export
   
   // Blog post methods
   saveBlogPost(post: InsertBlogPost): Promise<BlogPost>;
@@ -62,6 +109,10 @@ export interface IStorage {
   getAllBlogPosts(): Promise<BlogPost[]>;
   updateBlogPost(id: number, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
   deleteBlogPost(id: number): Promise<boolean>;
+  toggleAutoScheduling(isEnabled: boolean): Promise<boolean>;
+  addKeyword(keyword: string): Promise<boolean>;
+  deleteKeyword(keyword: string): Promise<boolean>;
+  getAllKeywords(): Promise<string[]>;
   
   // Blog analytics methods
   recordBlogView(postId: number, isUnique: boolean): Promise<void>;
@@ -74,9 +125,41 @@ export interface IStorage {
   createAdmin(admin: InsertAdminUser): Promise<AdminUser>;
   updateAdminLastLogin(id: number): Promise<void>;
   
+  // Email Subscriber methods
+  getAllSubscribers(): Promise<EmailSubscriber[]>;
+  getSubscriberById(id: number): Promise<EmailSubscriber | undefined>;
+  getSubscriberByEmail(email: string): Promise<EmailSubscriber | undefined>;
+  saveSubscriber(subscriber: InsertEmailSubscriber): Promise<EmailSubscriber>;
+  updateSubscriber(id: number, subscriber: Partial<InsertEmailSubscriber>): Promise<EmailSubscriber | undefined>;
+  unsubscribeByEmail(email: string): Promise<boolean>;
+  
+  // Lead Magnet methods
+  getAllLeadMagnets(): Promise<LeadMagnet[]>;
+  getLeadMagnetById(id: number): Promise<LeadMagnet | undefined>;
+  saveLeadMagnet(leadMagnet: InsertLeadMagnet): Promise<LeadMagnet>;
+  updateLeadMagnet(id: number, leadMagnet: Partial<InsertLeadMagnet>): Promise<LeadMagnet | undefined>;
+  deleteLeadMagnet(id: number): Promise<boolean>;
+  recordLeadMagnetDownload(id: number): Promise<void>;
+  
+  // Email Template methods
+  getAllEmailTemplates(): Promise<EmailTemplate[]>;
+  getEmailTemplateById(id: number): Promise<EmailTemplate | undefined>;
+  saveEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
+  updateEmailTemplate(id: number, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined>;
+  deleteEmailTemplate(id: number): Promise<boolean>;
+  toggleEmailTemplateStatus(id: number, isActive: boolean): Promise<boolean>;
+  
+  // System Settings methods
+  getAllSettings(): Promise<SystemSetting[]>;
+  getSettingByKey(key: string): Promise<SystemSetting | undefined>;
+  saveSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
+  updateSetting(key: string, value: string): Promise<SystemSetting | undefined>;
+  deleteSetting(key: string): Promise<boolean>;
+  
   // Analytics summary methods
   getQuizAnalytics(): Promise<QuizAnalyticsSummary>;
   getBlogAnalytics(): Promise<BlogAnalyticsSummary>;
+  getDashboardOverview(): Promise<DashboardOverview>;
 }
 
 export class MemStorage implements IStorage {
@@ -85,12 +168,22 @@ export class MemStorage implements IStorage {
   private blogPosts: Map<number, BlogPost>;
   private blogAnalytics: Map<number, BlogPostAnalytics>;
   private admins: Map<number, AdminUser>;
+  private emailSubscribers: Map<number, EmailSubscriber>;
+  private leadMagnets: Map<number, LeadMagnet>;
+  private emailTemplates: Map<number, EmailTemplate>;
+  private systemSettings: Map<string, SystemSetting>;
+  private keywords: Set<string>;
+  private autoSchedulingEnabled: boolean;
   
   private userCurrentId: number;
   private quizResponseCurrentId: number;
   private blogPostCurrentId: number;
   private blogAnalyticsCurrentId: number;
   private adminCurrentId: number;
+  private emailSubscriberCurrentId: number;
+  private leadMagnetCurrentId: number;
+  private emailTemplateCurrentId: number;
+  private systemSettingCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -98,18 +191,40 @@ export class MemStorage implements IStorage {
     this.blogPosts = new Map();
     this.blogAnalytics = new Map();
     this.admins = new Map();
+    this.emailSubscribers = new Map();
+    this.leadMagnets = new Map();
+    this.emailTemplates = new Map();
+    this.systemSettings = new Map();
+    this.keywords = new Set();
+    this.autoSchedulingEnabled = true;
     
     this.userCurrentId = 1;
     this.quizResponseCurrentId = 1;
     this.blogPostCurrentId = 1;
     this.blogAnalyticsCurrentId = 1;
     this.adminCurrentId = 1;
+    this.emailSubscriberCurrentId = 1;
+    this.leadMagnetCurrentId = 1;
+    this.emailTemplateCurrentId = 1;
+    this.systemSettingCurrentId = 1;
     
     // Create a default admin user with password "admin123"
     this.createDefaultAdmin();
     
     // Import blog posts from the public directory
     this.importBlogPosts();
+    
+    // Initialize default keywords
+    this.initializeKeywords();
+    
+    // Initialize sample subscribers
+    this.initializeSubscribers();
+    
+    // Initialize sample lead magnets
+    this.initializeLeadMagnets();
+    
+    // Initialize system settings
+    this.initializeSystemSettings();
   }
 
   // User methods
@@ -760,6 +875,518 @@ If you'd like a personalized assessment of your unique relationship situation, t
       topPerformingPosts,
       keywordPerformance: keywordPerformanceArray
     };
+  }
+
+
+  // Keyword methods
+  async getAllKeywords(): Promise<string[]> {
+    return Array.from(this.keywords);
+  }
+  
+  async addKeyword(keyword: string): Promise<boolean> {
+    this.keywords.add(keyword);
+    return true;
+  }
+  
+  async deleteKeyword(keyword: string): Promise<boolean> {
+    return this.keywords.delete(keyword);
+  }
+  
+  async toggleAutoScheduling(isEnabled: boolean): Promise<boolean> {
+    this.autoSchedulingEnabled = isEnabled;
+    return true;
+  }
+  
+  // Quiz response methods (continued)
+  async getAllQuizResponses(): Promise<QuizResponse[]> {
+    return Array.from(this.quizResponses.values());
+  }
+  
+  async exportQuizResponses(): Promise<string> {
+    const responses = await this.getAllQuizResponses();
+    
+    // Create CSV content
+    const headers = ['ID', 'First Name', 'Email', 'Relationship Status', 'Concern Type', 'Created At', 'Source'];
+    const rows = responses.map(response => [
+      response.id,
+      response.firstName,
+      response.email,
+      response.relationshipStatus,
+      response.concernType,
+      response.createdAt.toISOString(),
+      response.referralSource
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+    
+    return csvContent;
+  }
+  
+  // Email subscriber methods
+  async getAllSubscribers(): Promise<EmailSubscriber[]> {
+    return Array.from(this.emailSubscribers.values());
+  }
+  
+  async getSubscriberById(id: number): Promise<EmailSubscriber | undefined> {
+    return this.emailSubscribers.get(id);
+  }
+  
+  async getSubscriberByEmail(email: string): Promise<EmailSubscriber | undefined> {
+    return Array.from(this.emailSubscribers.values()).find(
+      subscriber => subscriber.email === email
+    );
+  }
+  
+  async saveSubscriber(insertSubscriber: InsertEmailSubscriber): Promise<EmailSubscriber> {
+    const id = this.emailSubscriberCurrentId++;
+    
+    const subscriber: EmailSubscriber = {
+      ...insertSubscriber,
+      id,
+      createdAt: new Date(),
+      unsubscribed: false,
+      lastEmailSent: null
+    };
+    
+    this.emailSubscribers.set(id, subscriber);
+    return subscriber;
+  }
+  
+  async updateSubscriber(id: number, updates: Partial<InsertEmailSubscriber>): Promise<EmailSubscriber | undefined> {
+    const subscriber = this.emailSubscribers.get(id);
+    
+    if (!subscriber) {
+      return undefined;
+    }
+    
+    const updatedSubscriber: EmailSubscriber = {
+      ...subscriber,
+      ...updates
+    };
+    
+    this.emailSubscribers.set(id, updatedSubscriber);
+    return updatedSubscriber;
+  }
+  
+  async unsubscribeByEmail(email: string): Promise<boolean> {
+    const subscriber = await this.getSubscriberByEmail(email);
+    
+    if (!subscriber) {
+      return false;
+    }
+    
+    const updatedSubscriber: EmailSubscriber = {
+      ...subscriber,
+      unsubscribed: true
+    };
+    
+    this.emailSubscribers.set(subscriber.id, updatedSubscriber);
+    return true;
+  }
+  
+  // Lead magnet methods
+  async getAllLeadMagnets(): Promise<LeadMagnet[]> {
+    return Array.from(this.leadMagnets.values());
+  }
+  
+  async getLeadMagnetById(id: number): Promise<LeadMagnet | undefined> {
+    return this.leadMagnets.get(id);
+  }
+  
+  async saveLeadMagnet(insertLeadMagnet: InsertLeadMagnet): Promise<LeadMagnet> {
+    const id = this.leadMagnetCurrentId++;
+    
+    const leadMagnet: LeadMagnet = {
+      ...insertLeadMagnet,
+      id,
+      downloadCount: 0,
+      createdAt: new Date(),
+      updatedAt: null
+    };
+    
+    this.leadMagnets.set(id, leadMagnet);
+    return leadMagnet;
+  }
+  
+  async updateLeadMagnet(id: number, updates: Partial<InsertLeadMagnet>): Promise<LeadMagnet | undefined> {
+    const leadMagnet = this.leadMagnets.get(id);
+    
+    if (!leadMagnet) {
+      return undefined;
+    }
+    
+    const updatedLeadMagnet: LeadMagnet = {
+      ...leadMagnet,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.leadMagnets.set(id, updatedLeadMagnet);
+    return updatedLeadMagnet;
+  }
+  
+  async deleteLeadMagnet(id: number): Promise<boolean> {
+    if (!this.leadMagnets.has(id)) {
+      return false;
+    }
+    
+    this.leadMagnets.delete(id);
+    return true;
+  }
+  
+  async recordLeadMagnetDownload(id: number): Promise<void> {
+    const leadMagnet = this.leadMagnets.get(id);
+    
+    if (leadMagnet) {
+      leadMagnet.downloadCount++;
+      this.leadMagnets.set(id, leadMagnet);
+    }
+  }
+  
+  // Email template methods
+  async getAllEmailTemplates(): Promise<EmailTemplate[]> {
+    return Array.from(this.emailTemplates.values());
+  }
+  
+  async getEmailTemplateById(id: number): Promise<EmailTemplate | undefined> {
+    return this.emailTemplates.get(id);
+  }
+  
+  async saveEmailTemplate(insertTemplate: InsertEmailTemplate): Promise<EmailTemplate> {
+    const id = this.emailTemplateCurrentId++;
+    
+    const template: EmailTemplate = {
+      ...insertTemplate,
+      id,
+      createdAt: new Date(),
+      updatedAt: null
+    };
+    
+    this.emailTemplates.set(id, template);
+    return template;
+  }
+  
+  async updateEmailTemplate(id: number, updates: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined> {
+    const template = this.emailTemplates.get(id);
+    
+    if (!template) {
+      return undefined;
+    }
+    
+    const updatedTemplate: EmailTemplate = {
+      ...template,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.emailTemplates.set(id, updatedTemplate);
+    return updatedTemplate;
+  }
+  
+  async deleteEmailTemplate(id: number): Promise<boolean> {
+    if (!this.emailTemplates.has(id)) {
+      return false;
+    }
+    
+    this.emailTemplates.delete(id);
+    return true;
+  }
+  
+  async toggleEmailTemplateStatus(id: number, isActive: boolean): Promise<boolean> {
+    const template = this.emailTemplates.get(id);
+    
+    if (!template) {
+      return false;
+    }
+    
+    const updatedTemplate: EmailTemplate = {
+      ...template,
+      isActive,
+      updatedAt: new Date()
+    };
+    
+    this.emailTemplates.set(id, updatedTemplate);
+    return true;
+  }
+  
+  // System settings methods
+  async getAllSettings(): Promise<SystemSetting[]> {
+    return Array.from(this.systemSettings.values());
+  }
+  
+  async getSettingByKey(key: string): Promise<SystemSetting | undefined> {
+    return this.systemSettings.get(key);
+  }
+  
+  async saveSetting(insertSetting: InsertSystemSetting): Promise<SystemSetting> {
+    const id = this.systemSettingCurrentId++;
+    
+    const setting: SystemSetting = {
+      ...insertSetting,
+      id,
+      lastUpdated: new Date()
+    };
+    
+    this.systemSettings.set(setting.settingKey, setting);
+    return setting;
+  }
+  
+  async updateSetting(key: string, value: string): Promise<SystemSetting | undefined> {
+    const setting = this.systemSettings.get(key);
+    
+    if (!setting) {
+      return undefined;
+    }
+    
+    const updatedSetting: SystemSetting = {
+      ...setting,
+      settingValue: value,
+      lastUpdated: new Date()
+    };
+    
+    this.systemSettings.set(key, updatedSetting);
+    return updatedSetting;
+  }
+  
+  async deleteSetting(key: string): Promise<boolean> {
+    if (!this.systemSettings.has(key)) {
+      return false;
+    }
+    
+    this.systemSettings.delete(key);
+    return true;
+  }
+  
+  // Dashboard overview
+  async getDashboardOverview(): Promise<DashboardOverview> {
+    // Quiz stats
+    const quizResponses = Array.from(this.quizResponses.values());
+    const totalQuizResponses = quizResponses.length;
+    const quizCompletionRate = 0.85; // Default value for demo
+    
+    // Blog stats
+    const blogPosts = Array.from(this.blogPosts.values());
+    const totalBlogPosts = blogPosts.length;
+    let totalBlogViews = 0;
+    let quizClicks = 0;
+    
+    Array.from(this.blogAnalytics.values()).forEach(analytics => {
+      totalBlogViews += analytics.totalViews;
+      quizClicks += analytics.quizClicks;
+    });
+    
+    const blogCTR = totalBlogViews > 0 ? (quizClicks / totalBlogViews) * 100 : 0;
+    
+    // Email stats
+    const subscribers = Array.from(this.emailSubscribers.values());
+    const totalSubscribers = subscribers.length;
+    const activeSubscribers = subscribers.filter(s => !s.unsubscribed).length;
+    
+    // Lead magnet stats
+    const leadMagnets = Array.from(this.leadMagnets.values());
+    const totalLeadMagnets = leadMagnets.length;
+    let leadMagnetDownloads = 0;
+    
+    leadMagnets.forEach(lm => {
+      leadMagnetDownloads += lm.downloadCount;
+    });
+    
+    // Affiliate stats (for demo purposes)
+    const totalAffiliateClicks = Math.floor(Math.random() * 1000) + 500;
+    
+    // Trending data - create sample data for last 7 days
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return date.toISOString().split('T')[0];
+    });
+    
+    const quizResponsesTrend = last7Days.map(date => {
+      // Count responses for each day
+      const count = quizResponses.filter(r => 
+        r.createdAt.toISOString().split('T')[0] === date
+      ).length;
+      
+      return { date, count };
+    });
+    
+    const subscribersTrend = last7Days.map(date => {
+      // Count subscribers for each day
+      const count = subscribers.filter(s => 
+        s.createdAt.toISOString().split('T')[0] === date
+      ).length;
+      
+      return { date, count };
+    });
+    
+    const blogViewsTrend = last7Days.map(date => {
+      // Count blog views for each day
+      let count = 0;
+      
+      Array.from(this.blogAnalytics.values()).forEach(analytics => {
+        if (analytics.viewDate.toISOString().split('T')[0] === date) {
+          count += analytics.totalViews;
+        }
+      });
+      
+      return { date, count };
+    });
+    
+    // Calculate stats for last 7 days
+    const newQuizResponsesLast7Days = quizResponsesTrend.reduce((sum, day) => sum + day.count, 0);
+    const newSubscribersLast7Days = subscribersTrend.reduce((sum, day) => sum + day.count, 0);
+    const blogViewsLast7Days = blogViewsTrend.reduce((sum, day) => sum + day.count, 0);
+    
+    // For demo purposes
+    const leadMagnetDownloadsLast7Days = Math.floor(leadMagnetDownloads * 0.3);
+    
+    return {
+      totalQuizResponses,
+      quizCompletionRate,
+      totalBlogPosts,
+      totalBlogViews,
+      blogCTR,
+      totalSubscribers,
+      activeSubscribers,
+      totalLeadMagnets,
+      leadMagnetDownloads,
+      totalAffiliateClicks,
+      quizResponsesTrend,
+      subscribersTrend,
+      blogViewsTrend,
+      newQuizResponsesLast7Days,
+      newSubscribersLast7Days,
+      blogViewsLast7Days,
+      leadMagnetDownloadsLast7Days
+    };
+  }
+  
+  // Helper method to initialize sample subscribers
+  private async initializeKeywords(): Promise<void> {
+    const defaultKeywords = [
+      'trigger his hero instinct',
+      'make him obsessed with you',
+      'create emotional intimacy',
+      'make him want you more',
+      'signs he is attracted to you',
+      'how to understand men',
+      'build lasting relationship',
+      'overcome relationship anxiety',
+      'effective communication',
+      'signs he loves you',
+      'how to get him back',
+      'make him commit',
+      'tell if he\'s lying',
+      'make him miss you',
+      'relationship red flags'
+    ];
+    
+    defaultKeywords.forEach(keyword => this.keywords.add(keyword));
+  }
+  
+  private async initializeSubscribers(): Promise<void> {
+    const sampleSubscribers = [
+      { firstName: 'Sarah', email: 'sarah@example.com', source: 'quiz' },
+      { firstName: 'Jennifer', email: 'jennifer@example.com', source: 'blog-sidebar' },
+      { firstName: 'Emma', email: 'emma@example.com', source: 'quiz' },
+      { firstName: 'Lisa', email: 'lisa@example.com', source: 'homepage' },
+      { firstName: 'Jessica', email: 'jessica@example.com', source: 'quiz' },
+      { firstName: 'Ashley', email: 'ashley@example.com', source: 'blog-post' },
+      { firstName: 'Michelle', email: 'michelle@example.com', source: 'quiz' },
+      { firstName: 'Amanda', email: 'amanda@example.com', source: 'blog-sidebar' }
+    ];
+    
+    for (const subscriber of sampleSubscribers) {
+      const id = this.emailSubscriberCurrentId++;
+      const createDate = new Date();
+      createDate.setDate(createDate.getDate() - Math.floor(Math.random() * 30)); // Random date in the last 30 days
+      
+      const emailSubscriber: EmailSubscriber = {
+        id,
+        firstName: subscriber.firstName,
+        email: subscriber.email,
+        source: subscriber.source,
+        createdAt: createDate,
+        unsubscribed: false,
+        lastEmailSent: null
+      };
+      
+      this.emailSubscribers.set(id, emailSubscriber);
+    }
+  }
+  
+  private async initializeLeadMagnets(): Promise<void> {
+    const sampleLeadMagnets = [
+      { 
+        name: 'Ultimate Relationship Guide', 
+        description: 'A comprehensive guide to understanding men and building a lasting relationship', 
+        filePath: '/lead-magnets/ultimate-relationship-guide.pdf',
+        downloadCount: 248
+      },
+      { 
+        name: 'Communication Secrets', 
+        description: 'Learn the secret language that makes him fall deeply in love', 
+        filePath: '/lead-magnets/communication-secrets.pdf',
+        downloadCount: 175
+      },
+      { 
+        name: 'Attraction Triggers', 
+        description: 'Discover the psychological triggers that create immediate attraction', 
+        filePath: '/lead-magnets/attraction-triggers.pdf',
+        downloadCount: 312
+      }
+    ];
+    
+    for (const magnet of sampleLeadMagnets) {
+      const id = this.leadMagnetCurrentId++;
+      const createDate = new Date();
+      createDate.setDate(createDate.getDate() - Math.floor(Math.random() * 60)); // Random date in the last 60 days
+      
+      const leadMagnet: LeadMagnet = {
+        id,
+        name: magnet.name,
+        description: magnet.description,
+        filePath: magnet.filePath,
+        downloadCount: magnet.downloadCount,
+        createdAt: createDate,
+        updatedAt: null
+      };
+      
+      this.leadMagnets.set(id, leadMagnet);
+    }
+  }
+  
+  private async initializeSystemSettings(): Promise<void> {
+    const defaultSettings = [
+      { key: 'OPENAI_API_KEY', value: process.env.OPENAI_API_KEY || '', type: 'string', description: 'API key for OpenAI integration' },
+      { key: 'PEXELS_API_KEY', value: process.env.PEXELS_API_KEY || '', type: 'string', description: 'API key for Pexels image integration' },
+      { key: 'BLOG_AUTO_SCHEDULE', value: 'true', type: 'boolean', description: 'Automatically schedule blog posts' },
+      { key: 'EMAIL_SERVICE', value: 'sendgrid', type: 'string', description: 'Email service provider' },
+      { key: 'EMAIL_FROM', value: 'info@obsessiontrigger.com', type: 'string', description: 'Default from email address' },
+      { key: 'DEFAULT_LEAD_MAGNET', value: '1', type: 'number', description: 'Default lead magnet ID for new subscribers' },
+      { key: 'QUIZ_LEAD_MAGNET', value: '1', type: 'number', description: 'Lead magnet ID for quiz completions' },
+      { key: 'BLOG_LEAD_MAGNET', value: '2', type: 'number', description: 'Lead magnet ID for blog opt-ins' },
+      { key: 'AFFILIATE_LINK_PREFIX', value: 'https://affiliate.example.com/', type: 'string', description: 'Prefix for affiliate links' },
+      { key: 'POSTS_PER_PAGE', value: '10', type: 'number', description: 'Number of posts to display per page' }
+    ];
+    
+    for (const setting of defaultSettings) {
+      const id = this.systemSettingCurrentId++;
+      
+      const systemSetting: SystemSetting = {
+        id,
+        settingKey: setting.key,
+        settingValue: setting.value,
+        settingType: setting.type,
+        lastUpdated: new Date(),
+        description: setting.description
+      };
+      
+      this.systemSettings.set(setting.key, systemSetting);
+    }
   }
 }
 
