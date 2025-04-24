@@ -867,17 +867,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const processImageForSEO = (imageUrl: string, keyword: string, title: string, photographer?: string) => {
     // Generate SEO-optimized alt text
     const generateAltText = (keyword: string, title: string) => {
-      // Create variations of alt text to avoid duplication
+      // Clean the keyword and title for better readability
+      const cleanKeyword = keyword.toLowerCase().trim();
+      const cleanTitle = title.replace(/[^\w\s]/g, '').trim();
+      
+      // Create variations of alt text to avoid duplication while maintaining SEO value
       const variations = [
-        `${keyword} - relationship advice for women`,
-        `Image showing ${keyword} in relationships`,
-        `Visual representation of ${keyword}`,
-        `${title} - relationship guidance`,
-        `Emotional visualization of ${keyword}`,
+        `Woman thinking about ${cleanKeyword} in a relationship`,
+        `Couple discussing ${cleanKeyword} together`,
+        `Visual representation of ${cleanKeyword} in romantic relationships`,
+        `${cleanTitle} - relationship concept illustration`,
+        `Emotional impact of ${cleanKeyword} on couples`,
+        `Understanding ${cleanKeyword} in romantic partnerships`,
+        `Relationship advice about ${cleanKeyword} for women`,
+        `${cleanKeyword} - strategies for healthy relationships`
       ];
       
-      // Return a random variation
-      return variations[Math.floor(Math.random() * variations.length)];
+      // Use a deterministic approach based on keyword+title to ensure consistency
+      const hashCode = (cleanKeyword + cleanTitle).split('').reduce(
+        (hash, char) => ((hash << 5) - hash) + char.charCodeAt(0), 0
+      );
+      
+      const index = Math.abs(hashCode) % variations.length;
+      return variations[index];
     };
     
     // Generate structured data for each image
