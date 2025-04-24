@@ -9,6 +9,7 @@ import BlogPost from "@/pages/BlogPost";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminLogin from "@/pages/AdminLogin";
 import QuizAnalytics from "@/pages/QuizAnalytics";
+import BlogManagement from "@/pages/BlogManagement";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -25,6 +26,13 @@ function Router() {
         {() => (
           <AdminAuthGuard>
             <QuizAnalytics />
+          </AdminAuthGuard>
+        )}
+      </Route>
+      <Route path="/admin/blog-management">
+        {() => (
+          <AdminAuthGuard>
+            <BlogManagement />
           </AdminAuthGuard>
         )}
       </Route>
