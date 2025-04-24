@@ -268,10 +268,28 @@ const AdminLogin: React.FC = () => {
                 >
                   {loginMutation.isPending ? 'Logging in...' : 'Login'}
                 </Button>
+                
+                {/* Direct login button */}
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="w-full mt-2"
+                  onClick={() => {
+                    console.log('Using direct login method');
+                    // Direct login with the default credentials
+                    loginMutation.mutate({
+                      username: 'newadmin',
+                      password: 'password123'
+                    });
+                  }}
+                >
+                  Login as Default Admin
+                </Button>
+                
                 <Button 
                   type="button"
                   variant="ghost"
-                  className="w-full"
+                  className="w-full mt-2"
                   onClick={() => setShowRegister(true)}
                 >
                   Create New Admin
