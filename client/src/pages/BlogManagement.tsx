@@ -19,6 +19,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Switch } from "@/components/ui/switch";
 import { useToast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/RichTextEditor';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -41,7 +42,10 @@ import {
   FileText,
   CheckCircle2,
   XCircle,
-  Loader2
+  Loader2,
+  CalendarClock,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 // Define types
@@ -269,6 +273,18 @@ const BlogManagement: React.FC = () => {
         category: 'general'
       }))
     : [];
+    
+  // Update scheduling state from the response
+  useEffect(() => {
+    if (schedulingResponse?.data) {
+      setSchedulingEnabled(schedulingResponse.data.enabled);
+      setScheduleFrequency(schedulingResponse.data.frequency);
+      setScheduleTime(schedulingResponse.data.time);
+      setLastGenerated(schedulingResponse.data.lastGenerated);
+      setLastGeneratedKeyword(schedulingResponse.data.lastKeyword);
+      setLastError(schedulingResponse.data.lastError);
+    }
+  }, [schedulingResponse]);
   
   // Filter and sort blog posts
   const filteredPosts = blogPosts
