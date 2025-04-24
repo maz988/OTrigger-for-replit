@@ -8,6 +8,7 @@ import Blog from "@/pages/Blog";
 import BlogPost from "@/pages/BlogPost";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminLogin from "@/pages/AdminLogin";
+import QuizAnalytics from "@/pages/QuizAnalytics";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -20,6 +21,13 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogPost} />
       <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/quiz-analytics">
+        {() => (
+          <AdminAuthGuard>
+            <QuizAnalytics />
+          </AdminAuthGuard>
+        )}
+      </Route>
       <Route path="/admin">
         {() => (
           <AdminAuthGuard>

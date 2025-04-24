@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   Card, 
@@ -1421,6 +1422,18 @@ const AdminDashboard: React.FC = () => {
 
         {/* Quiz Analytics Tab */}
         <TabsContent value="quiz" className="space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Quiz Analytics</h2>
+              <p className="text-muted-foreground">Key metrics from your relationship assessment quiz</p>
+            </div>
+            <Link href="/admin/quiz-analytics">
+              <Button>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Detailed Analytics
+              </Button>
+            </Link>
+          </div>
           <div className="grid gap-6 md:grid-cols-3">
             <Card>
               <CardHeader>
