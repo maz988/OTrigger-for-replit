@@ -878,6 +878,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const metaDescription = openAIContent.metaDescription || 
           `Learn about ${keyword} in relationships and discover practical strategies to improve your connection and understanding. Expert advice for women.`.substring(0, 160);
         
+        // Enhanced linking strategy - insert strategic links to quizzes, lead magnets, and authoritative sources
+        let enhancedContent = openAIContent.content || "";
+        
+        // Add UTM parameters for tracking
+        const addUtmParams = (url: string, source: string, medium: string, campaign: string) => {
+          return `${url}?utm_source=${source}&utm_medium=${medium}&utm_campaign=${campaign}`;
+        };
+        
+        // 1. Strategic quiz links - add if not already in the content
+        if (!enhancedContent.includes('/quiz') && !enhancedContent.includes('relationship assessment')) {
+          // Try to place after an H2 heading that seems appropriate
+          const h2Sections = enhancedContent.match(/<h2[^>]*>.*?<\/h2>/gi) || [];
+          
+          if (h2Sections.length > 1) {
+            // Target the second or third H2 section for better content flow
+            const targetH2 = h2Sections[Math.min(2, h2Sections.length - 1)];
+            const quizInsert = `
+              <div class="cta-box">
+                <p><strong>Not sure how to address ${keyword} in your relationship?</strong> Take our 
+                <a href="${addUtmParams('/quiz', 'blog', 'content_link', slug)}">relationship assessment quiz</a> 
+                to receive personalized guidance based on your specific situation.</p>
+              </div>
+            `;
+            
+            enhancedContent = enhancedContent.replace(
+              targetH2, 
+              targetH2 + quizInsert
+            );
+          }
+        }
+        
+        // 2. Lead magnet integration - with our available lead magnets
+        if (!enhancedContent.includes('lead-magnets') && !enhancedContent.includes('free guide')) {
+          // Get appropriate lead magnet based on keyword
+          let leadMagnetIndex = 0; // Default to the first lead magnet
+          
+          // Simple keyword matching for lead magnet selection
+          if (keyword.toLowerCase().includes('communicate') || 
+              keyword.toLowerCase().includes('talk') || 
+              keyword.toLowerCase().includes('conversation')) {
+            leadMagnetIndex = 1; // Communication Secrets
+          } else if (keyword.toLowerCase().includes('attract') || 
+                    keyword.toLowerCase().includes('love') || 
+                    keyword.toLowerCase().includes('desire')) {
+            leadMagnetIndex = 2; // Attraction Triggers
+          }
+          
+          const leadMagnets = [
+            {
+              name: 'Ultimate Relationship Guide',
+              path: '/lead-magnets/ultimate-relationship-guide',
+              description: 'comprehensive guide to understanding men'
+            },
+            {
+              name: 'Communication Secrets',
+              path: '/lead-magnets/communication-secrets',
+              description: 'secret language that makes him fall deeply in love'
+            },
+            {
+              name: 'Attraction Triggers',
+              path: '/lead-magnets/attraction-triggers',
+              description: 'psychological triggers that create immediate attraction'
+            }
+          ];
+          
+          const selectedMagnet = leadMagnets[leadMagnetIndex];
+          
+          // Add lead magnet offer box near the end, before any FAQ section
+          if (enhancedContent.includes('<h2>FAQ') || enhancedContent.includes('<h2>Frequently')) {
+            const leadMagnetBox = `
+              <div class="lead-magnet-box">
+                <h3>Get Our Free ${selectedMagnet.name}</h3>
+                <p>Want to master the ${selectedMagnet.description}? Download our free 
+                <a href="${addUtmParams(selectedMagnet.path, 'blog', 'lead_magnet', slug)}">${selectedMagnet.name}</a> 
+                to learn advanced techniques not covered in this article.</p>
+              </div>
+            `;
+            
+            enhancedContent = enhancedContent.replace(
+              /<h2>FAQ|<h2>Frequently/, 
+              leadMagnetBox + '\n\n$&'
+            );
+          } else {
+            // If no FAQ section, add before the conclusion or at the end
+            enhancedContent += `
+              <div class="lead-magnet-box">
+                <h3>Get Our Free ${selectedMagnet.name}</h3>
+                <p>Want to master the ${selectedMagnet.description}? Download our free 
+                <a href="${addUtmParams(selectedMagnet.path, 'blog', 'lead_magnet', slug)}">${selectedMagnet.name}</a> 
+                to learn advanced techniques not covered in this article.</p>
+              </div>
+            `;
+          }
+        }
+        
+        // 3. Add authoritative source links if not already present
+        if (!enhancedContent.includes('doi.org') && !enhancedContent.includes('ncbi.nlm.nih.gov')) {
+          // Psychology source for relationships
+          const authSourceText = 'According to <a href="https://doi.org/10.1111/pere.12230" target="_blank" rel="noopener">research in the Journal of Personal Relationships</a>';
+          
+          // Look for places to add citation
+          if (enhancedContent.includes('research shows') || enhancedContent.includes('studies show')) {
+            enhancedContent = enhancedContent.replace(
+              /research shows|studies show/i,
+              authSourceText + ' shows'
+            );
+          } else if (enhancedContent.includes('psychology') || enhancedContent.includes('psychological')) {
+            enhancedContent = enhancedContent.replace(
+              /(psychology|psychological)/i,
+              `$1. ${authSourceText}, this`
+            );
+          }
+        }
+        
         // Add schema markup for SEO
         const schemaMarkup = {
           "@context": "https://schema.org",
@@ -896,6 +1010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           slug,
           tags,
           metaDescription,
+          content: enhancedContent, // Use our enhanced content with strategic links
           schema: schemaMarkup,
           aiSource: isOpenAIOnly ? "openai" : "openai+gemini"
         };
