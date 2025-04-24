@@ -972,7 +972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               openAIContent = enhanced;
               geminiEnhanced = true;
               console.log("Successfully enhanced content with Gemini");
-            } catch (geminiError) {
+            } catch (geminiError: any) {
               console.warn(`Could not enhance with Gemini: ${geminiError.message}`);
               // Continue with OpenAI-only content
             }
@@ -1009,7 +1009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 data: finalGeminiContent,
                 note: "Content generated with Gemini (OpenAI unavailable)"
               });
-            } catch (geminiError) {
+            } catch (geminiError: any) {
               console.error(`Gemini generation also failed: ${geminiError.message}`);
               // Fall back to template content
             }

@@ -21,7 +21,7 @@ export async function generateText(prompt: string): Promise<string> {
       throw new Error("Gemini API key not configured");
     }
     
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     const result = await model.generateContent(prompt);
     const response = result.response;
     return response.text();
@@ -40,7 +40,7 @@ export async function generateBlogContent(keyword: string): Promise<any> {
       throw new Error("Gemini API key not configured");
     }
     
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     
     // First generate a blog outline
     const outlinePrompt = `
@@ -118,7 +118,7 @@ export async function enhanceOpenAIContent(openAIContent: any): Promise<any> {
       return openAIContent; // Return original if Gemini not available
     }
     
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     
     const enhancementPrompt = `
       Enhance the following blog post content to make it more engaging,
