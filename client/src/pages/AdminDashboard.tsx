@@ -2371,7 +2371,7 @@ const AdminDashboard: React.FC = () => {
                     <Switch 
                       id="auto-scheduling" 
                       checked={settings.find(s => s.settingKey === 'auto_scheduling_enabled')?.settingValue === 'true'}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={(checked: boolean) => {
                         toggleAutoSchedulingMutation.mutate(checked);
                       }}
                     />
