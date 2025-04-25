@@ -133,6 +133,7 @@ const SettingsPage: React.FC = () => {
   const [testingService, setTestingService] = useState<string | null>(null);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [testResults, setTestResults] = useState<{success: boolean, message: string} | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   // Fetch settings
   const { data: settingsResponse, isLoading: settingsLoading, refetch: refetchSettings } = useQuery({
