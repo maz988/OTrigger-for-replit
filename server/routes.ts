@@ -2181,6 +2181,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { serviceType } = req.params;
       
       switch(serviceType) {
+        case 'sendgrid': {
+          const apiKey = req.body.apiKey || process.env.SENDGRID_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "SendGrid API key not configured"
+            });
+          }
+          
+          // Import validation function to check API key format
+          const { validateApiKey } = await import('./services/emailProviders/sendgrid');
+          
+          if (!validateApiKey(apiKey)) {
+            return res.status(400).json({
+              success: false,
+              error: "Invalid SendGrid API key format"
+            });
+          }
+          
+          // Import test function to verify the API key works
+          const { testConnection } = await import('./services/emailProviders/sendgrid');
+          const result = await testConnection(apiKey);
+          
+          if (!result.success) {
+            return res.status(400).json({
+              success: false,
+              error: result.error || "Failed to connect to SendGrid"
+            });
+          }
+          
+          return res.status(200).json({
+            success: true,
+            message: result.message || "Successfully connected to SendGrid"
+          });
+        }
+        
+        case 'mailerlite': {
+          const apiKey = req.body.apiKey || process.env.MAILERLITE_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "MailerLite API key not configured"
+            });
+          }
+          
+          // Import validation function to check API key format
+          const { validateApiKey } = await import('./services/emailProviders/mailerlite');
+          
+          if (!validateApiKey(apiKey)) {
+            return res.status(400).json({
+              success: false,
+              error: "Invalid MailerLite API key format"
+            });
+          }
+          
+          // Import test function to verify the API key works
+          const { testConnection } = await import('./services/emailProviders/mailerlite');
+          const result = await testConnection(apiKey);
+          
+          if (!result.success) {
+            return res.status(400).json({
+              success: false,
+              error: result.error || "Failed to connect to MailerLite"
+            });
+          }
+          
+          return res.status(200).json({
+            success: true,
+            message: result.message || "Successfully connected to MailerLite"
+          });
+        }
+        
+        case 'brevo': {
+          const apiKey = req.body.apiKey || process.env.BREVO_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "Brevo API key not configured"
+            });
+          }
+          
+          // Import validation function to check API key format
+          const { validateApiKey } = await import('./services/emailProviders/brevo');
+          
+          if (!validateApiKey(apiKey)) {
+            return res.status(400).json({
+              success: false,
+              error: "Invalid Brevo API key format"
+            });
+          }
+          
+          // Import test function to verify the API key works
+          const { testConnection } = await import('./services/emailProviders/brevo');
+          const result = await testConnection(apiKey);
+          
+          if (!result.success) {
+            return res.status(400).json({
+              success: false,
+              error: result.error || "Failed to connect to Brevo"
+            });
+          }
+          
+          return res.status(200).json({
+            success: true,
+            message: result.message || "Successfully connected to Brevo"
+          });
+        }
+        
         case 'openai': {
           // Log the request body to debug
           console.log("OpenAI test request body:", req.body);
