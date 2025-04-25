@@ -56,6 +56,9 @@ interface ApiKeySettings {
   blogKeywordsFile: string;
   autoBlogPublishing: boolean;
   pdfGuideImageUrl: string;
+  quizListId: string;
+  leadMagnetListId: string;
+  defaultListId: string;
 }
 
 const defaultSettings: ApiKeySettings = {
@@ -77,7 +80,10 @@ const defaultSettings: ApiKeySettings = {
   externalStorageKey: '',
   blogKeywordsFile: 'keywords.txt',
   autoBlogPublishing: false,
-  pdfGuideImageUrl: '/images/pdf-guide-icon.svg'
+  pdfGuideImageUrl: '/images/pdf-guide-icon.svg',
+  quizListId: '',
+  leadMagnetListId: '',
+  defaultListId: ''
 };
 
 // Form validation schema
@@ -100,7 +106,10 @@ const apiKeySettingsSchema = z.object({
   externalStorageKey: z.string().optional(),
   blogKeywordsFile: z.string(),
   autoBlogPublishing: z.boolean(),
-  pdfGuideImageUrl: z.string()
+  pdfGuideImageUrl: z.string(),
+  quizListId: z.string().optional(),
+  leadMagnetListId: z.string().optional(),
+  defaultListId: z.string().optional()
 });
 
 // Get color for service status
@@ -127,6 +136,16 @@ const isSettingConfigured = (settingKey: string, settings: ServiceSettings[]): b
   return !!(setting && setting.value && setting.value.length > 0);
 };
 
+// Interface for email provider list
+interface EmailList {
+  id: string;
+  name: string;
+  subscriberCount?: number;
+  description?: string;
+  createdAt?: string;
+  isDefault?: boolean;
+}
+
 const SettingsPage: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('ai');
@@ -134,6 +153,7 @@ const SettingsPage: React.FC = () => {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [testResults, setTestResults] = useState<{success: boolean, message: string} | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [loadingLists, setLoadingLists] = useState(false);
 
   // Fetch settings
   const { data: settingsResponse, isLoading: settingsLoading, refetch: refetchSettings } = useQuery({
@@ -143,6 +163,13 @@ const SettingsPage: React.FC = () => {
 
   // Parse settings from API response
   const settings: ServiceSettings[] = settingsResponse?.data || [];
+  
+  // Fetch email provider lists
+  const { data: emailListsResponse, refetch: refetchEmailLists } = useQuery({
+    queryKey: ['/api/admin/email/lists'],
+    queryFn: getQueryFn(),
+    enabled: false, // Don't fetch automatically, we'll fetch manually when needed
+  });
   
   // Form setup with the schema
   const form = useForm<ApiKeySettings>({
@@ -175,7 +202,13 @@ const SettingsPage: React.FC = () => {
         'useExternalStorage': 'useExternalStorage',
         'autoBlogPublishing': 'autoBlogPublishing',
         'pdfGuideImageUrl': 'pdfGuideImageUrl',
-        'PDF_GUIDE_IMAGE_URL': 'pdfGuideImageUrl'
+        'PDF_GUIDE_IMAGE_URL': 'pdfGuideImageUrl',
+        'QUIZ_LIST_ID': 'quizListId',
+        'quizListId': 'quizListId',
+        'LEAD_MAGNET_LIST_ID': 'leadMagnetListId',
+        'leadMagnetListId': 'leadMagnetListId',
+        'DEFAULT_LIST_ID': 'defaultListId',
+        'defaultListId': 'defaultListId'
       };
       
       settings.forEach((setting: ServiceSettings) => {
@@ -394,6 +427,45 @@ const SettingsPage: React.FC = () => {
     setTestResults(null);
     setIsTestDialogOpen(true);
     testServiceMutation.mutate(serviceType);
+  };
+  
+  // Fetch email lists for the currently active provider
+  const fetchEmailLists = async () => {
+    try {
+      setLoadingLists(true);
+      const activeProvider = form.getValues().activeEmailService;
+      
+      if (activeProvider === 'none') {
+        toast({
+          title: 'No email provider selected',
+          description: 'Please select an email provider first',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Save current form values before testing to ensure API key is up to date
+      if (form.formState.isDirty) {
+        await updateSettingsMutation.mutateAsync(form.getValues());
+      }
+      
+      await refetchEmailLists();
+      
+      toast({
+        title: 'Lists Fetched',
+        description: `Successfully fetched lists from ${activeProvider}`,
+        variant: 'default',
+      });
+    } catch (error) {
+      console.error("Error fetching email lists:", error);
+      toast({
+        title: 'Error Fetching Lists',
+        description: error.message || "Could not fetch lists. Please check your API key and try again.",
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingLists(false);
+    }
   };
 
   if (settingsLoading) {
@@ -893,7 +965,7 @@ const SettingsPage: React.FC = () => {
                 <CardHeader>
                   <CardTitle>Email Configuration</CardTitle>
                   <CardDescription>
-                    Configure email delivery settings
+                    Configure email delivery settings and list management
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -905,7 +977,13 @@ const SettingsPage: React.FC = () => {
                         <FormItem>
                           <FormLabel>Active Email Service</FormLabel>
                           <Select
-                            onValueChange={field.onChange}
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // Clear list selections when provider changes
+                              form.setValue('quizListId', '');
+                              form.setValue('leadMagnetListId', '');
+                              form.setValue('defaultListId', '');
+                            }}
                             defaultValue={field.value}
                             value={field.value}
                           >
@@ -944,6 +1022,132 @@ const SettingsPage: React.FC = () => {
                           </FormControl>
                           <FormDescription>
                             Email address used for sending
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Separator className="my-4" />
+                  
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium">Email Lists Configuration</h3>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      disabled={form.getValues().activeEmailService === 'none'}
+                      onClick={fetchEmailLists}
+                    >
+                      {loadingLists ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Loading Lists...
+                        </>
+                      ) : (
+                        <>Fetch Lists</>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="defaultListId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Default List</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            value={field.value}
+                            disabled={!emailListsResponse?.data?.length}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select default list" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">No List (Don't Use)</SelectItem>
+                              {emailListsResponse?.data?.map((list: EmailList) => (
+                                <SelectItem key={list.id} value={list.id}>
+                                  {list.name} {list.isDefault ? " (Default)" : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Default list for all subscribers (if none specified)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="quizListId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quiz Subscribers List</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            value={field.value}
+                            disabled={!emailListsResponse?.data?.length}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select quiz subscribers list" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">No List (Use Default)</SelectItem>
+                              {emailListsResponse?.data?.map((list: EmailList) => (
+                                <SelectItem key={list.id} value={list.id}>
+                                  {list.name} {list.isDefault ? " (Default)" : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Specific list for quiz subscribers
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="leadMagnetListId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Lead Magnet Subscribers List</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            value={field.value}
+                            disabled={!emailListsResponse?.data?.length}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select lead magnet subscribers list" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">No List (Use Default)</SelectItem>
+                              {emailListsResponse?.data?.map((list: EmailList) => (
+                                <SelectItem key={list.id} value={list.id}>
+                                  {list.name} {list.isDefault ? " (Default)" : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Specific list for lead magnet subscribers
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
