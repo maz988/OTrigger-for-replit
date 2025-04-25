@@ -11,6 +11,8 @@ import {
   emailQueue,
   emailHistory,
   systemSettings,
+  notificationTemplates,
+  notificationLog,
   type User, 
   type InsertUser,
   type QuizResponse,
@@ -33,7 +35,11 @@ import {
   type EmailHistory,
   type InsertEmailHistory,
   type SystemSetting,
-  type InsertSystemSetting
+  type InsertSystemSetting,
+  type NotificationTemplate,
+  type InsertNotificationTemplate,
+  type NotificationLog,
+  type InsertNotificationLog
 } from "@shared/schema";
 
 // Analytics summary types
@@ -192,6 +198,18 @@ export interface IStorage {
   getQuizAnalytics(): Promise<QuizAnalyticsSummary>;
   getBlogAnalytics(): Promise<BlogAnalyticsSummary>;
   getDashboardOverview(): Promise<DashboardOverview>;
+  
+  // Simple Notification methods (replacing HTML email templates)
+  getAllNotificationTemplates(): Promise<NotificationTemplate[]>;
+  getNotificationTemplate(type: string): Promise<NotificationTemplate | undefined>;
+  saveNotificationTemplate(template: InsertNotificationTemplate): Promise<NotificationTemplate>;
+  updateNotificationTemplate(id: number, template: Partial<InsertNotificationTemplate>): Promise<NotificationTemplate | undefined>;
+  deleteNotificationTemplate(id: number): Promise<boolean>;
+  
+  // Notification log methods
+  getAllNotificationLogs(): Promise<NotificationLog[]>;
+  getNotificationLogsBySubscriberId(subscriberId: number): Promise<NotificationLog[]>;
+  logNotification(log: InsertNotificationLog): Promise<NotificationLog>;
 }
 
 export class MemStorage implements IStorage {
@@ -207,6 +225,8 @@ export class MemStorage implements IStorage {
   private emailQueue: Map<number, EmailQueue>;
   private emailHistory: Map<number, EmailHistory>;
   private systemSettings: Map<string, SystemSetting>;
+  private notificationTemplates: Map<number, NotificationTemplate>;
+  private notificationLogs: Map<number, NotificationLog>;
   private keywords: Set<string>;
   private autoSchedulingEnabled: boolean;
   
@@ -319,6 +339,8 @@ export class MemStorage implements IStorage {
   private emailQueueCurrentId: number;
   private emailHistoryCurrentId: number;
   private systemSettingCurrentId: number;
+  private notificationTemplateCurrentId: number;
+  private notificationLogCurrentId: number;
 
   constructor() {
     this.users = new Map();

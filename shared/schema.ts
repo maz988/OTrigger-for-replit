@@ -255,3 +255,39 @@ export type EmailHistory = typeof emailHistory.$inferSelect;
 export type InsertEmailHistory = z.infer<typeof insertEmailHistorySchema>;
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+
+// Simplified notification templates (replaces complex HTML email templates)
+export const notificationTemplates = pgTable("notification_templates", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // welcome, lead_magnet, content_update, custom
+  subject: text("subject").notNull(),
+  message: text("message").notNull(), // Plain text only, safe from HTML parsing issues
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+});
+
+// Notification log (tracks all sent notifications)
+export const notificationLog = pgTable("notification_log", {
+  id: serial("id").primaryKey(),
+  subscriberId: integer("subscriber_id").notNull(),
+  notificationType: text("notification_type").notNull(),
+  status: text("status").notNull(), // sent, failed
+  sentAt: timestamp("sent_at").notNull(),
+  metadata: jsonb("metadata")
+});
+
+// Schema for notification templates and logs
+export const insertNotificationTemplateSchema = createInsertSchema(notificationTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNotificationLogSchema = createInsertSchema(notificationLog).omit({
+  id: true,
+});
+
+export type NotificationTemplate = typeof notificationTemplates.$inferSelect;
+export type InsertNotificationTemplate = z.infer<typeof insertNotificationTemplateSchema>;
+export type NotificationLog = typeof notificationLog.$inferSelect;
+export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
