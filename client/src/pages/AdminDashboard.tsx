@@ -174,13 +174,37 @@ interface DashboardOverview {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#4CAF50', '#FF5722'];
 
 const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  // Parse the tab from URL query parameter
+  const getTabFromUrl = () => {
+    // Check if we're in a browser environment
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      // Validate that the tab is one of our valid options
+      if (tabParam && ['overview', 'blog', 'content', 'subscribers', 'settings'].includes(tabParam)) {
+        return tabParam;
+      }
+    }
+    return 'overview'; // Default tab
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabFromUrl());
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAddSubscriberDialogOpen, setIsAddSubscriberDialogOpen] = useState(false);
+  
+  // Update URL when tab changes to make it bookmark-able
+  useEffect(() => {
+    // Check if we're in a browser environment
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', activeTab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [activeTab]);
   
   // Form states for creating/editing posts
   const [formData, setFormData] = useState({
