@@ -4006,7 +4006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const subscriber = await storage.getEmailSubscriber(subscriberId);
+      const subscriber = await storage.getSubscriberById(subscriberId);
       
       if (!subscriber) {
         return res.status(404).json({
