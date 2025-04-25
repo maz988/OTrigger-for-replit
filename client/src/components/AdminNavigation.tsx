@@ -33,12 +33,6 @@ const AdminNavigation: React.FC = () => {
       active: location === '/admin/blog-management'
     },
     {
-      label: 'Subscribers',
-      href: '/admin?tab=subscribers',
-      icon: <Users className="h-5 w-5 mr-2" />,
-      active: location === '/admin' && window.location.search.includes('tab=subscribers')
-    },
-    {
       label: 'Settings',
       href: '/admin/settings',
       icon: <Settings className="h-5 w-5 mr-2" />,
