@@ -222,6 +222,15 @@ const AdminDashboard: React.FC = () => {
     source: 'manual'
   });
   
+  // States for API key editing dialogs
+  const [isEditApiKeyDialogOpen, setIsEditApiKeyDialogOpen] = useState(false);
+  const [currentApiKey, setCurrentApiKey] = useState({
+    key: '',
+    name: '',
+    displayName: ''
+  });
+  const [tempApiKey, setTempApiKey] = useState('');
+  
   const { toast } = useToast();
   
   // Get the admin token from localStorage
@@ -407,6 +416,30 @@ const AdminDashboard: React.FC = () => {
     }
   });
   
+  // API key update mutation
+  const updateApiKeyMutation = useMutation({
+    mutationFn: async ({ name, value }: { name: string; value: string }) => {
+      const response = await apiRequest('PATCH', `/api/admin/settings/${name}`, { value });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'API Key Updated',
+        description: 'The API key has been updated successfully.',
+        variant: 'default',
+      });
+      setIsEditApiKeyDialogOpen(false);
+      refetchSettings();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Updating API Key',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
   // Helper functions
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const title = e.target.value;
@@ -458,6 +491,32 @@ const AdminDashboard: React.FC = () => {
   const handleDeletePost = (postId: number) => {
     setSelectedPostId(postId);
     setIsDeleteDialogOpen(true);
+  };
+  
+  // API key helper functions
+  const handleUpdateApiKey = (name: string, displayName: string) => {
+    setCurrentApiKey({
+      key: settings[name] || '',
+      name: name,
+      displayName: displayName
+    });
+    setTempApiKey('');
+    setIsEditApiKeyDialogOpen(true);
+  };
+  
+  const handleApiKeySave = () => {
+    if (tempApiKey) {
+      updateApiKeyMutation.mutate({ 
+        name: currentApiKey.name, 
+        value: tempApiKey 
+      });
+    } else {
+      toast({
+        title: 'No Changes Made',
+        description: 'Please enter a new API key value.',
+        variant: 'default',
+      });
+    }
   };
   
   return (
@@ -1293,55 +1352,135 @@ const AdminDashboard: React.FC = () => {
                 <CardDescription>Manage connection to third-party services</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="openai">OpenAI API Key</Label>
-                    <div className="flex mt-1.5">
-                      <Input 
-                        id="openai" 
-                        type="password" 
-                        value="sk-••••••••••••••••••••••••••••••" 
-                        readOnly
-                        className="rounded-r-none"
-                      />
-                      <Button variant="outline" className="rounded-l-none border-l-0">
-                        Update
-                      </Button>
+                {settingsLoading ? (
+                  <div className="space-y-4">
+                    <div className="h-10 bg-muted animate-pulse rounded"></div>
+                    <div className="h-10 bg-muted animate-pulse rounded"></div>
+                    <div className="h-10 bg-muted animate-pulse rounded"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="openai">OpenAI API Key</Label>
+                      <div className="flex mt-1.5">
+                        <Input 
+                          id="openai" 
+                          type="password" 
+                          value={settings.OPENAI_API_KEY ? "sk-••••••••••••••••••••••••••••••" : "Not set"} 
+                          readOnly
+                          className="rounded-r-none"
+                        />
+                        <Button 
+                          variant="outline" 
+                          className="rounded-l-none border-l-0"
+                          onClick={() => handleUpdateApiKey('OPENAI_API_KEY', 'OpenAI API Key')}
+                        >
+                          Update
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <Label htmlFor="sendgrid">SendGrid API Key</Label>
+                      <div className="flex mt-1.5">
+                        <Input 
+                          id="sendgrid" 
+                          type="password" 
+                          value={settings.SENDGRID_API_KEY ? "SG.••••••••••••••••••••••••••••••" : "Not set"} 
+                          readOnly
+                          className="rounded-r-none"
+                        />
+                        <Button 
+                          variant="outline" 
+                          className="rounded-l-none border-l-0"
+                          onClick={() => handleUpdateApiKey('SENDGRID_API_KEY', 'SendGrid API Key')}
+                        >
+                          Update
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <Label htmlFor="mailerlite">MailerLite API Key</Label>
+                      <div className="flex mt-1.5">
+                        <Input 
+                          id="mailerlite" 
+                          type="password" 
+                          value={settings.MAILERLITE_API_KEY ? "••••••••••••••••••••••••••••••" : "Not set"} 
+                          readOnly
+                          className="rounded-r-none"
+                        />
+                        <Button 
+                          variant="outline" 
+                          className="rounded-l-none border-l-0"
+                          onClick={() => handleUpdateApiKey('MAILERLITE_API_KEY', 'MailerLite API Key')}
+                        >
+                          Update
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <Label htmlFor="brevo">Brevo API Key</Label>
+                      <div className="flex mt-1.5">
+                        <Input 
+                          id="brevo" 
+                          type="password" 
+                          value={settings.BREVO_API_KEY ? "••••••••••••••••••••••••••••••" : "Not set"} 
+                          readOnly
+                          className="rounded-r-none"
+                        />
+                        <Button 
+                          variant="outline" 
+                          className="rounded-l-none border-l-0"
+                          onClick={() => handleUpdateApiKey('BREVO_API_KEY', 'Brevo API Key')}
+                        >
+                          Update
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <Label htmlFor="pexels">Pexels API Key</Label>
+                      <div className="flex mt-1.5">
+                        <Input 
+                          id="pexels" 
+                          type="password" 
+                          value={settings.PEXELS_API_KEY ? "••••••••••••••••••••••••••••••" : "Not set"} 
+                          readOnly
+                          className="rounded-r-none"
+                        />
+                        <Button 
+                          variant="outline" 
+                          className="rounded-l-none border-l-0"
+                          onClick={() => handleUpdateApiKey('PEXELS_API_KEY', 'Pexels API Key')}
+                        >
+                          Update
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <Label htmlFor="gemini">Gemini API Key</Label>
+                      <div className="flex mt-1.5">
+                        <Input 
+                          id="gemini" 
+                          type="password" 
+                          value={settings.GEMINI_API_KEY ? "••••••••••••••••••••••••••••••" : "Not set"} 
+                          readOnly
+                          className="rounded-r-none"
+                        />
+                        <Button 
+                          variant="outline" 
+                          className="rounded-l-none border-l-0"
+                          onClick={() => handleUpdateApiKey('GEMINI_API_KEY', 'Gemini API Key')}
+                        >
+                          Update
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="pt-2">
-                    <Label htmlFor="sendgrid">SendGrid API Key</Label>
-                    <div className="flex mt-1.5">
-                      <Input 
-                        id="sendgrid" 
-                        type="password" 
-                        value="SG.••••••••••••••••••••••••••••••" 
-                        readOnly
-                        className="rounded-r-none"
-                      />
-                      <Button variant="outline" className="rounded-l-none border-l-0">
-                        Update
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="pt-2">
-                    <Label htmlFor="pexels">Pexels API Key</Label>
-                    <div className="flex mt-1.5">
-                      <Input 
-                        id="pexels" 
-                        type="password" 
-                        value="••••••••••••••••••••••••••••••" 
-                        readOnly
-                        className="rounded-r-none"
-                      />
-                      <Button variant="outline" className="rounded-l-none border-l-0">
-                        Update
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -1411,6 +1550,49 @@ const AdminDashboard: React.FC = () => {
                   <span>Adding...</span>
                 </div>
               ) : 'Add Subscriber'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Update API Key Dialog */}
+      <Dialog open={isEditApiKeyDialogOpen} onOpenChange={setIsEditApiKeyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update {currentApiKey.displayName}</DialogTitle>
+            <DialogDescription>
+              Enter a new API key for {currentApiKey.displayName}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="apiKey">New API Key</Label>
+              <Input 
+                id="apiKey"
+                type="password"
+                value={tempApiKey} 
+                onChange={(e) => setTempApiKey(e.target.value)} 
+                placeholder="Enter your new API key" 
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Your API key will be stored securely and never displayed in full.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditApiKeyDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleApiKeySave}
+              disabled={!tempApiKey || updateApiKeyMutation.isPending}
+            >
+              {updateApiKeyMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Updating...</span>
+                </div>
+              ) : 'Update Key'}
             </Button>
           </DialogFooter>
         </DialogContent>
