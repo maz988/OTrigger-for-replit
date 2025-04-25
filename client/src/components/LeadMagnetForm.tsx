@@ -110,7 +110,16 @@ export default function LeadMagnetForm({
     return (
       <div className={getContainerClasses()}>
         <div className="text-center py-4">
-          <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
+          <div className="flex flex-col items-center mb-3">
+            {variant === 'sidebar' && (
+              <img 
+                src="/images/pdf-guide-icon.svg" 
+                alt="Relationship Guide PDF" 
+                className="w-16 h-24 mb-3 drop-shadow-md" 
+              />
+            )}
+            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
+          </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Thank You!</h3>
           <p className="text-gray-600">
             Check your email for your {leadMagnetName}. If you don't see it, please check your spam folder.
@@ -124,8 +133,15 @@ export default function LeadMagnetForm({
   if (variant === 'sidebar') {
     return (
       <div className={getContainerClasses()}>
-        <h3 className="text-lg font-semibold text-[#f24b7c] mb-2">{title}</h3>
-        <p className="text-sm text-gray-600 mb-4">{description}</p>
+        <div className="flex flex-col items-center mb-4">
+          <img 
+            src="/images/pdf-guide-icon.svg" 
+            alt="Relationship Guide PDF" 
+            className="w-20 h-28 mb-2 drop-shadow-md" 
+          />
+          <h3 className="text-lg font-semibold text-[#f24b7c] mb-1">{title}</h3>
+          <p className="text-sm text-gray-600 text-center">{description}</p>
+        </div>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
