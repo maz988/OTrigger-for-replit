@@ -3108,11 +3108,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Convert settings array to object for easier access
       const settingsObj = settings.reduce((acc, setting) => {
-        acc[setting.name] = setting.value;
+        // Store both by name and settingKey for flexibility
+        acc[setting.name] = setting.settingValue || setting.value;
+        acc[setting.settingKey] = setting.settingValue || setting.value;
         return acc;
       }, {} as Record<string, string>);
       
-      const activeEmailService = settingsObj.activeEmailService || 'none';
+      // Check both activeEmailService and EMAIL_SERVICE settings
+      const activeEmailService = settingsObj.activeEmailService || settingsObj.EMAIL_SERVICE || 'none';
+      console.log("Active email service from settings:", activeEmailService);
       
       if (activeEmailService === 'none') {
         return res.status(400).json({
@@ -3126,7 +3130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch lists from the active provider
       switch(activeEmailService) {
         case 'sendgrid': {
-          const apiKey = settingsObj.sendgridApiKey || process.env.SENDGRID_API_KEY;
+          const apiKey = settingsObj.sendgridApiKey || settingsObj.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY;
+          console.log("Using SendGrid API key:", apiKey ? `${apiKey.substring(0, 5)}...` : "none");
           if (!apiKey) {
             return res.status(400).json({
               success: false,
@@ -3169,7 +3174,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         case 'mailerlite': {
-          const apiKey = settingsObj.mailerliteApiKey || process.env.MAILERLITE_API_KEY;
+          const apiKey = settingsObj.mailerliteApiKey || settingsObj.MAILERLITE_API_KEY || process.env.MAILERLITE_API_KEY;
+          console.log("Using MailerLite API key:", apiKey ? `${apiKey.substring(0, 5)}...` : "none");
           if (!apiKey) {
             return res.status(400).json({
               success: false,
@@ -3224,7 +3230,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         case 'brevo': {
-          const apiKey = settingsObj.brevoApiKey || process.env.BREVO_API_KEY;
+          const apiKey = settingsObj.brevoApiKey || settingsObj.BREVO_API_KEY || process.env.BREVO_API_KEY;
+          console.log("Using Brevo API key:", apiKey ? `${apiKey.substring(0, 5)}...` : "none");
           if (!apiKey) {
             return res.status(400).json({
               success: false,
