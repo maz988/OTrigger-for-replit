@@ -158,11 +158,26 @@ const SettingsPage: React.FC = () => {
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: ApiKeySettings) => {
       try {
+        // Convert boolean values to strings for the API
+        const processedSettings: Record<string, string | boolean> = {};
+        
+        // Process all values properly
+        Object.entries(newSettings).forEach(([key, value]) => {
+          // Convert booleans to strings since server expects string values
+          if (typeof value === 'boolean') {
+            processedSettings[key] = value.toString();
+          } else if (value !== undefined && value !== null) {
+            processedSettings[key] = value;
+          }
+        });
+        
+        console.log("Submitting settings:", processedSettings);
+        
         // apiRequest expects (method, url, body, options)
         return await apiRequest(
           'POST',
           '/api/admin/settings',
-          newSettings
+          processedSettings
         );
       } catch (error) {
         console.error("Error updating settings:", error);
@@ -178,9 +193,10 @@ const SettingsPage: React.FC = () => {
       refetchSettings();
     },
     onError: (error: Error) => {
+      console.error("Settings update error:", error);
       toast({
         title: 'Error Updating Settings',
-        description: error.message,
+        description: error.message || "An unknown error occurred",
         variant: 'destructive',
       });
     }
@@ -1123,7 +1139,29 @@ const SettingsPage: React.FC = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => refetchSettings()}
+              onClick={() => {
+                refetchSettings().then(() => {
+                  // Reset form to latest data after refetch
+                  if (settings.length > 0) {
+                    const formData: Partial<ApiKeySettings> = { ...defaultSettings };
+                    settings.forEach((setting: ServiceSettings) => {
+                      if (setting.settingKey === 'autoEmailDelivery' || 
+                          setting.settingKey === 'useExternalStorage' || 
+                          setting.settingKey === 'autoBlogPublishing') {
+                        formData[setting.settingKey as keyof ApiKeySettings] = setting.value === 'true';
+                      } else {
+                        formData[setting.settingKey as keyof ApiKeySettings] = setting.value as any;
+                      }
+                    });
+                    form.reset(formData as ApiKeySettings);
+                  }
+                  
+                  toast({
+                    title: 'Form Reset',
+                    description: 'Settings form has been reset to saved values.',
+                  });
+                });
+              }}
               disabled={updateSettingsMutation.isPending}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
