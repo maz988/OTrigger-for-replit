@@ -11,9 +11,13 @@ const defaultSettings: SystemSettings = {
 };
 
 export function useSettings() {
-  const { data: settingsResponse, isLoading } = useQuery({
+  const { data: settingsResponse, isLoading, refetch } = useQuery({
     queryKey: ['/api/admin/settings'],
     queryFn: getQueryFn(),
+    // Refresh settings more frequently to ensure UI is updated
+    staleTime: 10 * 1000, // 10 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const settings = settingsResponse?.data || [];
@@ -33,6 +37,7 @@ export function useSettings() {
 
   return {
     settings: parsedSettings,
-    isLoading
+    isLoading,
+    refetch
   };
 }

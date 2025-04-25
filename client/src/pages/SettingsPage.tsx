@@ -242,6 +242,9 @@ const SettingsPage: React.FC = () => {
       }
     },
     onSuccess: () => {
+      // Invalidate the settings cache to refresh all components using settings
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/settings'] });
+      
       toast({
         title: 'Settings Updated',
         description: 'Integration settings have been saved successfully.',
