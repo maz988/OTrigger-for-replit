@@ -115,11 +115,13 @@ export async function getProviderConfig(): Promise<EmailProviderConfig> {
 export async function sendSubscriberToEmailService({
   name, 
   email, 
-  source
+  source,
+  listId
 }: {
   name: string;
   email: string;
   source?: string;
+  listId?: string;
 }): Promise<{
   success: boolean;
   message?: string;

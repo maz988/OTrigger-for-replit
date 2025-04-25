@@ -343,14 +343,16 @@ export async function testConnection(apiKey: string): Promise<{ success: boolean
  * @param name Subscriber name
  * @param source Source of subscription (e.g., 'quiz', 'blog')
  * @param apiKey MailerLite API key
+ * @param listId Optional group/list ID to add the subscriber to
  * @returns Success response or error
  */
 export async function sendToMailerLite(
   email: string,
   name: string,
   source?: string,
-  apiKey?: string
-): Promise<{ success: boolean; message?: string; error?: string }> {
+  apiKey?: string,
+  listId?: string
+): Promise<{ success: boolean; message?: string; error?: string; subscriberId?: string }> {
   try {
     // Validate API key if provided
     if (!apiKey) {
@@ -402,9 +404,41 @@ export async function sendToMailerLite(
     if (response.ok) {
       const data = await response.json();
       console.log(`MailerLite subscriber added/updated successfully: ${email}`);
+      
+      // Get the subscriber ID from the response
+      const subscriberId = data.data?.id?.toString();
+      
+      // If a list ID was provided, add the subscriber to that group
+      if (listId && subscriberId) {
+        try {
+          // Add subscriber to the specified group
+          console.log(`Adding subscriber ${email} to MailerLite group ${listId}`);
+          
+          const groupResponse = await fetch(`https://connect.mailerlite.com/api/groups/${listId}/subscribers/${subscriberId}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (groupResponse.ok) {
+            console.log(`Successfully added ${email} to MailerLite group ${listId}`);
+          } else {
+            const groupError = await groupResponse.text();
+            console.error(`Error adding to group: ${groupError}`);
+          }
+        } catch (groupError) {
+          console.error(`Exception adding to group: ${groupError.message}`);
+          // Continue despite group assignment error
+        }
+      }
+      
       return {
         success: true,
-        message: `Subscriber successfully added to MailerLite: ${name} (${email})`
+        message: `Subscriber successfully added to MailerLite: ${name} (${email})`,
+        subscriberId
       };
     } else {
       const errorData = await response.json();
