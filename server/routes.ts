@@ -2249,6 +2249,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
           
+          // If successful and a new API key was provided, update it in the database and environment
+          if (req.body.apiKey && req.body.apiKey !== process.env.SENDGRID_API_KEY) {
+            await storage.saveSetting({
+              settingKey: 'SENDGRID_API_KEY',
+              settingValue: apiKey,
+              settingType: 'string', 
+              description: 'SendGrid API Key'
+            });
+            
+            // Update env var for immediate use
+            process.env.SENDGRID_API_KEY = apiKey;
+            console.log('SendGrid API key updated in both database and environment');
+          }
+          
           return res.status(200).json({
             success: true,
             message: result.message || "Successfully connected to SendGrid"
@@ -2285,6 +2299,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
           
+          // If successful and a new API key was provided, update it in the database and environment
+          if (req.body.apiKey && req.body.apiKey !== process.env.MAILERLITE_API_KEY) {
+            await storage.saveSetting({
+              settingKey: 'MAILERLITE_API_KEY',
+              settingValue: apiKey,
+              settingType: 'string', 
+              description: 'MailerLite API Key'
+            });
+            
+            // Update env var for immediate use
+            process.env.MAILERLITE_API_KEY = apiKey;
+            console.log('MailerLite API key updated in both database and environment');
+          }
+          
           return res.status(200).json({
             success: true,
             message: result.message || "Successfully connected to MailerLite"
@@ -2319,6 +2347,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               success: false,
               error: result.error || "Failed to connect to Brevo"
             });
+          }
+          
+          // If successful and a new API key was provided, update it in the database and environment
+          if (req.body.apiKey && req.body.apiKey !== process.env.BREVO_API_KEY) {
+            await storage.saveSetting({
+              settingKey: 'BREVO_API_KEY',
+              settingValue: apiKey,
+              settingType: 'string', 
+              description: 'Brevo API Key'
+            });
+            
+            // Update env var for immediate use
+            process.env.BREVO_API_KEY = apiKey;
+            console.log('Brevo API key updated in both database and environment');
           }
           
           return res.status(200).json({

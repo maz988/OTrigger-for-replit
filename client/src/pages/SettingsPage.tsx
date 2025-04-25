@@ -189,6 +189,11 @@ const SettingsPage: React.FC = () => {
   const testServiceMutation = useMutation({
     mutationFn: async (serviceType: string) => {
       try {
+        // First, save any pending changes to settings
+        if (form.formState.isDirty) {
+          await updateSettingsMutation.mutateAsync(form.getValues());
+        }
+        
         // Get the current value of the API key from the form
         let apiKey;
         switch(serviceType) {
@@ -215,6 +220,18 @@ const SettingsPage: React.FC = () => {
             break;
         }
         
+        // If API key is empty, provide a helpful message
+        if (!apiKey) {
+          // If this is an email service, show a message about using environment variables
+          if (['sendgrid', 'mailerlite', 'brevo'].includes(serviceType)) {
+            toast({
+              title: 'No API key provided',
+              description: 'Using API key from environment variables if available.',
+              variant: 'default',
+            });
+          }
+        }
+        
         // apiRequest expects (url, options)
         const response = await apiRequest(`/api/admin/settings/test/${serviceType}`, {
           method: 'POST',
@@ -227,10 +244,20 @@ const SettingsPage: React.FC = () => {
       }
     },
     onSuccess: (data) => {
+      // Show success toast notification
+      toast({
+        title: '✅ Connection Successful',
+        description: data.message || 'Connection test was successful!',
+        variant: 'default',
+      });
+      
       setTestResults({
         success: true,
         message: data.message || 'Connection successful!'
       });
+      
+      // Refresh settings to ensure UI is up to date
+      refetchSettings();
     },
     onError: (error: any) => {
       console.log("Test service error received:", error);
@@ -260,10 +287,20 @@ const SettingsPage: React.FC = () => {
         }
       }
       
+      // Show error toast notification
+      toast({
+        title: '❌ Connection Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      
       setTestResults({
         success: false,
         message: errorMessage
       });
+      
+      // Refresh settings to ensure UI is up to date with latest values
+      refetchSettings();
     }
   });
 
