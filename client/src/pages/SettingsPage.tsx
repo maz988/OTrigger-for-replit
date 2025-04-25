@@ -55,6 +55,7 @@ interface ApiKeySettings {
   externalStorageKey: string;
   blogKeywordsFile: string;
   autoBlogPublishing: boolean;
+  pdfGuideImageUrl: string;
 }
 
 const defaultSettings: ApiKeySettings = {
@@ -75,7 +76,8 @@ const defaultSettings: ApiKeySettings = {
   externalStorageProvider: 'none',
   externalStorageKey: '',
   blogKeywordsFile: 'keywords.txt',
-  autoBlogPublishing: false
+  autoBlogPublishing: false,
+  pdfGuideImageUrl: '/images/pdf-guide-icon.svg'
 };
 
 // Form validation schema
@@ -97,7 +99,8 @@ const apiKeySettingsSchema = z.object({
   externalStorageProvider: z.enum(['firebase', 'cloudinary', 'none']),
   externalStorageKey: z.string().optional(),
   blogKeywordsFile: z.string(),
-  autoBlogPublishing: z.boolean()
+  autoBlogPublishing: z.boolean(),
+  pdfGuideImageUrl: z.string()
 });
 
 // Get color for service status
@@ -169,7 +172,9 @@ const SettingsPage: React.FC = () => {
         'brevoApiKey': 'brevoApiKey',
         'autoEmailDelivery': 'autoEmailDelivery',
         'useExternalStorage': 'useExternalStorage',
-        'autoBlogPublishing': 'autoBlogPublishing'
+        'autoBlogPublishing': 'autoBlogPublishing',
+        'pdfGuideImageUrl': 'pdfGuideImageUrl',
+        'PDF_GUIDE_IMAGE_URL': 'pdfGuideImageUrl'
       };
       
       settings.forEach((setting: ServiceSettings) => {
@@ -1044,6 +1049,51 @@ const SettingsPage: React.FC = () => {
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Lead Magnet Configuration</CardTitle>
+                    <CardDescription>
+                      Configure lead magnet PDF guide appearance
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="pdfGuideImageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>PDF Guide Image URL</FormLabel>
+                          <FormControl>
+                            <div className="space-y-4">
+                              <Input
+                                type="text"
+                                placeholder="/images/pdf-guide-icon.svg"
+                                {...field}
+                              />
+                              <div className="flex items-center justify-center p-2 border rounded-md">
+                                <img 
+                                  src={field.value} 
+                                  alt="PDF Guide Preview" 
+                                  className="h-24 object-contain"
+                                  onError={(e) => { 
+                                    e.currentTarget.src = '/images/pdf-guide-icon.svg';
+                                    e.currentTarget.classList.add('border', 'border-red-300');
+                                    e.currentTarget.title = "Invalid image URL";
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            URL of the PDF guide image shown in the sidebar
+                          </FormDescription>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
