@@ -1597,7 +1597,7 @@ const AdminDashboard: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* View Blog Post Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-4xl">
