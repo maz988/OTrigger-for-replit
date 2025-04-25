@@ -10,6 +10,17 @@ interface BasicRichTextEditorProps {
   readOnly?: boolean;
 }
 
+// Function to sanitize HTML content before it's used
+const sanitizeHtml = (html: string): string => {
+  if (!html) return '';
+  // Remove DOCTYPE, XML declarations, and comments that can cause issues
+  return html
+    .replace(/<!DOCTYPE[^>]*>/i, '')
+    .replace(/<\?xml[^>]*\?>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .trim();
+};
+
 const BasicRichTextEditor = ({
   value,
   onChange,
@@ -31,6 +42,22 @@ const BasicRichTextEditor = ({
       ['clean']
     ]
   };
+
+  // Wrap the onChange handler to sanitize content
+  const handleChange = (content: string) => {
+    const sanitizedContent = sanitizeHtml(content);
+    onChange(sanitizedContent);
+  };
+  
+  // Ensure initial value is sanitized
+  useEffect(() => {
+    if (value && !readOnly) {
+      const sanitizedValue = sanitizeHtml(value);
+      if (sanitizedValue !== value) {
+        onChange(sanitizedValue);
+      }
+    }
+  }, []);
   
   return (
     <div style={{ minHeight }}>
@@ -38,7 +65,7 @@ const BasicRichTextEditor = ({
         ref={editorRef}
         theme="snow"
         value={value}
-        onChange={onChange}
+        onChange={handleChange}
         modules={modules}
         placeholder={placeholder}
         readOnly={readOnly}

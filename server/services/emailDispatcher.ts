@@ -123,8 +123,17 @@ export async function sendTemplateToSubscriber(
   subscriber: EmailSubscriber
 ): Promise<SendResult> {
   try {
-    // Process template
-    const emailMessage = await processTemplate(template, subscriber);
+    // Import sanitizeHtml function dynamically to avoid circular dependency
+    const { sanitizeHtml } = await import('./emailTemplates');
+    
+    // Create a sanitized copy of the template
+    const sanitizedTemplate = {
+      ...template,
+      content: sanitizeHtml(template.content)
+    };
+    
+    // Process template with sanitized content
+    const emailMessage = await processTemplate(sanitizedTemplate, subscriber);
     
     // Send the email
     const result = await sendEmail(emailMessage);
@@ -160,6 +169,23 @@ export async function sendTemplateToSubscriber(
 }
 
 /**
+ * Ensure HTML content is sanitized before processing to avoid JSON issues
+ */ 
+const ensureSanitizedTemplate = async (template: EmailTemplate): Promise<EmailTemplate> => {
+  // Dynamically import the sanitizeHtml function to avoid circular dependencies
+  const { sanitizeHtml } = await import('./emailTemplates');
+  
+  if (template && template.content) {
+    return {
+      ...template,
+      content: sanitizeHtml(template.content)
+    };
+  }
+  
+  return template;
+};
+
+/**
  * Process the email queue, sending any due emails
  */
 export async function processEmailQueue(): Promise<void> {
@@ -181,7 +207,7 @@ export async function processEmailQueue(): Promise<void> {
         
         // Get the subscriber and template
         const subscriber = await storage.getSubscriberById(queuedEmail.subscriberId);
-        const template = await storage.getEmailTemplateById(queuedEmail.templateId);
+        let template = await storage.getEmailTemplateById(queuedEmail.templateId);
         
         if (!subscriber) {
           await storage.updateQueuedEmailStatus(
@@ -210,6 +236,9 @@ export async function processEmailQueue(): Promise<void> {
           );
           continue;
         }
+        
+        // Sanitize template content to ensure HTML is safe for processing
+        template = await ensureSanitizedTemplate(template);
         
         // Send the email
         const result = await sendTemplateToSubscriber(template, subscriber);
@@ -243,6 +272,7 @@ export async function processEmailQueue(): Promise<void> {
     }
   } catch (error) {
     console.error('Error processing email queue:', error);
+    throw new Error(`Failed to process email queue: ${error.message}`);
   }
 }
 
@@ -412,6 +442,9 @@ export async function sendTestEmail(
   apiKey?: string
 ): Promise<SendResult> {
   try {
+    // Import sanitizeHtml function dynamically to avoid circular dependency
+    const { sanitizeHtml } = await import('./emailTemplates');
+    
     // Create test subscriber data
     const testSubscriber: EmailSubscriber = {
       id: 0,
@@ -425,18 +458,20 @@ export async function sendTestEmail(
       lastEmailSent: null
     };
     
-    // Create test template
+    // Create test template with sanitized content
+    const basicContent = `
+      <h1>This is a test email</h1>
+      <p>Hello {{firstName}},</p>
+      <p>This is a test email from Obsession Trigger.</p>
+      <p>If you're receiving this, the email system is working correctly!</p>
+      <p>Sent at: ${new Date().toISOString()}</p>
+    `;
+    
     const testTemplate: EmailTemplate = {
       id: 0,
       name: 'Test Email',
       subject: 'Test Email from Obsession Trigger',
-      content: `
-        <h1>This is a test email</h1>
-        <p>Hello {{firstName}},</p>
-        <p>This is a test email from Obsession Trigger.</p>
-        <p>If you're receiving this, the email system is working correctly!</p>
-        <p>Sent at: ${new Date().toISOString()}</p>
-      `,
+      content: sanitizeHtml(basicContent),
       sequenceId: 0,
       emailType: 'test',
       delayDays: 0,
@@ -447,7 +482,7 @@ export async function sendTestEmail(
       leadMagnetPath: null
     };
     
-    // Process template
+    // Process template (this will apply additional sanitization)
     const emailMessage = await processTemplate(testTemplate, testSubscriber);
     
     // Use custom provider if specified

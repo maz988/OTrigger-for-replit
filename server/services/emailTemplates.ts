@@ -36,16 +36,40 @@ export interface EmailMessage {
 }
 
 /**
- * Sanitize HTML content to prevent issues with email providers
+ * Sanitize HTML content to prevent issues with email providers and JSON serialization
  */
 export function sanitizeHtml(html: string): string {
   if (!html) return '';
-  // Remove DOCTYPE and other potentially problematic tags that would cause issues
-  return html
-    .replace(/<!DOCTYPE[^>]*>/i, '')
-    .replace(/<\?xml[^>]*\?>/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .trim();
+  
+  try {
+    // Remove DOCTYPE and other potentially problematic tags that would cause issues
+    let sanitized = html
+      .replace(/<!DOCTYPE[^>]*>/i, '')
+      .replace(/<\?xml[^>]*\?>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      // Remove any script tags that might cause issues
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      // Normalize quotes to prevent JSON parsing issues
+      .replace(/"/g, '"')
+      .replace(/"/g, '"')
+      .replace(/'/g, "'")
+      .replace(/'/g, "'")
+      // Remove any control characters that might break JSON
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+      .trim();
+    
+    // Validate that the content can be safely serialized to JSON and back
+    JSON.parse(JSON.stringify({ content: sanitized }));
+    
+    return sanitized;
+  } catch (error) {
+    console.error('Error during HTML sanitization:', error);
+    // If there's an error, perform more aggressive sanitization
+    return html
+      .replace(/<[^>]*>/g, '') // Remove all HTML tags as a last resort
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+      .trim();
+  }
 }
 
 /**
