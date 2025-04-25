@@ -36,6 +36,19 @@ export interface EmailMessage {
 }
 
 /**
+ * Sanitize HTML content to prevent issues with email providers
+ */
+export function sanitizeHtml(html: string): string {
+  if (!html) return '';
+  // Remove DOCTYPE and other potentially problematic tags that would cause issues
+  return html
+    .replace(/<!DOCTYPE[^>]*>/i, '')
+    .replace(/<\?xml[^>]*\?>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .trim();
+}
+
+/**
  * Process a template for a specific subscriber
  */
 export async function processTemplate(
@@ -54,8 +67,11 @@ export async function processTemplate(
   // Replace variables in subject
   const subject = replaceVariables(template.subject, subscriber);
   
+  // Sanitize HTML content
+  const sanitizedContent = sanitizeHtml(template.content);
+  
   // Replace variables in content
-  const html = replaceVariables(template.content, subscriber);
+  const html = replaceVariables(sanitizedContent, subscriber);
   
   // Generate plain text version
   const text = convertHtmlToText(html);
