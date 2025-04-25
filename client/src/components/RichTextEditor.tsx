@@ -547,7 +547,7 @@ const RichTextEditor = ({
           </div>
           
           <TabsContent value="visual" className="p-0 mt-2">
-            <div className="border rounded-md">
+            <div className="border rounded-md bg-white text-gray-900">
               <ReactQuill
                 theme="snow"
                 value={value}
@@ -571,7 +571,9 @@ const RichTextEditor = ({
                 }}
                 style={{
                   height: 'auto',
-                  minHeight: minHeight
+                  minHeight: minHeight,
+                  color: '#1f2937',
+                  backgroundColor: '#ffffff'
                 }}
               />
             </div>

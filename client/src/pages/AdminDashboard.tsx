@@ -1709,7 +1709,7 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
@@ -1720,6 +1720,7 @@ const AdminDashboard: React.FC = () => {
                 }
               }}
               disabled={updatePostMutation.isPending}
+              className="bg-primary text-white hover:bg-primary/90"
             >
               {updatePostMutation.isPending ? (
                 <div className="flex items-center gap-2">
