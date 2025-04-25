@@ -355,6 +355,8 @@ export class MemStorage implements IStorage {
     this.emailQueue = new Map();
     this.emailHistory = new Map();
     this.systemSettings = new Map();
+    this.notificationTemplates = new Map();
+    this.notificationLogs = new Map();
     this.keywords = new Set();
     this.autoSchedulingEnabled = true;
     
@@ -370,6 +372,8 @@ export class MemStorage implements IStorage {
     this.emailQueueCurrentId = 1;
     this.emailHistoryCurrentId = 1;
     this.systemSettingCurrentId = 1;
+    this.notificationTemplateCurrentId = 1;
+    this.notificationLogCurrentId = 1;
     
     // Create a default admin user with password "admin123"
     this.createDefaultAdmin();
@@ -391,6 +395,9 @@ export class MemStorage implements IStorage {
     
     // Initialize default email sequence and templates
     this.initializeEmailSequences();
+    
+    // Initialize default notification templates
+    this.initializeNotificationTemplates();
   }
 
   // User methods
@@ -1747,6 +1754,130 @@ If you'd like a personalized assessment of your unique relationship situation, t
       
       this.systemSettings.set(setting.key, systemSetting);
     }
+  }
+
+  // Simple Notification Template methods
+  async getAllNotificationTemplates(): Promise<NotificationTemplate[]> {
+    return Array.from(this.notificationTemplates.values());
+  }
+  
+  async getNotificationTemplate(type: string): Promise<NotificationTemplate | undefined> {
+    return Array.from(this.notificationTemplates.values()).find(
+      template => template.type === type
+    );
+  }
+  
+  async saveNotificationTemplate(insertTemplate: InsertNotificationTemplate): Promise<NotificationTemplate> {
+    const id = this.notificationTemplateCurrentId++;
+    
+    const template: NotificationTemplate = {
+      ...insertTemplate,
+      id,
+      createdAt: new Date(),
+      updatedAt: null
+    };
+    
+    this.notificationTemplates.set(id, template);
+    return template;
+  }
+  
+  async updateNotificationTemplate(id: number, updates: Partial<InsertNotificationTemplate>): Promise<NotificationTemplate | undefined> {
+    const template = this.notificationTemplates.get(id);
+    
+    if (!template) {
+      return undefined;
+    }
+    
+    const updatedTemplate: NotificationTemplate = {
+      ...template,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.notificationTemplates.set(id, updatedTemplate);
+    return updatedTemplate;
+  }
+  
+  async deleteNotificationTemplate(id: number): Promise<boolean> {
+    if (!this.notificationTemplates.has(id)) {
+      return false;
+    }
+    
+    this.notificationTemplates.delete(id);
+    return true;
+  }
+  
+  // Notification Log methods
+  async getAllNotificationLogs(): Promise<NotificationLog[]> {
+    return Array.from(this.notificationLogs.values());
+  }
+  
+  async getNotificationLogsBySubscriberId(subscriberId: number): Promise<NotificationLog[]> {
+    return Array.from(this.notificationLogs.values())
+      .filter(log => log.subscriberId === subscriberId)
+      .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime()); // Most recent first
+  }
+  
+  async logNotification(insertLog: InsertNotificationLog): Promise<NotificationLog> {
+    const id = this.notificationLogCurrentId++;
+    
+    const log: NotificationLog = {
+      ...insertLog,
+      id,
+      sentAt: new Date()
+    };
+    
+    this.notificationLogs.set(id, log);
+    
+    // Update subscriber's lastEmailSent date
+    const subscriber = this.emailSubscribers.get(insertLog.subscriberId);
+    if (subscriber) {
+      subscriber.lastEmailSent = new Date();
+    }
+    
+    return log;
+  }
+  // Initialize default notification templates
+  private async initializeNotificationTemplates(): Promise<void> {
+    // Create default templates for each notification type if they don't exist
+    const templateTypes = ['welcome', 'lead_magnet', 'content_update', 'custom'];
+    
+    for (const type of templateTypes) {
+      const existingTemplate = await this.getNotificationTemplate(type);
+      
+      if (!existingTemplate) {
+        let subject = '';
+        let message = '';
+        
+        switch (type) {
+          case 'welcome':
+            subject = 'Welcome to Obsession Trigger';
+            message = 'Thank you for joining our community! We are excited to have you on board and cannot wait to share valuable relationship insights with you.';
+            break;
+          case 'lead_magnet':
+            subject = 'Your Free Guide is Ready';
+            message = 'Thank you for your interest! Your requested guide is ready. Check your inbox for the download link or access it directly from your account.';
+            break;
+          case 'content_update':
+            subject = 'New Content Available';
+            message = 'We have just published new content that we think you will love. Check it out on our website!';
+            break;
+          case 'custom':
+            subject = 'Message from Obsession Trigger';
+            message = 'This is a custom message from the Obsession Trigger team.';
+            break;
+        }
+        
+        await this.saveNotificationTemplate({
+          type,
+          subject,
+          template: message,
+          isActive: true
+        });
+      }
+    }
+    
+    console.log('Default notification templates initialized');
   }
 }
 

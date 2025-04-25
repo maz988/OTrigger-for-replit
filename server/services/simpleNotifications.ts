@@ -337,7 +337,7 @@ export async function initializeDefaultNotificationTemplates(): Promise<void> {
         subject: 'Welcome to Obsession Trigger!',
         message: `Dear {{firstName}},
 
-Welcome to Obsession Trigger! We're excited to have you join our community.
+Welcome to Obsession Trigger! We are excited to have you join our community.
 
 Over the next few days, you'll receive valuable relationship advice and insights that can help transform your love life.
 
@@ -356,6 +356,32 @@ The Obsession Trigger Team`
 Thank you for your interest in our relationship resources. Your requested guide is attached to this email.
 
 We hope you find it valuable and insightful!
+
+Warm regards,
+The Obsession Trigger Team`
+      });
+      
+      // Create content update template
+      await storage.saveNotificationTemplate({
+        type: 'content_update',
+        subject: 'New Content: Enhancing Your Relationship',
+        message: `Dear {{firstName}},
+
+We have just published new content that we think you will find valuable for your relationship journey.
+
+Visit our blog to check it out: https://obsessiontrigger.com/blog
+
+Warm regards,
+The Obsession Trigger Team`
+      });
+      
+      // Create custom template
+      await storage.saveNotificationTemplate({
+        type: 'custom',
+        subject: 'Update from Obsession Trigger',
+        message: `Dear {{firstName}},
+
+We have an important update to share with you.
 
 Warm regards,
 The Obsession Trigger Team`
