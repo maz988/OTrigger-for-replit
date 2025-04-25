@@ -3,7 +3,6 @@ import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import {
   BarChart3,
-  Bell,
   FileText,
   Users,
   Settings,
@@ -40,12 +39,7 @@ const AdminNavigation: React.FC = () => {
       icon: <Mail className="h-5 w-5 mr-2" />,
       active: location === '/admin/email-templates'
     },
-    {
-      label: 'Notifications',
-      href: '/admin/notifications',
-      icon: <Bell className="h-5 w-5 mr-2" />,
-      active: location === '/admin/notifications'
-    },
+
     {
       label: 'Subscribers',
       href: '/admin/subscribers',
