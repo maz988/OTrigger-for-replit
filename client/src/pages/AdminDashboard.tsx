@@ -23,6 +23,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/RichTextEditor';
+import AdminNavigation from '@/components/AdminNavigation';
 import {
   BarChart,
   Bar,
@@ -419,8 +420,7 @@ const AdminDashboard: React.FC = () => {
   
   return (
     <div className="container mx-auto py-8 px-4">
-      {/* Import and use AdminNavigation component */}
-      {React.createElement(require('../components/AdminNavigation').default)}
+      <AdminNavigation />
       
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>

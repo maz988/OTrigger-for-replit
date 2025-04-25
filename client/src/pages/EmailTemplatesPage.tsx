@@ -38,6 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import RichTextEditor from '@/components/RichTextEditor';
+import AdminNavigation from '@/components/AdminNavigation';
 import {
   FileText,
   Plus,
@@ -458,8 +459,7 @@ const EmailTemplatesPage: React.FC = () => {
   
   return (
     <div className="container mx-auto py-8 px-4">
-      {/* Import and use AdminNavigation component */}
-      {React.createElement(require('../components/AdminNavigation').default)}
+      <AdminNavigation />
       
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Email Management</h1>
