@@ -87,23 +87,20 @@ export default function NotificationsPage() {
       try {
         // Get templates
         const templatesResponse = await apiRequest('GET', '/api/admin/notifications/templates');
-        const templatesData = await templatesResponse.json();
-        if (templatesData.success) {
-          setTemplates(templatesData.data || []);
+        if (templatesResponse.success) {
+          setTemplates(templatesResponse.data || []);
         }
         
         // Get logs
         const logsResponse = await apiRequest('GET', '/api/admin/notifications/logs');
-        const logsData = await logsResponse.json();
-        if (logsData.success) {
-          setLogs(logsData.data || []);
+        if (logsResponse.success) {
+          setLogs(logsResponse.data || []);
         }
         
         // Get subscribers for selection dropdown
         const subscribersResponse = await apiRequest('GET', '/api/admin/subscribers');
-        const subscribersData = await subscribersResponse.json();
-        if (subscribersData.success) {
-          setSubscribers(subscribersData.data || []);
+        if (subscribersResponse.success) {
+          setSubscribers(subscribersResponse.data || []);
         }
       } catch (error) {
         console.error('Error fetching notification data:', error);
