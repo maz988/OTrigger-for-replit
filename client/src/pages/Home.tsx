@@ -13,6 +13,8 @@ interface BlogPost {
   slug: string;
   category: string;
   publishedAt: string;
+  content: string;
+  imageUrl?: string; // Optional image URL
 }
 
 const Home: React.FC = () => {
@@ -92,17 +94,47 @@ const Home: React.FC = () => {
               </div>
             </div>
             
-            <div className="bg-[#ffedf1] rounded-xl p-6">
-              <h3 className="text-2xl font-semibold text-[#f24b7c] mb-6">Featured Articles</h3>
+            
+          </div>
+          
+          {/* Featured Articles Section - Moved to bottom of page */}
+          <div className="mt-12 py-12 bg-[#fef6f8] rounded-xl">
+            <div className="max-w-5xl mx-auto px-4">
+              <h3 className="text-3xl font-bold text-center text-[#f24b7c] mb-8">Featured Articles</h3>
               
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {featuredPosts.length > 0 ? (
                   featuredPosts.map((post) => (
-                    <Card key={post.id} className="bg-white overflow-hidden">
+                    <Card key={post.id} className="bg-white shadow-md overflow-hidden h-full flex flex-col">
+                      <div className="h-48 w-full bg-gray-200 overflow-hidden">
+                        {post.imageUrl ? (
+                          <img 
+                            src={post.imageUrl} 
+                            alt={post.title}
+                            className="w-full h-full object-cover transition-transform hover:scale-105" 
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full bg-gradient-to-br from-[#ffedf1] to-[#ffe4e4]">
+                            <Heart className="h-12 w-12 text-[#f24b7c] opacity-40" />
+                          </div>
+                        )}
+                      </div>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-lg text-[#f24b7c]">{post.title}</CardTitle>
+                        <CardTitle className="text-lg font-semibold text-[#f24b7c]">{post.title}</CardTitle>
+                        <p className="text-sm text-gray-500">
+                          {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
                       </CardHeader>
-                      <CardFooter className="pt-2">
+                      <CardContent className="pb-2 flex-grow">
+                        <p className="text-gray-700 line-clamp-3">
+                          {post.content?.replace(/<[^>]+>/g, '').substring(0, 120)}...
+                        </p>
+                      </CardContent>
+                      <CardFooter className="pt-0">
                         <Link href={`/blog/${post.slug}`} className="text-[#f24b7c] font-medium flex items-center hover:underline">
                           Read more
                           <ArrowRight className="ml-1 h-4 w-4" />
@@ -111,8 +143,8 @@ const Home: React.FC = () => {
                     </Card>
                   ))
                 ) : (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500 mb-4">Explore our relationship advice blog</p>
+                  <div className="col-span-3 text-center py-8">
+                    <p className="text-gray-500 mb-4 text-lg">Explore our relationship advice blog</p>
                     <Link href="/blog">
                       <Button variant="outline" className="border-[#f24b7c] text-[#f24b7c]">
                         Visit Blog
@@ -122,10 +154,12 @@ const Home: React.FC = () => {
                 )}
               </div>
               
-              <div className="mt-6 text-center">
-                <Link href="/blog" className="text-[#f24b7c] font-medium flex items-center justify-center hover:underline">
-                  View all articles
-                  <ArrowRight className="ml-1 h-4 w-4" />
+              <div className="mt-8 text-center">
+                <Link href="/blog" className="inline-block bg-white py-3 px-6 rounded-full shadow-md text-[#f24b7c] font-medium hover:shadow-lg transition-shadow">
+                  <span className="flex items-center">
+                    View all articles
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </span>
                 </Link>
               </div>
             </div>
