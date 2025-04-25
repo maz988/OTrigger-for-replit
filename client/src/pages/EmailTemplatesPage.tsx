@@ -444,13 +444,21 @@ const EmailTemplatesPage: React.FC = () => {
   
   const handleViewTemplate = (template: EmailTemplate) => {
     setSelectedTemplateId(template.id);
-    setTemplateFormData(template);
+    // Sanitize the content before setting it in the form
+    setTemplateFormData({
+      ...template,
+      content: sanitizeHtmlForJson(template.content)
+    });
     setIsViewTemplateDialogOpen(true);
   };
   
   const handleEditTemplate = (template: EmailTemplate) => {
     setSelectedTemplateId(template.id);
-    setTemplateFormData(template);
+    // Sanitize the content before setting it in the form
+    setTemplateFormData({
+      ...template,
+      content: sanitizeHtmlForJson(template.content)
+    });
     setIsEditTemplateDialogOpen(true);
   };
   
