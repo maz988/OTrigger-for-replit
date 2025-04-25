@@ -2799,13 +2799,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           try {
-            // Test with the groups endpoint which doesn't modify anything
-            const response = await fetch('https://api.mailerlite.com/api/v2/groups', {
+            console.log("Testing MailerLite connection with updated API...");
+            
+            // Test with the groups endpoint using the v1 API
+            const response = await fetch('https://connect.mailerlite.com/api/groups?limit=1', {
               headers: { 
-                'X-MailerLite-ApiKey': apiKey,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
               }
             });
+            
+            // Log the status for debugging
+            console.log("MailerLite API test response status:", response.status);
+            
+            const responseData = await response.json();
+            console.log("MailerLite API test response:", JSON.stringify(responseData).substring(0, 100) + "...");
             
             if (response.ok) {
               return res.status(200).json({
@@ -2814,10 +2823,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             } else {
               // Get response body to extract error message
-              const errorData = await response.json();
               return res.status(400).json({
                 success: false,
-                error: errorData.error?.message || `API error: ${response.status}`
+                error: responseData.message || `API error: ${response.status}`
               });
             }
           } catch (error) {
@@ -3170,28 +3178,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           try {
-            // Get all groups from MailerLite (groups are their equivalent of lists)
-            const response = await fetch('https://api.mailerlite.com/api/v2/groups', {
+            console.log("Fetching MailerLite groups with API key:", apiKey.substring(0, 10) + "...");
+            
+            // Get all groups from MailerLite using their current v1 API
+            const response = await fetch('https://connect.mailerlite.com/api/groups?limit=100', {
               method: 'GET',
               headers: {
-                'X-MailerLite-ApiKey': apiKey,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
               }
             });
             
+            const responseData = await response.json();
+            console.log("MailerLite API response status:", response.status);
+            
             if (response.ok) {
-              const data = await response.json();
-              lists = data.map((group: any) => ({
-                id: group.id.toString(),
-                name: group.name,
-                subscriberCount: group.total || 0,
-                description: group.name,
-                createdAt: group.date_created,
-                isDefault: false
-              }));
+              console.log("MailerLite groups found:", responseData.data?.length || 0);
+              
+              if (responseData.data && Array.isArray(responseData.data)) {
+                lists = responseData.data.map((group: any) => ({
+                  id: group.id.toString(),
+                  name: group.name,
+                  subscriberCount: group.active_count || 0,
+                  description: group.name,
+                  createdAt: group.created_at,
+                  isDefault: false
+                }));
+              } else {
+                console.log("Unexpected MailerLite response format:", responseData);
+                throw new Error("Unexpected response format from MailerLite API");
+              }
             } else {
-              const errorText = await response.text();
-              throw new Error(`MailerLite API error: ${response.status} - ${errorText}`);
+              console.error("MailerLite API error:", responseData);
+              throw new Error(`MailerLite API error: ${response.status} - ${responseData.message || JSON.stringify(responseData)}`);
             }
           } catch (error: any) {
             console.error("Error fetching MailerLite groups:", error);
