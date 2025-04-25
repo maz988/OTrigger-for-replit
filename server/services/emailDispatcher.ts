@@ -45,13 +45,58 @@ export async function getProviderConfig(): Promise<EmailProviderConfig> {
   const service = emailServiceSetting?.settingValue || 'sendgrid';
   let apiKeySetting;
   
+  // First try to get the API key from the database (most up-to-date)
   if (service === 'mailerlite') {
     apiKeySetting = await storage.getSettingByKey('MAILERLITE_API_KEY');
+    // If empty in database but exists in env, update the database
+    if ((!apiKeySetting || !apiKeySetting.settingValue) && process.env.MAILERLITE_API_KEY) {
+      await storage.saveSetting({
+        settingKey: 'MAILERLITE_API_KEY',
+        settingValue: process.env.MAILERLITE_API_KEY,
+        settingType: 'string',
+        description: 'MailerLite API Key'
+      });
+      apiKeySetting = { settingValue: process.env.MAILERLITE_API_KEY };
+    }
   } else if (service === 'brevo') {
     apiKeySetting = await storage.getSettingByKey('BREVO_API_KEY');
+    // If empty in database but exists in env, update the database
+    if ((!apiKeySetting || !apiKeySetting.settingValue) && process.env.BREVO_API_KEY) {
+      await storage.saveSetting({
+        settingKey: 'BREVO_API_KEY',
+        settingValue: process.env.BREVO_API_KEY,
+        settingType: 'string',
+        description: 'Brevo API Key'
+      });
+      apiKeySetting = { settingValue: process.env.BREVO_API_KEY };
+    }
   } else {
     // Default to SendGrid
     apiKeySetting = await storage.getSettingByKey('SENDGRID_API_KEY');
+    // If empty in database but exists in env, update the database
+    if ((!apiKeySetting || !apiKeySetting.settingValue) && process.env.SENDGRID_API_KEY) {
+      await storage.saveSetting({
+        settingKey: 'SENDGRID_API_KEY',
+        settingValue: process.env.SENDGRID_API_KEY,
+        settingType: 'string',
+        description: 'SendGrid API Key'
+      });
+      apiKeySetting = { settingValue: process.env.SENDGRID_API_KEY };
+    }
+  }
+  
+  // Now ensure environment variables are also updated with database values
+  if (apiKeySetting?.settingValue) {
+    if (service === 'mailerlite' && process.env.MAILERLITE_API_KEY !== apiKeySetting.settingValue) {
+      process.env.MAILERLITE_API_KEY = apiKeySetting.settingValue;
+      console.log('Updated MailerLite API key in environment from database');
+    } else if (service === 'brevo' && process.env.BREVO_API_KEY !== apiKeySetting.settingValue) {
+      process.env.BREVO_API_KEY = apiKeySetting.settingValue;
+      console.log('Updated Brevo API key in environment from database');
+    } else if (service === 'sendgrid' && process.env.SENDGRID_API_KEY !== apiKeySetting.settingValue) {
+      process.env.SENDGRID_API_KEY = apiKeySetting.settingValue;
+      console.log('Updated SendGrid API key in environment from database');
+    }
   }
   
   return {
