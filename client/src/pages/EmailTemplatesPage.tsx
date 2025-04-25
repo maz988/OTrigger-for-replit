@@ -1048,9 +1048,10 @@ const EmailTemplatesPage: React.FC = () => {
               </Label>
               <div className="col-span-3">
                 <div className="border rounded-md p-1 min-h-[150px]">
-                  <RichTextEditor
+                  <BasicRichTextEditor
                     value={templateFormData.content}
                     onChange={(value) => setTemplateFormData({ ...templateFormData, content: value })}
+                    minHeight="200px"
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -1231,9 +1232,10 @@ const EmailTemplatesPage: React.FC = () => {
               </Label>
               <div className="col-span-3">
                 <div className="border rounded-md p-1 min-h-[150px]">
-                  <RichTextEditor
+                  <BasicRichTextEditor
                     value={templateFormData.content}
                     onChange={(value) => setTemplateFormData({ ...templateFormData, content: value })}
+                    minHeight="200px"
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
