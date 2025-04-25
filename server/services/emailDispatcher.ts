@@ -169,7 +169,9 @@ export async function sendSubscriberToEmailService({
         try {
           // Dynamically import to avoid circular dependencies
           const { sendToMailerLite } = await import('./emailProviders/mailerlite');
-          const result = await sendToMailerLite(email, name, source, providerConfig.apiKey);
+          
+          // Pass the list ID parameter to MailerLite
+          const result = await sendToMailerLite(email, name, source, providerConfig.apiKey, listId);
           
           if (result.success) {
             return {
@@ -195,7 +197,9 @@ export async function sendSubscriberToEmailService({
         try {
           // Dynamically import to avoid circular dependencies
           const { sendToBrevo } = await import('./emailProviders/brevo');
-          const result = await sendToBrevo(email, name, source, providerConfig.apiKey);
+          
+          // Pass the list ID parameter to Brevo
+          const result = await sendToBrevo(email, name, source, providerConfig.apiKey, listId);
           
           if (result.success) {
             return {
@@ -222,7 +226,9 @@ export async function sendSubscriberToEmailService({
         try {
           // Dynamically import to avoid circular dependencies
           const { sendToSendGrid } = await import('./emailProviders/sendgrid');
-          const result = await sendToSendGrid(email, name, source, providerConfig.apiKey);
+          
+          // Pass the list ID parameter to SendGrid
+          const result = await sendToSendGrid(email, name, source, providerConfig.apiKey, listId);
           
           if (result.success) {
             return {

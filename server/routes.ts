@@ -184,11 +184,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import dynamically to avoid circular dependencies
       const { sendSubscriberToEmailService } = await import('./services/emailDispatcher');
       
+      // Determine which list ID to use based on source
+      let listIdSetting;
+      if (source === 'quiz') {
+        listIdSetting = await storage.getSettingByKey('QUIZ_LIST_ID');
+      } else if (source === 'lead-magnet') {
+        listIdSetting = await storage.getSettingByKey('LEAD_MAGNET_LIST_ID');
+      } else {
+        listIdSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
+      }
+      
+      const listId = listIdSetting?.settingValue || '';
+      console.log(`Using list ID ${listId || 'default'} for subscriber with source: ${source || 'website'}`);
+      
       // Send subscriber to the active email service provider
       const result = await sendSubscriberToEmailService({
         name: firstName,
         email: email,
-        source: source || 'website'
+        source: source || 'website',
+        listId
       });
       
       if (!result.success) {
@@ -233,11 +247,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Name to use for sending to email service
         const fullName = lastName ? `${firstName} ${lastName}` : firstName;
         
+        // Get the lead magnet list ID from settings
+        const listIdSetting = await storage.getSettingByKey('LEAD_MAGNET_LIST_ID');
+        const listId = listIdSetting?.settingValue || '';
+        console.log(`Using list ID ${listId || 'default'} for lead magnet subscriber: ${email}`);
+        
         // Send to email service with lead magnet as source
         const result = await sendSubscriberToEmailService({
           name: fullName,
           email: email,
-          source: 'lead-magnet'
+          source: 'lead-magnet',
+          listId
         });
         
         if (result.success) {
