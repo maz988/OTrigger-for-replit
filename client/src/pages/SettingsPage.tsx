@@ -111,6 +111,12 @@ const getStatusText = (active: boolean, hasValue: boolean): string => {
   return active ? 'Active' : 'Configured (Inactive)';
 };
 
+// Check if a setting is actually configured in the database
+const isSettingConfigured = (settingKey: string, settings: ServiceSettings[]): boolean => {
+  const setting = settings.find(s => s.settingKey === settingKey);
+  return !!(setting && setting.value && setting.value.length > 0);
+};
+
 const SettingsPage: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('ai');
@@ -413,8 +419,8 @@ const SettingsPage: React.FC = () => {
                     <div className="flex items-center justify-between pt-2">
                       <div className="font-medium text-sm">
                         Status: 
-                        <span className={getStatusColor(true, !!form.getValues().openaiApiKey)}>
-                          {' '}{getStatusText(true, !!form.getValues().openaiApiKey)}
+                        <span className={getStatusColor(true, isSettingConfigured('openaiApiKey', settings) || !!form.getValues().openaiApiKey)}>
+                          {' '}{getStatusText(true, isSettingConfigured('openaiApiKey', settings) || !!form.getValues().openaiApiKey)}
                         </span>
                       </div>
                       <Button 
@@ -461,8 +467,8 @@ const SettingsPage: React.FC = () => {
                     <div className="flex items-center justify-between pt-2">
                       <div className="font-medium text-sm">
                         Status: 
-                        <span className={getStatusColor(true, !!form.getValues().geminiApiKey)}>
-                          {' '}{getStatusText(true, !!form.getValues().geminiApiKey)}
+                        <span className={getStatusColor(true, isSettingConfigured('geminiApiKey', settings) || !!form.getValues().geminiApiKey)}>
+                          {' '}{getStatusText(true, isSettingConfigured('geminiApiKey', settings) || !!form.getValues().geminiApiKey)}
                         </span>
                       </div>
                       <Button 
@@ -554,8 +560,8 @@ const SettingsPage: React.FC = () => {
                     <div className="flex items-center justify-between pt-2">
                       <div className="font-medium text-sm">
                         Status: 
-                        <span className={getStatusColor(true, !!form.getValues().pexelsApiKey)}>
-                          {' '}{getStatusText(true, !!form.getValues().pexelsApiKey)}
+                        <span className={getStatusColor(true, isSettingConfigured('pexelsApiKey', settings) || !!form.getValues().pexelsApiKey)}>
+                          {' '}{getStatusText(true, isSettingConfigured('pexelsApiKey', settings) || !!form.getValues().pexelsApiKey)}
                         </span>
                       </div>
                       <Button 
@@ -602,8 +608,8 @@ const SettingsPage: React.FC = () => {
                     <div className="flex items-center justify-between pt-2">
                       <div className="font-medium text-sm">
                         Status: 
-                        <span className={getStatusColor(true, !!form.getValues().unsplashApiKey)}>
-                          {' '}{getStatusText(true, !!form.getValues().unsplashApiKey)}
+                        <span className={getStatusColor(true, isSettingConfigured('unsplashApiKey', settings) || !!form.getValues().unsplashApiKey)}>
+                          {' '}{getStatusText(true, isSettingConfigured('unsplashApiKey', settings) || !!form.getValues().unsplashApiKey)}
                         </span>
                       </div>
                       <Button 
@@ -697,11 +703,11 @@ const SettingsPage: React.FC = () => {
                         Status: 
                         <span className={getStatusColor(
                           form.getValues().activeEmailService === 'sendgrid', 
-                          !!form.getValues().sendgridApiKey
+                          isSettingConfigured('sendgridApiKey', settings) || !!form.getValues().sendgridApiKey
                         )}>
                           {' '}{getStatusText(
                             form.getValues().activeEmailService === 'sendgrid', 
-                            !!form.getValues().sendgridApiKey
+                            isSettingConfigured('sendgridApiKey', settings) || !!form.getValues().sendgridApiKey
                           )}
                         </span>
                       </div>
@@ -751,11 +757,11 @@ const SettingsPage: React.FC = () => {
                         Status: 
                         <span className={getStatusColor(
                           form.getValues().activeEmailService === 'mailerlite', 
-                          !!form.getValues().mailerliteApiKey
+                          isSettingConfigured('mailerliteApiKey', settings) || !!form.getValues().mailerliteApiKey
                         )}>
                           {' '}{getStatusText(
                             form.getValues().activeEmailService === 'mailerlite', 
-                            !!form.getValues().mailerliteApiKey
+                            isSettingConfigured('mailerliteApiKey', settings) || !!form.getValues().mailerliteApiKey
                           )}
                         </span>
                       </div>
@@ -807,11 +813,11 @@ const SettingsPage: React.FC = () => {
                         Status: 
                         <span className={getStatusColor(
                           form.getValues().activeEmailService === 'brevo', 
-                          !!form.getValues().brevoApiKey
+                          isSettingConfigured('brevoApiKey', settings) || !!form.getValues().brevoApiKey
                         )}>
                           {' '}{getStatusText(
                             form.getValues().activeEmailService === 'brevo', 
-                            !!form.getValues().brevoApiKey
+                            isSettingConfigured('brevoApiKey', settings) || !!form.getValues().brevoApiKey
                           )}
                         </span>
                       </div>
