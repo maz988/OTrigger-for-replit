@@ -3436,9 +3436,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const templates = await storage.getAllEmailTemplates();
       
+      // Base64 encode the content for each template to prevent JSON issues
+      const encodedTemplates = templates.map(template => {
+        if (template.content) {
+          return {
+            ...template,
+            content: Buffer.from(template.content).toString('base64')
+          };
+        }
+        return template;
+      });
+      
       res.status(200).json({
         success: true,
-        data: templates
+        data: encodedTemplates
       });
     } catch (err: any) {
       console.error(`Error getting email templates: ${err.message}`);
@@ -3461,9 +3472,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Base64 encode the content for safe transmission
+      const encodedTemplate = {
+        ...template,
+        content: template.content ? Buffer.from(template.content).toString('base64') : ''
+      };
+      
       res.status(200).json({
         success: true,
-        data: template
+        data: encodedTemplate
       });
     } catch (err: any) {
       console.error(`Error getting email template: ${err.message}`);
@@ -3479,9 +3496,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sequenceId = parseInt(req.params.sequenceId);
       const templates = await storage.getEmailTemplatesBySequenceId(sequenceId);
       
+      // Base64 encode the content for each template to prevent JSON issues
+      const encodedTemplates = templates.map(template => {
+        if (template.content) {
+          return {
+            ...template,
+            content: Buffer.from(template.content).toString('base64')
+          };
+        }
+        return template;
+      });
+      
       res.status(200).json({
         success: true,
-        data: templates
+        data: encodedTemplates
       });
     } catch (err: any) {
       console.error(`Error getting templates by sequence: ${err.message}`);
@@ -3494,17 +3522,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/admin/email/templates", authenticateAdmin, async (req, res) => {
     try {
-      // Import sanitizeHtml dynamically to avoid circular dependencies
-      const { sanitizeHtml } = await import('./services/emailTemplates');
+      // Handle the possibility that the content is Base64 encoded
+      const data = { ...req.body };
       
-      // Sanitize HTML content to prevent JSON issues
-      const sanitizedData = { ...req.body };
-      
-      if (sanitizedData.content) {
-        sanitizedData.content = sanitizeHtml(sanitizedData.content);
+      // Decode Base64 content if needed
+      if (data.content) {
+        // Check if the content appears to be Base64 encoded
+        if (/^[A-Za-z0-9+/=]+$/.test(data.content.trim())) {
+          try {
+            // Decode Base64 using Node.js Buffer
+            data.content = Buffer.from(data.content, 'base64').toString('utf-8');
+          } catch (decodeError) {
+            console.error(`Failed to decode Base64 content: ${decodeError.message}`);
+            // Continue with original content if decode fails
+          }
+        }
+        
+        // Import sanitizeHtml dynamically to avoid circular dependencies
+        const { sanitizeHtml } = await import('./services/emailTemplates');
+        data.content = sanitizeHtml(data.content);
       }
       
-      const template = await storage.saveEmailTemplate(sanitizedData);
+      const template = await storage.saveEmailTemplate(data);
       
       res.status(201).json({
         success: true,
@@ -3523,17 +3562,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Import sanitizeHtml dynamically to avoid circular dependencies
-      const { sanitizeHtml } = await import('./services/emailTemplates');
+      // Handle the possibility that the content is Base64 encoded
+      const data = { ...req.body };
       
-      // Sanitize HTML content to prevent JSON issues
-      const sanitizedData = { ...req.body };
-      
-      if (sanitizedData.content) {
-        sanitizedData.content = sanitizeHtml(sanitizedData.content);
+      // Decode Base64 content if needed
+      if (data.content) {
+        // Check if the content appears to be Base64 encoded
+        if (/^[A-Za-z0-9+/=]+$/.test(data.content.trim())) {
+          try {
+            // Decode Base64 using Node.js Buffer
+            data.content = Buffer.from(data.content, 'base64').toString('utf-8');
+          } catch (decodeError) {
+            console.error(`Failed to decode Base64 content: ${decodeError.message}`);
+            // Continue with original content if decode fails
+          }
+        }
+        
+        // Import sanitizeHtml dynamically to avoid circular dependencies
+        const { sanitizeHtml } = await import('./services/emailTemplates');
+        data.content = sanitizeHtml(data.content);
       }
       
-      const updatedTemplate = await storage.updateEmailTemplate(id, sanitizedData);
+      const updatedTemplate = await storage.updateEmailTemplate(id, data);
       
       if (!updatedTemplate) {
         return res.status(404).json({

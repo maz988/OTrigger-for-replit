@@ -105,15 +105,41 @@ interface EmailQueue {
   processedAt: string | null;
 }
 
-// Function to sanitize HTML content to prevent validation issues
-const sanitizeHtmlForJson = (html: string): string => {
+// Function to encode HTML content for safe transmission
+const encodeHtmlContent = (html: string): string => {
   if (!html) return '';
-  // Remove DOCTYPE and other potentially problematic tags that would cause JSON issues
-  return html
-    .replace(/<!DOCTYPE[^>]*>/i, '')
-    .replace(/<\?xml[^>]*\?>/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .trim();
+  // Use Base64 encoding to safely transmit HTML content
+  try {
+    return btoa(html); // Base64 encode
+  } catch (error) {
+    console.error('Error encoding HTML content:', error);
+    // Fallback to basic sanitization if encoding fails
+    return html
+      .replace(/<!DOCTYPE[^>]*>/i, '')
+      .replace(/<\?xml[^>]*\?>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .trim();
+  }
+};
+
+// Function to decode HTML content
+const decodeHtmlContent = (encoded: string): string => {
+  if (!encoded) return '';
+  // Try to decode from Base64
+  try {
+    // Check if it's already Base64 encoded
+    if (/^[A-Za-z0-9+/=]+$/.test(encoded.trim())) {
+      return atob(encoded); // Base64 decode
+    }
+    return encoded; // Return as is if not Base64
+  } catch (error) {
+    console.error('Error decoding HTML content:', error);
+    return encoded; // Return original if decode fails
+  }
 };
 
 const EmailTemplatesPage: React.FC = () => {
@@ -261,12 +287,12 @@ const EmailTemplatesPage: React.FC = () => {
   
   const createTemplateMutation = useMutation({
     mutationFn: async (template: Partial<EmailTemplate>) => {
-      // Sanitize the HTML content before sending to the server
-      const sanitizedTemplate = {
+      // Encode the HTML content using Base64 before sending to the server
+      const encodedTemplate = {
         ...template,
-        content: sanitizeHtmlForJson(template.content || '')
+        content: encodeHtmlContent(template.content || '')
       };
-      const res = await apiRequest('POST', '/api/admin/email/templates', sanitizedTemplate);
+      const res = await apiRequest('POST', '/api/admin/email/templates', encodedTemplate);
       return await res.json();
     },
     onSuccess: () => {
@@ -289,12 +315,12 @@ const EmailTemplatesPage: React.FC = () => {
   
   const updateTemplateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<EmailTemplate> }) => {
-      // Sanitize the HTML content before sending to the server
-      const sanitizedData = {
+      // Encode the HTML content using Base64 before sending to the server
+      const encodedData = {
         ...data,
-        content: sanitizeHtmlForJson(data.content || '')
+        content: encodeHtmlContent(data.content || '')
       };
-      const res = await apiRequest('PUT', `/api/admin/email/templates/${id}`, sanitizedData);
+      const res = await apiRequest('PUT', `/api/admin/email/templates/${id}`, encodedData);
       return await res.json();
     },
     onSuccess: () => {
@@ -444,20 +470,20 @@ const EmailTemplatesPage: React.FC = () => {
   
   const handleViewTemplate = (template: EmailTemplate) => {
     setSelectedTemplateId(template.id);
-    // Sanitize the content before setting it in the form
+    // Decode the content if it's Base64 encoded
     setTemplateFormData({
       ...template,
-      content: sanitizeHtmlForJson(template.content)
+      content: decodeHtmlContent(template.content)
     });
     setIsViewTemplateDialogOpen(true);
   };
   
   const handleEditTemplate = (template: EmailTemplate) => {
     setSelectedTemplateId(template.id);
-    // Sanitize the content before setting it in the form
+    // Decode the content if it's Base64 encoded
     setTemplateFormData({
       ...template,
-      content: sanitizeHtmlForJson(template.content)
+      content: decodeHtmlContent(template.content)
     });
     setIsEditTemplateDialogOpen(true);
   };
