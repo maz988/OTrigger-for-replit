@@ -1098,8 +1098,14 @@ const SettingsPage: React.FC = () => {
                                           const formData = new FormData();
                                           formData.append('image', file);
                                           
+                                          // Get admin token from localStorage
+                                          const token = localStorage.getItem('adminToken');
+                                          
                                           fetch('/api/admin/upload-image', {
                                             method: 'POST',
+                                            headers: {
+                                              'Authorization': `Bearer ${token}`
+                                            },
                                             body: formData
                                           })
                                           .then(response => response.json())
