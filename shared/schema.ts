@@ -262,6 +262,7 @@ export const notificationTemplates = pgTable("notification_templates", {
   type: text("type").notNull(), // welcome, lead_magnet, content_update, custom
   subject: text("subject").notNull(),
   message: text("message").notNull(), // Plain text only, safe from HTML parsing issues
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
 });

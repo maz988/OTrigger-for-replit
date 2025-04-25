@@ -42,14 +42,26 @@ export async function sendNotification(
     const fromName = fromNameSetting?.settingValue || 'Obsession Trigger Team';
     const fromEmail = fromEmailSetting?.settingValue || 'info@obsessiontrigger.com';
     
-    // Create basic message with fallbacks for each notification type
+    // Create basic message with template from database or fallbacks
     let subject = options.subject || '';
     let message = options.message || '';
     
     if (!subject || !message) {
-      const defaults = getDefaultContentByType(type, subscriber);
-      subject = subject || defaults.subject;
-      message = message || defaults.message;
+      // Try to get template from the database
+      const template = await storage.getNotificationTemplate(type);
+      
+      if (template) {
+        subject = subject || template.subject;
+        message = message || template.message;
+        
+        // Process any template variables
+        message = message.replace(/{{firstName}}/g, subscriber.firstName || 'there');
+      } else {
+        // Fallback to default content if no template found
+        const defaults = getDefaultContentByType(type, subscriber);
+        subject = subject || defaults.subject;
+        message = message || defaults.message;
+      }
     }
     
     // Get active email provider

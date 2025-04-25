@@ -3837,6 +3837,212 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Notification Templates API
+  app.get("/api/admin/notifications/templates", authenticateAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getAllNotificationTemplates();
+      
+      res.status(200).json({
+        success: true,
+        data: templates
+      });
+    } catch (err: any) {
+      console.error(`Error getting notification templates: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.get("/api/admin/notifications/templates/:type", authenticateAdmin, async (req, res) => {
+    try {
+      const type = req.params.type;
+      const template = await storage.getNotificationTemplate(type);
+      
+      if (!template) {
+        return res.status(404).json({
+          success: false,
+          error: `Template for type '${type}' not found`
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: template
+      });
+    } catch (err: any) {
+      console.error(`Error getting notification template: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/notifications/templates", authenticateAdmin, async (req, res) => {
+    try {
+      const templateData = req.body;
+      
+      if (!templateData.type || !templateData.subject || !templateData.message) {
+        return res.status(400).json({
+          success: false,
+          error: "Type, subject, and message are required fields"
+        });
+      }
+      
+      const template = await storage.saveNotificationTemplate(templateData);
+      
+      res.status(201).json({
+        success: true,
+        data: template
+      });
+    } catch (err: any) {
+      console.error(`Error creating notification template: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.put("/api/admin/notifications/templates/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const templateData = req.body;
+      
+      const updatedTemplate = await storage.updateNotificationTemplate(id, templateData);
+      
+      if (!updatedTemplate) {
+        return res.status(404).json({
+          success: false,
+          error: `Template with ID ${id} not found`
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: updatedTemplate
+      });
+    } catch (err: any) {
+      console.error(`Error updating notification template: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.delete("/api/admin/notifications/templates/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await storage.deleteNotificationTemplate(id);
+      
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          error: `Template with ID ${id} not found`
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        message: `Template with ID ${id} deleted successfully`
+      });
+    } catch (err: any) {
+      console.error(`Error deleting notification template: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Notification Logs API
+  app.get("/api/admin/notifications/logs", authenticateAdmin, async (req, res) => {
+    try {
+      const logs = await storage.getAllNotificationLogs();
+      
+      res.status(200).json({
+        success: true,
+        data: logs
+      });
+    } catch (err: any) {
+      console.error(`Error getting notification logs: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.get("/api/admin/notifications/logs/subscriber/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const subscriberId = parseInt(req.params.id);
+      const logs = await storage.getNotificationLogsBySubscriberId(subscriberId);
+      
+      res.status(200).json({
+        success: true,
+        data: logs
+      });
+    } catch (err: any) {
+      console.error(`Error getting subscriber notification logs: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Notification Sending API
+  app.post("/api/admin/notifications/send", authenticateAdmin, async (req, res) => {
+    try {
+      const { subscriberId, type, customSubject, customMessage } = req.body;
+      
+      if (!subscriberId || !type) {
+        return res.status(400).json({
+          success: false,
+          error: "Subscriber ID and notification type are required"
+        });
+      }
+      
+      const subscriber = await storage.getEmailSubscriber(subscriberId);
+      
+      if (!subscriber) {
+        return res.status(404).json({
+          success: false,
+          error: `Subscriber with ID ${subscriberId} not found`
+        });
+      }
+      
+      // Import dynamically to avoid circular dependencies
+      const { sendNotification } = await import('./services/simpleNotifications');
+      
+      const result = await sendNotification(subscriber, type, {
+        subject: customSubject,
+        message: customMessage
+      });
+      
+      if (!result) {
+        return res.status(400).json({
+          success: false,
+          error: "Failed to send notification"
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        message: "Notification sent successfully"
+      });
+    } catch (err: any) {
+      console.error(`Error sending notification: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
   // Initialize the blog scheduling system
   setupBlogScheduleJobs().catch(error => {
     console.error('Error setting up blog scheduling system:', error);
