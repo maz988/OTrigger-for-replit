@@ -4074,6 +4074,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // If successful and using a specific provider with API key, save it to database
+      if (provider && apiKey) {
+        // Determine correct setting key based on provider
+        let settingKey: string;
+        let description: string;
+        
+        switch (provider) {
+          case 'mailerlite':
+            settingKey = 'MAILERLITE_API_KEY';
+            description = 'MailerLite API Key';
+            // Update env var for immediate use
+            if (process.env.MAILERLITE_API_KEY !== apiKey) {
+              process.env.MAILERLITE_API_KEY = apiKey;
+              console.log('MailerLite API key updated in environment');
+            }
+            break;
+          case 'brevo':
+            settingKey = 'BREVO_API_KEY';
+            description = 'Brevo API Key';
+            // Update env var for immediate use
+            if (process.env.BREVO_API_KEY !== apiKey) {
+              process.env.BREVO_API_KEY = apiKey;
+              console.log('Brevo API key updated in environment');
+            }
+            break;
+          case 'sendgrid':
+          default:
+            settingKey = 'SENDGRID_API_KEY';
+            description = 'SendGrid API Key';
+            // Update env var for immediate use
+            if (process.env.SENDGRID_API_KEY !== apiKey) {
+              process.env.SENDGRID_API_KEY = apiKey;
+              console.log('SendGrid API key updated in environment');
+            }
+            break;
+        }
+        
+        // Save to database
+        await storage.saveSetting({
+          settingKey,
+          settingValue: apiKey,
+          settingType: 'string',
+          description
+        });
+        
+        console.log(`${provider} API key saved to database after successful test email`);
+      }
+      
       res.status(200).json({
         success: true,
         message: "Test email sent successfully",
