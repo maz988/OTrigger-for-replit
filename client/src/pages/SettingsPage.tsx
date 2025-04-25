@@ -113,7 +113,7 @@ const getStatusText = (active: boolean, hasValue: boolean): string => {
 
 // Check if a setting is actually configured in the database
 const isSettingConfigured = (settingKey: string, settings: ServiceSettings[]): boolean => {
-  const setting = settings.find(s => s.settingKey === settingKey);
+  const setting = settings.find(s => s.name === settingKey);
   return !!(setting && setting.value && setting.value.length > 0);
 };
 
@@ -146,13 +146,13 @@ const SettingsPage: React.FC = () => {
       
       settings.forEach((setting: ServiceSettings) => {
         // For boolean values
-        if (setting.settingKey === 'autoEmailDelivery' || 
-            setting.settingKey === 'useExternalStorage' || 
-            setting.settingKey === 'autoBlogPublishing') {
-          formData[setting.settingKey as keyof ApiKeySettings] = setting.value === 'true';
+        if (setting.name === 'autoEmailDelivery' || 
+            setting.name === 'useExternalStorage' || 
+            setting.name === 'autoBlogPublishing') {
+          formData[setting.name as keyof ApiKeySettings] = setting.value === 'true';
         } else {
           // For string and enum values
-          formData[setting.settingKey as keyof ApiKeySettings] = setting.value as any;
+          formData[setting.name as keyof ApiKeySettings] = setting.value as any;
         }
       });
       
@@ -1163,12 +1163,12 @@ const SettingsPage: React.FC = () => {
                   if (settings.length > 0) {
                     const formData: Partial<ApiKeySettings> = { ...defaultSettings };
                     settings.forEach((setting: ServiceSettings) => {
-                      if (setting.settingKey === 'autoEmailDelivery' || 
-                          setting.settingKey === 'useExternalStorage' || 
-                          setting.settingKey === 'autoBlogPublishing') {
-                        formData[setting.settingKey as keyof ApiKeySettings] = setting.value === 'true';
+                      if (setting.name === 'autoEmailDelivery' || 
+                          setting.name === 'useExternalStorage' || 
+                          setting.name === 'autoBlogPublishing') {
+                        formData[setting.name as keyof ApiKeySettings] = setting.value === 'true';
                       } else {
-                        formData[setting.settingKey as keyof ApiKeySettings] = setting.value as any;
+                        formData[setting.name as keyof ApiKeySettings] = setting.value as any;
                       }
                     });
                     form.reset(formData as ApiKeySettings);
