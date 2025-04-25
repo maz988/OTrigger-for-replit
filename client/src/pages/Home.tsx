@@ -60,41 +60,57 @@ const Home: React.FC = () => {
             </Button>
           </div>
           
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
-            <div>
-              <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+          {/* Testimonials Section - Centered */}
+          <div className="mb-16 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-md p-6">
                 <p className="italic text-gray-600 mb-2 text-lg">
                   "This quiz helped me understand what was really going on in my relationship. The insights were spot on!"
                 </p>
                 <p className="text-[#f24b7c] font-semibold">— Sarah, 32</p>
               </div>
-              
               <div className="bg-white rounded-xl shadow-md p-6">
-                <h3 className="flex items-center text-xl font-semibold text-[#f24b7c] mb-4">
-                  <Heart className="h-5 w-5 mr-2 inline" fill="#fbb5c8" /> Why Take This Quiz?
-                </h3>
-                <ul className="space-y-4">
-                  <li className="flex items-start">
-                    <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
-                    <span>Gain clarity on your relationship dynamics</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
-                    <span>Discover psychological insights about his behavior</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
-                    <span>Learn practical techniques to deepen your connection</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
-                    <span>Receive a personalized analysis of your relationship</span>
-                  </li>
-                </ul>
+                <p className="italic text-gray-600 mb-2 text-lg">
+                  "I was skeptical at first, but the analysis gave me a whole new perspective on my relationship."
+                </p>
+                <p className="text-[#f24b7c] font-semibold">— Jessica, 28</p>
               </div>
             </div>
-            
-            
+          </div>
+          
+          {/* Why Take This Quiz Section - Centered */}
+          <div className="mb-16 max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl shadow-md p-8 border border-[#ffccd8]">
+              <h3 className="flex items-center text-2xl font-semibold text-[#f24b7c] mb-6 justify-center">
+                <Heart className="h-6 w-6 mr-2 inline" fill="#fbb5c8" /> Why Take This Quiz?
+              </h3>
+              <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+                <div className="flex items-start">
+                  <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
+                  <span>Gain clarity on your relationship dynamics</span>
+                </div>
+                <div className="flex items-start">
+                  <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
+                  <span>Discover psychological insights about his behavior</span>
+                </div>
+                <div className="flex items-start">
+                  <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
+                  <span>Learn practical techniques to deepen your connection</span>
+                </div>
+                <div className="flex items-start">
+                  <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
+                  <span>Receive a personalized analysis of your relationship</span>
+                </div>
+                <div className="flex items-start">
+                  <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
+                  <span>Understand his attachment style and needs</span>
+                </div>
+                <div className="flex items-start">
+                  <div className="h-5 w-5 text-[#f24b7c] mr-3 mt-0.5">✓</div>
+                  <span>Get a customized PDF with detailed advice</span>
+                </div>
+              </div>
+            </div>
           </div>
           
           {/* Featured Articles Section - Moved to bottom of page */}
