@@ -317,11 +317,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Name to use for sending to email service
           const fullName = lastName ? `${firstName} ${lastName}` : firstName;
           
+          // Get the default list ID from settings
+          const listIdSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
+          const listId = listIdSetting?.settingValue || '';
+          console.log(`Using list ID ${listId || 'default'} for blog subscriber: ${email}`);
+          
           // Send to email service
           const result = await sendSubscriberToEmailService({
             name: fullName,
             email: email,
-            source: 'blog'
+            source: 'blog',
+            listId
           });
           
           if (result.success) {
@@ -371,11 +377,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Name to use for sending to email service
           const fullName = lastName ? `${firstName} ${lastName}` : firstName;
           
+          // Get the quiz list ID from settings
+          const listIdSetting = await storage.getSettingByKey('QUIZ_LIST_ID');
+          const listId = listIdSetting?.settingValue || '';
+          console.log(`Using list ID ${listId || 'default'} for quiz subscriber: ${email}`);
+          
           // Send to email service
           const result = await sendSubscriberToEmailService({
             name: fullName,
             email: email,
-            source: 'quiz'
+            source: 'quiz',
+            listId
           });
           
           if (result.success) {
