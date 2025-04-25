@@ -1088,6 +1088,9 @@ const SettingsPage: React.FC = () => {
                                     onChange={(e) => {
                                       const file = e.target.files?.[0];
                                       if (file) {
+                                        // Set uploading state
+                                        setImageUploading(true);
+                                        
                                         // Create a temporary URL for the file
                                         const reader = new FileReader();
                                         reader.onload = () => {
@@ -1101,6 +1104,7 @@ const SettingsPage: React.FC = () => {
                                           })
                                           .then(response => response.json())
                                           .then(data => {
+                                            setImageUploading(false);
                                             if (data.success && data.imageUrl) {
                                               // Update the field with the uploaded image URL
                                               field.onChange(data.imageUrl);
@@ -1109,22 +1113,20 @@ const SettingsPage: React.FC = () => {
                                                 description: "The image has been uploaded successfully.",
                                               });
                                             } else {
-                                              // Show fallback preview
-                                              field.onChange(reader.result as string);
+                                              // Show error message
                                               toast({
                                                 title: "Upload Failed",
-                                                description: "Using temporary preview. Save to store base64 image.",
+                                                description: data.message || "Failed to upload image. Please try again.",
                                                 variant: "destructive"
                                               });
                                             }
                                           })
                                           .catch(error => {
+                                            setImageUploading(false);
                                             console.error("Upload error:", error);
-                                            // Show fallback preview using base64
-                                            field.onChange(reader.result as string);
                                             toast({
-                                              title: "Upload Failed",
-                                              description: "Using temporary preview. Save to store base64 image.",
+                                              title: "Upload Error",
+                                              description: "An error occurred while uploading the image.",
                                               variant: "destructive"
                                             });
                                           });
@@ -1132,28 +1134,45 @@ const SettingsPage: React.FC = () => {
                                         reader.readAsDataURL(file);
                                       }
                                     }}
+                                    disabled={imageUploading}
                                   />
                                   <Button
                                     type="button"
                                     variant="outline"
+                                    disabled={imageUploading}
                                   >
-                                    Upload
+                                    {imageUploading ? (
+                                      <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                                        Uploading...
+                                      </>
+                                    ) : "Upload"}
                                   </Button>
                                 </div>
                               </div>
                               <div className="flex flex-col items-center p-4 border rounded-md">
-                                <img 
-                                  src={field.value || '/images/pdf-guide-icon.svg'} 
-                                  alt="PDF Guide Preview" 
-                                  className="h-32 object-contain mb-2"
-                                  onError={(e) => { 
-                                    e.currentTarget.src = '/images/pdf-guide-icon.svg';
-                                    e.currentTarget.classList.add('border', 'border-red-300');
-                                    e.currentTarget.title = "Invalid image URL";
-                                  }}
-                                />
+                                {imageUploading ? (
+                                  <div className="h-32 flex items-center justify-center">
+                                    <div className="text-center">
+                                      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                                      <p className="text-sm text-muted-foreground">Uploading image...</p>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <img 
+                                    src={field.value || '/images/pdf-guide-icon.svg'} 
+                                    alt="PDF Guide Preview" 
+                                    className="h-32 object-contain mb-2"
+                                    onError={(e) => { 
+                                      e.currentTarget.src = '/images/pdf-guide-icon.svg';
+                                      e.currentTarget.classList.add('border', 'border-red-300');
+                                      e.currentTarget.title = "Invalid image URL";
+                                    }}
+                                  />
+                                )}
                                 <p className="text-xs text-muted-foreground mt-2">
-                                  {field.value ? 'Current image' : 'Default image (no custom image set)'}
+                                  {imageUploading ? 'Uploading...' : 
+                                    (field.value ? 'Current image' : 'Default image (no custom image set)')}
                                 </p>
                               </div>
                             </div>
