@@ -20,6 +20,7 @@ export function useSettings() {
     refetchOnWindowFocus: true,
   });
 
+  console.log("Settings API response:", settingsResponse);
   const settings = settingsResponse?.data || [];
   let parsedSettings = { ...defaultSettings };
 
@@ -35,6 +36,8 @@ export function useSettings() {
     }
   }
 
+  console.log("Parsed settings:", parsedSettings);
+  
   return {
     settings: parsedSettings,
     isLoading,
