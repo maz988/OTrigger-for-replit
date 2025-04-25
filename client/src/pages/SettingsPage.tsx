@@ -113,7 +113,13 @@ const getStatusText = (active: boolean, hasValue: boolean): string => {
 
 // Check if a setting is actually configured in the database
 const isSettingConfigured = (settingKey: string, settings: ServiceSettings[]): boolean => {
-  const setting = settings.find(s => s.name === settingKey);
+  // First try to find the setting by name matching the exact key
+  const setting = settings.find(s => 
+    s.name === settingKey || 
+    // Also try with common variations like API_KEY format vs apiKey format
+    s.name === settingKey.toUpperCase() || 
+    s.name === settingKey.replace(/([A-Z])/g, '_$1').toUpperCase());
+  
   return !!(setting && setting.value && setting.value.length > 0);
 };
 
@@ -144,18 +150,56 @@ const SettingsPage: React.FC = () => {
     if (settings.length > 0) {
       const formData: Partial<ApiKeySettings> = { ...defaultSettings };
       
+      // Map of setting keys to form field names
+      const settingKeyMap: Record<string, keyof ApiKeySettings> = {
+        'OPENAI_API_KEY': 'openaiApiKey',
+        'openaiApiKey': 'openaiApiKey',
+        'GEMINI_API_KEY': 'geminiApiKey',
+        'geminiApiKey': 'geminiApiKey',
+        'PEXELS_API_KEY': 'pexelsApiKey',
+        'pexelsApiKey': 'pexelsApiKey',
+        'UNSPLASH_API_KEY': 'unsplashApiKey',
+        'unsplashApiKey': 'unsplashApiKey',
+        'SENDGRID_API_KEY': 'sendgridApiKey',
+        'sendgridApiKey': 'sendgridApiKey',
+        'MAILERLITE_API_KEY': 'mailerliteApiKey',
+        'mailerliteApiKey': 'mailerliteApiKey',
+        'BREVO_API_KEY': 'brevoApiKey',
+        'brevoApiKey': 'brevoApiKey',
+        'autoEmailDelivery': 'autoEmailDelivery',
+        'useExternalStorage': 'useExternalStorage',
+        'autoBlogPublishing': 'autoBlogPublishing'
+      };
+      
       settings.forEach((setting: ServiceSettings) => {
-        // For boolean values
-        if (setting.name === 'autoEmailDelivery' || 
-            setting.name === 'useExternalStorage' || 
-            setting.name === 'autoBlogPublishing') {
-          formData[setting.name as keyof ApiKeySettings] = setting.value === 'true';
+        // Check if we have a mapping for this setting
+        const formKey = settingKeyMap[setting.name] || 
+                        settingKeyMap[setting.name.replace(/([A-Z])/g, '_$1').toUpperCase()];
+        
+        if (formKey) {
+          if (formKey === 'autoEmailDelivery' || 
+              formKey === 'useExternalStorage' || 
+              formKey === 'autoBlogPublishing') {
+            // For boolean values
+            formData[formKey] = setting.value === 'true';
+          } else {
+            // For string and enum values
+            formData[formKey] = setting.value as any;
+          }
         } else {
-          // For string and enum values
-          formData[setting.name as keyof ApiKeySettings] = setting.value as any;
+          // If it's a direct match for a field in our form
+          if (setting.name in formData) {
+            const key = setting.name as keyof ApiKeySettings;
+            if (typeof defaultSettings[key] === 'boolean') {
+              formData[key] = setting.value === 'true';
+            } else {
+              formData[key] = setting.value as any;
+            }
+          }
         }
       });
       
+      console.log("Form data set from settings:", formData);
       form.reset(formData as ApiKeySettings);
     }
   }, [settings, form]);
@@ -1162,15 +1206,56 @@ const SettingsPage: React.FC = () => {
                   // Reset form to latest data after refetch
                   if (settings.length > 0) {
                     const formData: Partial<ApiKeySettings> = { ...defaultSettings };
+                    
+                    // Map of setting keys to form field names
+                    const settingKeyMap: Record<string, keyof ApiKeySettings> = {
+                      'OPENAI_API_KEY': 'openaiApiKey',
+                      'openaiApiKey': 'openaiApiKey',
+                      'GEMINI_API_KEY': 'geminiApiKey',
+                      'geminiApiKey': 'geminiApiKey',
+                      'PEXELS_API_KEY': 'pexelsApiKey',
+                      'pexelsApiKey': 'pexelsApiKey',
+                      'UNSPLASH_API_KEY': 'unsplashApiKey',
+                      'unsplashApiKey': 'unsplashApiKey',
+                      'SENDGRID_API_KEY': 'sendgridApiKey',
+                      'sendgridApiKey': 'sendgridApiKey',
+                      'MAILERLITE_API_KEY': 'mailerliteApiKey',
+                      'mailerliteApiKey': 'mailerliteApiKey',
+                      'BREVO_API_KEY': 'brevoApiKey',
+                      'brevoApiKey': 'brevoApiKey',
+                      'autoEmailDelivery': 'autoEmailDelivery',
+                      'useExternalStorage': 'useExternalStorage',
+                      'autoBlogPublishing': 'autoBlogPublishing'
+                    };
+                    
                     settings.forEach((setting: ServiceSettings) => {
-                      if (setting.name === 'autoEmailDelivery' || 
-                          setting.name === 'useExternalStorage' || 
-                          setting.name === 'autoBlogPublishing') {
-                        formData[setting.name as keyof ApiKeySettings] = setting.value === 'true';
+                      // Check if we have a mapping for this setting
+                      const formKey = settingKeyMap[setting.name] || 
+                                      settingKeyMap[setting.name.replace(/([A-Z])/g, '_$1').toUpperCase()];
+                      
+                      if (formKey) {
+                        if (formKey === 'autoEmailDelivery' || 
+                            formKey === 'useExternalStorage' || 
+                            formKey === 'autoBlogPublishing') {
+                          // For boolean values
+                          formData[formKey] = setting.value === 'true';
+                        } else {
+                          // For string and enum values
+                          formData[formKey] = setting.value as any;
+                        }
                       } else {
-                        formData[setting.name as keyof ApiKeySettings] = setting.value as any;
+                        // If it's a direct match for a field in our form
+                        if (setting.name in formData) {
+                          const key = setting.name as keyof ApiKeySettings;
+                          if (typeof defaultSettings[key] === 'boolean') {
+                            formData[key] = setting.value === 'true';
+                          } else {
+                            formData[key] = setting.value as any;
+                          }
+                        }
                       }
                     });
+                    
                     form.reset(formData as ApiKeySettings);
                   }
                   
