@@ -3858,7 +3858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/notifications/templates/:type", authenticateAdmin, async (req, res) => {
     try {
       const type = req.params.type;
-      const template = await storage.getNotificationTemplate(type);
+      const template = await storage.getNotificationTemplateByType(type);
       
       if (!template) {
         return res.status(404).json({

@@ -1761,7 +1761,11 @@ If you'd like a personalized assessment of your unique relationship situation, t
     return Array.from(this.notificationTemplates.values());
   }
   
-  async getNotificationTemplate(type: string): Promise<NotificationTemplate | undefined> {
+  async getNotificationTemplateById(id: number): Promise<NotificationTemplate | undefined> {
+    return this.notificationTemplates.get(id);
+  }
+  
+  async getNotificationTemplateByType(type: string): Promise<NotificationTemplate | undefined> {
     return Array.from(this.notificationTemplates.values()).find(
       template => template.type === type
     );
@@ -1844,7 +1848,7 @@ If you'd like a personalized assessment of your unique relationship situation, t
     const templateTypes = ['welcome', 'lead_magnet', 'content_update', 'custom'];
     
     for (const type of templateTypes) {
-      const existingTemplate = await this.getNotificationTemplate(type);
+      const existingTemplate = await this.getNotificationTemplateByType(type);
       
       if (!existingTemplate) {
         let subject = '';

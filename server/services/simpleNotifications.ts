@@ -51,7 +51,7 @@ export async function sendNotification(
 ): Promise<boolean> {
   try {
     // Find the template for this notification type
-    const template = await storage.getNotificationTemplate(type);
+    const template = await storage.getNotificationTemplateByType(type);
     
     if (!template || !template.isActive) {
       console.error(`No active template found for notification type: ${type}`);
