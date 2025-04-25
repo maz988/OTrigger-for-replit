@@ -3,6 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import {
   BarChart3,
+  Bell,
   FileText,
   Users,
   Settings,
