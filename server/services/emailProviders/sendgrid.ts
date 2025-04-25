@@ -162,3 +162,92 @@ export async function testConnection(apiKey: string): Promise<{ success: boolean
     };
   }
 }
+
+/**
+ * Add a new subscriber to SendGrid
+ * @param email Subscriber email
+ * @param name Subscriber name
+ * @param source Source of subscription (e.g., 'quiz', 'blog')
+ * @param apiKey SendGrid API key
+ * @returns Success response or error
+ */
+export async function sendToSendGrid(
+  email: string,
+  name: string,
+  source?: string,
+  apiKey?: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    // Validate API key if provided
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'SendGrid API key is required'
+      };
+    }
+    
+    if (!validateApiKey(apiKey)) {
+      return {
+        success: false,
+        error: 'Invalid SendGrid API key format'
+      };
+    }
+    
+    // Split name into first and last name if possible
+    const nameParts = name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    
+    // Create custom fields for source tracking
+    const customFields = {};
+    if (source) {
+      customFields['source'] = source;
+    }
+    
+    // Create subscriber in SendGrid
+    const contactData = {
+      contacts: [
+        {
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          ...customFields
+        }
+      ]
+    };
+    
+    // Use the Marketing Contacts API to add or update contact
+    const response = await fetch('https://api.sendgrid.com/v3/marketing/contacts', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(contactData)
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`SendGrid contact added/updated successfully: ${email}`);
+      return {
+        success: true,
+        message: `Subscriber successfully added to SendGrid: ${name} (${email})`
+      };
+    } else {
+      const errorData = await response.json();
+      console.error('SendGrid API error:', errorData);
+      return {
+        success: false,
+        error: `SendGrid error: ${response.status} - ${
+          errorData.errors?.[0]?.message || response.statusText
+        }`
+      };
+    }
+  } catch (error) {
+    console.error('Error adding subscriber to SendGrid:', error);
+    return {
+      success: false,
+      error: `SendGrid exception: ${error.message}`
+    };
+  }
+}

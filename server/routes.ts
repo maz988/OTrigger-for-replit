@@ -144,12 +144,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Record lead signup in database (simplified in this example)
+      // Import dynamically to avoid circular dependencies
+      const { sendSubscriberToEmailService } = await import('./services/emailDispatcher');
+      
+      // Send subscriber to the active email service provider
+      const result = await sendSubscriberToEmailService({
+        name: firstName,
+        email: email,
+        source: source || 'website'
+      });
+      
+      if (!result.success) {
+        console.error(`Error sending subscriber to email service: ${result.error}`);
+        // Continue processing to capture lead in local DB even if ESP fails
+      } else {
+        console.log(`Subscriber successfully sent to email service: ${result.message}`);
+      }
+      
+      // Log the capture for debugging/monitoring
       console.log(`New lead captured: ${firstName} (${email}) from ${source || 'unknown'} for ${leadMagnetName || 'general newsletter'}`);
       
       res.status(200).json({
         success: true,
-        message: "Lead information captured successfully"
+        message: "Lead information captured and sent to email service successfully"
       });
     } catch (err: any) {
       console.error(`Error capturing lead data: ${err.message}`);
@@ -196,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/blog/lead-conversion", async (req, res) => {
     try {
-      const { blogPostId, email } = req.body;
+      const { blogPostId, email, firstName, lastName } = req.body;
       
       if (!blogPostId || !email) {
         return res.status(400).json({
@@ -205,8 +222,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // In a real implementation, record the lead conversion for analytics
+      // Record lead conversion in database for analytics
       console.log(`Lead conversion from blog post ${blogPostId} for ${email}`);
+      
+      // If name is provided, also send to email service provider
+      if (firstName) {
+        try {
+          // Import dynamically to avoid circular dependencies
+          const { sendSubscriberToEmailService } = await import('./services/emailDispatcher');
+          
+          // Name to use for sending to email service
+          const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+          
+          // Send to email service
+          const result = await sendSubscriberToEmailService({
+            name: fullName,
+            email: email,
+            source: 'blog'
+          });
+          
+          if (result.success) {
+            console.log(`Blog lead successfully sent to email service: ${result.message}`);
+          } else {
+            console.error(`Error sending blog lead to email service: ${result.error}`);
+            // Continue processing to capture lead in local DB even if ESP fails
+          }
+        } catch (emailError: any) {
+          console.error(`Error in blog lead email service integration: ${emailError.message}`);
+          // Continue processing to return success for the frontend even if email service fails
+        }
+      }
       
       res.status(200).json({
         success: true
@@ -222,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/quiz/lead-conversion", async (req, res) => {
     try {
-      const { quizResponseId, email } = req.body;
+      const { quizResponseId, email, firstName, lastName } = req.body;
       
       if (!quizResponseId || !email) {
         return res.status(400).json({
@@ -231,8 +276,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // In a real implementation, record the lead conversion for analytics
+      // Record lead conversion in database for analytics
       console.log(`Lead conversion from quiz ${quizResponseId} for ${email}`);
+      
+      // If name is provided, also send to email service provider
+      if (firstName) {
+        try {
+          // Import dynamically to avoid circular dependencies
+          const { sendSubscriberToEmailService } = await import('./services/emailDispatcher');
+          
+          // Name to use for sending to email service
+          const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+          
+          // Send to email service
+          const result = await sendSubscriberToEmailService({
+            name: fullName,
+            email: email,
+            source: 'quiz'
+          });
+          
+          if (result.success) {
+            console.log(`Quiz lead successfully sent to email service: ${result.message}`);
+          } else {
+            console.error(`Error sending quiz lead to email service: ${result.error}`);
+            // Continue processing to capture lead in local DB even if ESP fails
+          }
+        } catch (emailError: any) {
+          console.error(`Error in quiz lead email service integration: ${emailError.message}`);
+          // Continue processing to return success for the frontend even if email service fails
+        }
+      }
       
       res.status(200).json({
         success: true

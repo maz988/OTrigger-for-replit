@@ -325,3 +325,89 @@ export async function testConnection(apiKey: string): Promise<{ success: boolean
     };
   }
 }
+
+/**
+ * Add a new subscriber to MailerLite
+ * @param email Subscriber email
+ * @param name Subscriber name
+ * @param source Source of subscription (e.g., 'quiz', 'blog')
+ * @param apiKey MailerLite API key
+ * @returns Success response or error
+ */
+export async function sendToMailerLite(
+  email: string,
+  name: string,
+  source?: string,
+  apiKey?: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    // Validate API key if provided
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'MailerLite API key is required'
+      };
+    }
+    
+    if (!validateApiKey(apiKey)) {
+      return {
+        success: false,
+        error: 'Invalid MailerLite API key format'
+      };
+    }
+    
+    // Split name into first and last name if possible
+    const nameParts = name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    
+    // Create subscriber data
+    const subscriberData = {
+      email,
+      fields: {
+        name,
+        first_name: firstName,
+        last_name: lastName
+      },
+      status: 'active'
+    };
+    
+    // Add source as a custom field if provided
+    if (source) {
+      subscriberData.fields['source'] = source;
+    }
+    
+    // Create or update subscriber in MailerLite
+    const response = await fetch('https://connect.mailerlite.com/api/subscribers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(subscriberData)
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`MailerLite subscriber added/updated successfully: ${email}`);
+      return {
+        success: true,
+        message: `Subscriber successfully added to MailerLite: ${name} (${email})`
+      };
+    } else {
+      const errorData = await response.json();
+      console.error('MailerLite API error:', errorData);
+      return {
+        success: false,
+        error: `MailerLite error: ${response.status} - ${JSON.stringify(errorData)}`
+      };
+    }
+  } catch (error) {
+    console.error('Error adding subscriber to MailerLite:', error);
+    return {
+      success: false,
+      error: `MailerLite exception: ${error.message}`
+    };
+  }
+}
