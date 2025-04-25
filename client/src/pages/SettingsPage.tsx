@@ -81,9 +81,9 @@ const defaultSettings: ApiKeySettings = {
   blogKeywordsFile: 'keywords.txt',
   autoBlogPublishing: false,
   pdfGuideImageUrl: '/images/pdf-guide-icon.svg',
-  quizListId: '',
-  leadMagnetListId: '',
-  defaultListId: ''
+  quizListId: 'none',
+  leadMagnetListId: 'none',
+  defaultListId: 'none'
 };
 
 // Form validation schema
@@ -172,7 +172,18 @@ const SettingsPage: React.FC = () => {
   });
   
   // Ensure we always have a valid array for lists
-  const emailLists: EmailList[] = emailListsResponse?.data || [];
+  const [emailLists, setEmailLists] = useState<EmailList[]>([]);
+  
+  // Update email lists whenever the response changes
+  useEffect(() => {
+    if (emailListsResponse?.data && Array.isArray(emailListsResponse.data)) {
+      console.log("Email lists loaded:", emailListsResponse.data.length);
+      setEmailLists(emailListsResponse.data);
+    } else {
+      console.log("No email lists found or invalid format");
+      setEmailLists([]);
+    }
+  }, [emailListsResponse?.data]);
   
   // Form setup with the schema
   const form = useForm<ApiKeySettings>({
@@ -438,6 +449,8 @@ const SettingsPage: React.FC = () => {
       setLoadingLists(true);
       const activeProvider = form.getValues().activeEmailService;
       
+      console.log("Fetching email lists for provider:", activeProvider);
+      
       if (activeProvider === 'none') {
         toast({
           title: 'No email provider selected',
@@ -449,17 +462,34 @@ const SettingsPage: React.FC = () => {
       
       // Save current form values before testing to ensure API key is up to date
       if (form.formState.isDirty) {
+        console.log("Saving form values before fetching lists");
         await updateSettingsMutation.mutateAsync(form.getValues());
       }
       
-      await refetchEmailLists();
+      console.log("Fetching lists from API...");
+      const result = await refetchEmailLists();
+      console.log("API response:", result);
       
-      toast({
-        title: 'Lists Fetched',
-        description: `Successfully fetched lists from ${activeProvider}`,
-        variant: 'default',
-      });
-    } catch (error) {
+      if (result.isError) {
+        console.error("Error fetching lists:", result.error);
+        throw new Error(result.error?.message || "Failed to fetch email lists");
+      }
+      
+      if (!result.data?.data || !Array.isArray(result.data.data)) {
+        console.warn("Invalid list format returned:", result.data);
+        toast({
+          title: 'No lists found',
+          description: `No valid lists were returned from ${activeProvider}. Try creating a list first.`,
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Lists Fetched',
+          description: `Successfully fetched ${result.data.data.length} lists from ${activeProvider}`,
+          variant: 'default',
+        });
+      }
+    } catch (error: any) {
       console.error("Error fetching email lists:", error);
       toast({
         title: 'Error Fetching Lists',
@@ -983,9 +1013,9 @@ const SettingsPage: React.FC = () => {
                             onValueChange={(value) => {
                               field.onChange(value);
                               // Clear list selections when provider changes
-                              form.setValue('quizListId', '');
-                              form.setValue('leadMagnetListId', '');
-                              form.setValue('defaultListId', '');
+                              form.setValue('quizListId', 'none');
+                              form.setValue('leadMagnetListId', 'none');
+                              form.setValue('defaultListId', 'none');
                             }}
                             defaultValue={field.value}
                             value={field.value}
