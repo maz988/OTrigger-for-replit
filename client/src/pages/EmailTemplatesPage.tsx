@@ -105,6 +105,17 @@ interface EmailQueue {
   processedAt: string | null;
 }
 
+// Function to sanitize HTML content to prevent validation issues
+const sanitizeHtmlForJson = (html: string): string => {
+  if (!html) return '';
+  // Remove DOCTYPE and other potentially problematic tags that would cause JSON issues
+  return html
+    .replace(/<!DOCTYPE[^>]*>/i, '')
+    .replace(/<\?xml[^>]*\?>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .trim();
+};
+
 const EmailTemplatesPage: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('sequences');
@@ -250,7 +261,12 @@ const EmailTemplatesPage: React.FC = () => {
   
   const createTemplateMutation = useMutation({
     mutationFn: async (template: Partial<EmailTemplate>) => {
-      const res = await apiRequest('POST', '/api/admin/email/templates', template);
+      // Sanitize the HTML content before sending to the server
+      const sanitizedTemplate = {
+        ...template,
+        content: sanitizeHtmlForJson(template.content || '')
+      };
+      const res = await apiRequest('POST', '/api/admin/email/templates', sanitizedTemplate);
       return await res.json();
     },
     onSuccess: () => {
@@ -273,7 +289,12 @@ const EmailTemplatesPage: React.FC = () => {
   
   const updateTemplateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<EmailTemplate> }) => {
-      const res = await apiRequest('PUT', `/api/admin/email/templates/${id}`, data);
+      // Sanitize the HTML content before sending to the server
+      const sanitizedData = {
+        ...data,
+        content: sanitizeHtmlForJson(data.content || '')
+      };
+      const res = await apiRequest('PUT', `/api/admin/email/templates/${id}`, sanitizedData);
       return await res.json();
     },
     onSuccess: () => {
