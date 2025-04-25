@@ -324,6 +324,7 @@ const SettingsPage: React.FC = () => {
 
   // Handle form submission
   const onSubmit = (data: ApiKeySettings) => {
+    console.log("Form submitted with data:", data);
     updateSettingsMutation.mutate(data);
   };
 
@@ -353,7 +354,18 @@ const SettingsPage: React.FC = () => {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form 
+          onSubmit={(e) => {
+            console.log("Form submission event triggered");
+            e.preventDefault(); 
+            // Get the current form values
+            const formValues = form.getValues();
+            console.log("Form values before submit:", formValues);
+            
+            // Call the onSubmit handler with the form values
+            onSubmit(formValues);
+          }} 
+          className="space-y-8">
           <Tabs 
             defaultValue="ai" 
             value={activeTab} 
@@ -1169,6 +1181,17 @@ const SettingsPage: React.FC = () => {
             </Button>
             <Button
               type="submit"
+              onClick={(e) => {
+                console.log("Save button clicked");
+                // The form's onSubmit handler should handle this,
+                // but let's add a backup
+                if (form.formState.isValid) {
+                  e.preventDefault();
+                  const formValues = form.getValues();
+                  console.log("Submitting form manually:", formValues);
+                  onSubmit(formValues);
+                }
+              }}
               disabled={updateSettingsMutation.isPending}
             >
               {updateSettingsMutation.isPending ? (
