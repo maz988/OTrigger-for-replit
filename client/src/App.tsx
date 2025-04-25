@@ -12,6 +12,7 @@ import QuizAnalytics from "@/pages/QuizAnalytics";
 import BlogManagement from "@/pages/BlogManagement";
 import SettingsPage from "@/pages/SettingsPage";
 import EmailTemplatesPage from "@/pages/EmailTemplatesPage";
+import NotificationsPage from "@/pages/NotificationsPage";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -49,6 +50,13 @@ function Router() {
         {() => (
           <AdminAuthGuard>
             <EmailTemplatesPage />
+          </AdminAuthGuard>
+        )}
+      </Route>
+      <Route path="/admin/notifications">
+        {() => (
+          <AdminAuthGuard>
+            <NotificationsPage />
           </AdminAuthGuard>
         )}
       </Route>

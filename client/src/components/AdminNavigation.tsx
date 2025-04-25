@@ -40,6 +40,12 @@ const AdminNavigation: React.FC = () => {
       active: location === '/admin/email-templates'
     },
     {
+      label: 'Notifications',
+      href: '/admin/notifications',
+      icon: <Bell className="h-5 w-5 mr-2" />,
+      active: location === '/admin/notifications'
+    },
+    {
       label: 'Subscribers',
       href: '/admin/subscribers',
       icon: <Users className="h-5 w-5 mr-2" />,

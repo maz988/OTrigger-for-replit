@@ -1824,7 +1824,8 @@ If you'd like a personalized assessment of your unique relationship situation, t
     const log: NotificationLog = {
       ...insertLog,
       id,
-      sentAt: new Date()
+      sentAt: new Date(),
+      metadata: insertLog.metadata || {}  // Ensure metadata is always defined
     };
     
     this.notificationLogs.set(id, log);
@@ -1871,7 +1872,7 @@ If you'd like a personalized assessment of your unique relationship situation, t
         await this.saveNotificationTemplate({
           type,
           subject,
-          template: message,
+          message,
           isActive: true
         });
       }
