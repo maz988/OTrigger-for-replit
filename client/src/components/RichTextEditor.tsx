@@ -564,7 +564,8 @@ const RichTextEditor = ({
                 placeholder={placeholder}
                 readOnly={readOnly}
                 ref={(el) => {
-                  if (el) {
+                  // Only update if the instance has changed to prevent infinite updates
+                  if (el && el !== state.editorInstance) {
                     updateState({ editorInstance: el });
                   }
                 }}
