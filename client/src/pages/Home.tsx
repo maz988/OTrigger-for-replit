@@ -92,6 +92,20 @@ const Home: React.FC = () => {
               </div>
             </div>
             
+            <div className="bg-[#ffedf1] rounded-xl p-6 mb-6">
+              <h3 className="text-2xl font-semibold text-[#f24b7c] mb-4">Why Take This Quiz?</h3>
+              <div className="space-y-3">
+                <p className="text-gray-700">Uncover the hidden psychological triggers that make him obsessed with you. Our personalized assessment reveals:</p>
+                <ul className="list-disc pl-6 space-y-2 text-gray-700">
+                  <li>His specific attachment style and how it impacts your relationship</li>
+                  <li>The exact words and actions that create deep emotional attraction</li>
+                  <li>Personalized strategies to establish a secure and lasting bond</li>
+                  <li>Signs of genuine interest versus temporary infatuation</li>
+                </ul>
+                <p className="text-gray-700 mt-4">Get a tailored PDF guide based on your unique relationship dynamics!</p>
+              </div>
+            </div>
+            
             <div className="bg-[#ffedf1] rounded-xl p-6">
               <h3 className="text-2xl font-semibold text-[#f24b7c] mb-6">Featured Articles</h3>
               
