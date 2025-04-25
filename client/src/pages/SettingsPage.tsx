@@ -1068,30 +1068,97 @@ const SettingsPage: React.FC = () => {
                       name="pdfGuideImageUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>PDF Guide Image URL</FormLabel>
+                          <FormLabel>PDF Guide Image</FormLabel>
                           <FormControl>
                             <div className="space-y-4">
-                              <Input
-                                type="text"
-                                placeholder="/images/pdf-guide-icon.svg"
-                                {...field}
-                              />
-                              <div className="flex items-center justify-center p-2 border rounded-md">
+                              <div className="flex gap-3">
+                                <Input
+                                  type="text"
+                                  placeholder="/images/pdf-guide-icon.svg"
+                                  {...field}
+                                  className="flex-1"
+                                />
+                                <div className="relative">
+                                  <input
+                                    type="file"
+                                    id="pdf-guide-upload"
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        // Create a temporary URL for the file
+                                        const reader = new FileReader();
+                                        reader.onload = () => {
+                                          // Handle image upload to server
+                                          const formData = new FormData();
+                                          formData.append('image', file);
+                                          
+                                          fetch('/api/admin/upload-image', {
+                                            method: 'POST',
+                                            body: formData
+                                          })
+                                          .then(response => response.json())
+                                          .then(data => {
+                                            if (data.success && data.imageUrl) {
+                                              // Update the field with the uploaded image URL
+                                              field.onChange(data.imageUrl);
+                                              toast({
+                                                title: "Image Uploaded",
+                                                description: "The image has been uploaded successfully.",
+                                              });
+                                            } else {
+                                              // Show fallback preview
+                                              field.onChange(reader.result as string);
+                                              toast({
+                                                title: "Upload Failed",
+                                                description: "Using temporary preview. Save to store base64 image.",
+                                                variant: "destructive"
+                                              });
+                                            }
+                                          })
+                                          .catch(error => {
+                                            console.error("Upload error:", error);
+                                            // Show fallback preview using base64
+                                            field.onChange(reader.result as string);
+                                            toast({
+                                              title: "Upload Failed",
+                                              description: "Using temporary preview. Save to store base64 image.",
+                                              variant: "destructive"
+                                            });
+                                          });
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                  >
+                                    Upload
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-center p-4 border rounded-md">
                                 <img 
-                                  src={field.value} 
+                                  src={field.value || '/images/pdf-guide-icon.svg'} 
                                   alt="PDF Guide Preview" 
-                                  className="h-24 object-contain"
+                                  className="h-32 object-contain mb-2"
                                   onError={(e) => { 
                                     e.currentTarget.src = '/images/pdf-guide-icon.svg';
                                     e.currentTarget.classList.add('border', 'border-red-300');
                                     e.currentTarget.title = "Invalid image URL";
                                   }}
                                 />
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  {field.value ? 'Current image' : 'Default image (no custom image set)'}
+                                </p>
                               </div>
                             </div>
                           </FormControl>
                           <FormDescription>
-                            URL of the PDF guide image shown in the sidebar
+                            Upload or enter URL for the PDF guide image shown in the lead magnet forms
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
