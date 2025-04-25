@@ -32,8 +32,6 @@ const AdminNavigation: React.FC = () => {
       icon: <FileText className="h-5 w-5 mr-2" />,
       active: location === '/admin/blog-management'
     },
-
-
     {
       label: 'Subscribers',
       href: '/admin?tab=subscribers',
