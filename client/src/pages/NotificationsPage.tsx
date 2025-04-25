@@ -174,9 +174,7 @@ export default function NotificationsPage() {
         );
       }
       
-      const data = await response.json();
-      
-      if (data.success) {
+      if (response.success) {
         toast({
           title: "Success",
           description: editingTemplate 

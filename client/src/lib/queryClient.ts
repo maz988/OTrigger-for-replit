@@ -42,7 +42,9 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest<T = any>(
+  method: string,
   url: string,
+  body?: any,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   // Get the admin token from localStorage
@@ -58,11 +60,19 @@ export async function apiRequest<T = any>(
     headers['Authorization'] = `Bearer ${adminToken}`;
   }
   
-  const res = await fetch(url, {
-    ...options,
+  const requestOptions: RequestInit = {
+    method,
     headers,
     credentials: "include",
-  });
+    ...options
+  };
+  
+  // Add the body if it exists
+  if (body) {
+    requestOptions.body = JSON.stringify(body);
+  }
+  
+  const res = await fetch(url, requestOptions);
 
   await throwIfResNotOk(res);
   return await res.json();
