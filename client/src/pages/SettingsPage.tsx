@@ -430,8 +430,27 @@ const SettingsPage: React.FC = () => {
   });
 
   // Handle form submission
-  const onSubmit = (data: ApiKeySettings) => {
+  const onSubmit = async (data: ApiKeySettings) => {
     console.log("Form submitted with data:", data);
+    
+    // If we have an active email service, update the EMAIL_SERVICE setting first
+    if (data.activeEmailService) {
+      try {
+        const updateEmailServiceResponse = await apiRequest('PATCH', '/api/admin/settings/EMAIL_SERVICE', {
+          value: data.activeEmailService
+        });
+        
+        if (!updateEmailServiceResponse.ok) {
+          console.error("Failed to update EMAIL_SERVICE setting");
+        } else {
+          console.log("Updated EMAIL_SERVICE setting to:", data.activeEmailService);
+        }
+      } catch (error) {
+        console.error("Error updating EMAIL_SERVICE setting:", error);
+      }
+    }
+    
+    // Continue with updating the rest of the settings
     updateSettingsMutation.mutate(data);
   };
 
@@ -457,7 +476,25 @@ const SettingsPage: React.FC = () => {
           description: 'Please select an email provider first',
           variant: 'destructive',
         });
+        setLoadingLists(false);
         return;
+      }
+      
+      // First ensure the EMAIL_SERVICE system setting is updated
+      // This is critical because the backend looks for this setting when fetching lists
+      try {
+        const updateEmailServiceResponse = await apiRequest('PATCH', '/api/admin/settings/EMAIL_SERVICE', {
+          value: activeProvider
+        });
+        
+        if (!updateEmailServiceResponse.ok) {
+          const updateError = await updateEmailServiceResponse.json();
+          console.error("Failed to update EMAIL_SERVICE setting:", updateError);
+        } else {
+          console.log("Updated EMAIL_SERVICE setting to:", activeProvider);
+        }
+      } catch (error) {
+        console.error("Error updating EMAIL_SERVICE setting:", error);
       }
       
       // Save current form values before testing to ensure API key is up to date
@@ -465,6 +502,9 @@ const SettingsPage: React.FC = () => {
         console.log("Saving form values before fetching lists");
         await updateSettingsMutation.mutateAsync(form.getValues());
       }
+      
+      // Wait a moment for settings to be saved
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       console.log("Fetching lists from API...");
       const result = await refetchEmailLists();
@@ -1010,12 +1050,28 @@ const SettingsPage: React.FC = () => {
                         <FormItem>
                           <FormLabel>Active Email Service</FormLabel>
                           <Select
-                            onValueChange={(value) => {
+                            onValueChange={async (value) => {
                               field.onChange(value);
                               // Clear list selections when provider changes
                               form.setValue('quizListId', 'none');
                               form.setValue('leadMagnetListId', 'none');
                               form.setValue('defaultListId', 'none');
+                              
+                              // Update the EMAIL_SERVICE system setting immediately
+                              try {
+                                console.log("Updating EMAIL_SERVICE setting to:", value);
+                                const updateResponse = await apiRequest('PATCH', '/api/admin/settings/EMAIL_SERVICE', {
+                                  value: value
+                                });
+                                
+                                if (!updateResponse.ok) {
+                                  console.error("Failed to update EMAIL_SERVICE setting");
+                                } else {
+                                  console.log("Successfully updated EMAIL_SERVICE setting");
+                                }
+                              } catch (error) {
+                                console.error("Error updating EMAIL_SERVICE setting:", error);
+                              }
                             }}
                             defaultValue={field.value}
                             value={field.value}
