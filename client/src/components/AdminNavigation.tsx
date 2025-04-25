@@ -62,6 +62,12 @@ const AdminNavigation: React.FC = () => {
             </Link>
           </Button>
         ))}
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/" className="flex items-center">
+            <Home className="h-5 w-5 mr-2" />
+            View Site
+          </Link>
+        </Button>
       </div>
     </div>
   );
