@@ -15,6 +15,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import AdminNavigation from '@/components/AdminNavigation';
 import { 
   Dialog, 
   DialogContent, 
@@ -289,6 +290,8 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto py-8 px-4">
+      <AdminNavigation />
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Integration Control Panel</h1>
         <p className="text-muted-foreground">Configure external services and API connections for your system</p>
