@@ -1054,7 +1054,7 @@ const EmailTemplatesPage: React.FC = () => {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Use {{firstName}} and other variables to personalize your email.
+                  Use {"{{firstName}}"} and other variables to personalize your email.
                 </p>
               </div>
             </div>
@@ -1237,7 +1237,7 @@ const EmailTemplatesPage: React.FC = () => {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Use {{firstName}} and other variables to personalize your email.
+                  Use {"{{firstName}}"} and other variables to personalize your email.
                 </p>
               </div>
             </div>
