@@ -2238,6 +2238,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Update the list ID settings for various subscription sources
+      
+      // Quiz List ID
+      if ('quizListId' in settingsData) {
+        const quizListSetting = await storage.getSettingByKey('QUIZ_LIST_ID');
+        if (!quizListSetting || quizListSetting.settingValue !== settingsData.quizListId) {
+          if (quizListSetting) {
+            await storage.updateSetting('QUIZ_LIST_ID', settingsData.quizListId);
+            console.log(`Updated QUIZ_LIST_ID setting to: ${settingsData.quizListId}`);
+          } else {
+            await storage.saveSetting({
+              settingKey: 'QUIZ_LIST_ID',
+              settingValue: settingsData.quizListId,
+              settingType: 'string',
+              description: 'Email list ID for quiz subscribers'
+            });
+            console.log(`Created QUIZ_LIST_ID setting with value: ${settingsData.quizListId}`);
+          }
+        }
+      }
+      
+      // Lead Magnet List ID
+      if ('leadMagnetListId' in settingsData) {
+        const leadMagnetListSetting = await storage.getSettingByKey('LEAD_MAGNET_LIST_ID');
+        if (!leadMagnetListSetting || leadMagnetListSetting.settingValue !== settingsData.leadMagnetListId) {
+          if (leadMagnetListSetting) {
+            await storage.updateSetting('LEAD_MAGNET_LIST_ID', settingsData.leadMagnetListId);
+            console.log(`Updated LEAD_MAGNET_LIST_ID setting to: ${settingsData.leadMagnetListId}`);
+          } else {
+            await storage.saveSetting({
+              settingKey: 'LEAD_MAGNET_LIST_ID',
+              settingValue: settingsData.leadMagnetListId,
+              settingType: 'string',
+              description: 'Email list ID for lead magnet subscribers'
+            });
+            console.log(`Created LEAD_MAGNET_LIST_ID setting with value: ${settingsData.leadMagnetListId}`);
+          }
+        }
+      }
+      
+      // Default List ID
+      if ('defaultListId' in settingsData) {
+        const defaultListSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
+        if (!defaultListSetting || defaultListSetting.settingValue !== settingsData.defaultListId) {
+          if (defaultListSetting) {
+            await storage.updateSetting('DEFAULT_LIST_ID', settingsData.defaultListId);
+            console.log(`Updated DEFAULT_LIST_ID setting to: ${settingsData.defaultListId}`);
+          } else {
+            await storage.saveSetting({
+              settingKey: 'DEFAULT_LIST_ID',
+              settingValue: settingsData.defaultListId,
+              settingType: 'string',
+              description: 'Default email list ID for subscribers when not specified'
+            });
+            console.log(`Created DEFAULT_LIST_ID setting with value: ${settingsData.defaultListId}`);
+          }
+        }
+      }
+      
       res.status(200).json({
         success: true,
         message: "Settings updated successfully"
@@ -2997,6 +3056,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         error: err.message
+      });
+    }
+  });
+  
+  // Fetch email provider lists
+  app.get("/api/admin/email/lists", authenticateAdmin, async (req, res) => {
+    try {
+      // Get all settings to find the active email service and API keys
+      const settings = await storage.getAllSettings();
+      
+      // Convert settings array to object for easier access
+      const settingsObj = settings.reduce((acc, setting) => {
+        acc[setting.name] = setting.value;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const activeEmailService = settingsObj.activeEmailService || 'none';
+      
+      if (activeEmailService === 'none') {
+        return res.status(400).json({
+          success: false,
+          error: "No email service is active"
+        });
+      }
+      
+      let lists = [];
+      
+      // Fetch lists from the active provider
+      switch(activeEmailService) {
+        case 'sendgrid': {
+          const apiKey = settingsObj.sendgridApiKey || process.env.SENDGRID_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "SendGrid API key not configured"
+            });
+          }
+          
+          try {
+            // Get all lists from SendGrid
+            const response = await fetch('https://api.sendgrid.com/v3/marketing/lists', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              lists = data.result.map((list: any) => ({
+                id: list.id,
+                name: list.name,
+                subscriberCount: list.contact_count,
+                description: list.description || null,
+                createdAt: list.created_at,
+                isDefault: false
+              }));
+            } else {
+              const errorText = await response.text();
+              throw new Error(`SendGrid API error: ${response.status} - ${errorText}`);
+            }
+          } catch (error: any) {
+            console.error("Error fetching SendGrid lists:", error);
+            return res.status(500).json({
+              success: false,
+              error: error.message || "Failed to fetch SendGrid lists"
+            });
+          }
+          break;
+        }
+        
+        case 'mailerlite': {
+          const apiKey = settingsObj.mailerliteApiKey || process.env.MAILERLITE_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "MailerLite API key not configured"
+            });
+          }
+          
+          try {
+            // Get all groups from MailerLite (groups are their equivalent of lists)
+            const response = await fetch('https://api.mailerlite.com/api/v2/groups', {
+              method: 'GET',
+              headers: {
+                'X-MailerLite-ApiKey': apiKey,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              lists = data.map((group: any) => ({
+                id: group.id.toString(),
+                name: group.name,
+                subscriberCount: group.total || 0,
+                description: group.name,
+                createdAt: group.date_created,
+                isDefault: false
+              }));
+            } else {
+              const errorText = await response.text();
+              throw new Error(`MailerLite API error: ${response.status} - ${errorText}`);
+            }
+          } catch (error: any) {
+            console.error("Error fetching MailerLite groups:", error);
+            return res.status(500).json({
+              success: false,
+              error: error.message || "Failed to fetch MailerLite groups"
+            });
+          }
+          break;
+        }
+        
+        case 'brevo': {
+          const apiKey = settingsObj.brevoApiKey || process.env.BREVO_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "Brevo API key not configured"
+            });
+          }
+          
+          try {
+            // Get all lists from Brevo
+            const response = await fetch('https://api.brevo.com/v3/contacts/lists?limit=50&offset=0', {
+              method: 'GET',
+              headers: {
+                'api-key': apiKey,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              lists = data.lists.map((list: any) => ({
+                id: list.id.toString(),
+                name: list.name,
+                subscriberCount: list.totalSubscribers || 0,
+                description: list.name,
+                createdAt: new Date().toISOString(), // Brevo doesn't provide creation date
+                isDefault: false
+              }));
+            } else {
+              const errorText = await response.text();
+              throw new Error(`Brevo API error: ${response.status} - ${errorText}`);
+            }
+          } catch (error: any) {
+            console.error("Error fetching Brevo lists:", error);
+            return res.status(500).json({
+              success: false,
+              error: error.message || "Failed to fetch Brevo lists"
+            });
+          }
+          break;
+        }
+        
+        default:
+          return res.status(400).json({
+            success: false,
+            error: `Unsupported email provider: ${activeEmailService}`
+          });
+      }
+      
+      return res.json({
+        success: true,
+        data: lists
+      });
+    } catch (error: any) {
+      console.error("Error fetching email lists:", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Failed to fetch email lists"
       });
     }
   });
