@@ -6,7 +6,6 @@ import {
   FileText,
   Users,
   Settings,
-  Mail,
   Home,
   LayoutDashboard
 } from 'lucide-react';
@@ -33,12 +32,7 @@ const AdminNavigation: React.FC = () => {
       icon: <FileText className="h-5 w-5 mr-2" />,
       active: location === '/admin/blog-management'
     },
-    {
-      label: 'Email Templates',
-      href: '/admin/email-templates',
-      icon: <Mail className="h-5 w-5 mr-2" />,
-      active: location === '/admin/email-templates'
-    },
+
 
     {
       label: 'Subscribers',
