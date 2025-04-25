@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { submitLeadData, generateAndSendLeadMagnet } from '@/services/emailSignup';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from '@/hooks/use-settings';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -43,6 +44,7 @@ export default function LeadMagnetForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
+  const { settings } = useSettings();
   
   const form = useForm<LeadMagnetFormData>({
     resolver: zodResolver(leadMagnetFormSchema),
@@ -113,9 +115,12 @@ export default function LeadMagnetForm({
           <div className="flex flex-col items-center mb-3">
             {variant === 'sidebar' && (
               <img 
-                src="/images/pdf-guide-icon.svg" 
+                src={settings.pdfGuideImageUrl} 
                 alt="Relationship Guide PDF" 
                 className="w-16 h-24 mb-3 drop-shadow-md" 
+                onError={(e) => {
+                  e.currentTarget.src = '/images/pdf-guide-icon.svg';
+                }}
               />
             )}
             <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
@@ -135,9 +140,12 @@ export default function LeadMagnetForm({
       <div className={getContainerClasses()}>
         <div className="flex flex-col items-center mb-4">
           <img 
-            src="/images/pdf-guide-icon.svg" 
+            src={settings.pdfGuideImageUrl} 
             alt="Relationship Guide PDF" 
-            className="w-20 h-28 mb-2 drop-shadow-md" 
+            className="w-20 h-28 mb-2 drop-shadow-md"
+            onError={(e) => {
+              e.currentTarget.src = '/images/pdf-guide-icon.svg';
+            }}
           />
           <h3 className="text-lg font-semibold text-[#f24b7c] mb-1">{title}</h3>
           <p className="text-sm text-gray-600 text-center">{description}</p>
