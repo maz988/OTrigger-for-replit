@@ -2162,6 +2162,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         process.env.GEMINI_API_KEY = settingsData.geminiApiKey;
       }
       
+      // Update the EMAIL_SERVICE setting if activeEmailService has changed
+      if (settingsData.activeEmailService) {
+        const emailServiceSetting = await storage.getSettingByKey('EMAIL_SERVICE');
+        if (!emailServiceSetting || emailServiceSetting.settingValue !== settingsData.activeEmailService) {
+          if (emailServiceSetting) {
+            await storage.updateSetting('EMAIL_SERVICE', settingsData.activeEmailService);
+            console.log(`Updated EMAIL_SERVICE setting to: ${settingsData.activeEmailService}`);
+          } else {
+            await storage.saveSetting({
+              settingKey: 'EMAIL_SERVICE',
+              settingValue: settingsData.activeEmailService,
+              settingType: 'string',
+              description: 'Currently active email service provider'
+            });
+            console.log(`Created EMAIL_SERVICE setting with value: ${settingsData.activeEmailService}`);
+          }
+        }
+      }
+      
+      // Update the EMAIL_FROM setting if senderEmail has changed
+      if (settingsData.senderEmail) {
+        const emailFromSetting = await storage.getSettingByKey('EMAIL_FROM');
+        if (!emailFromSetting || emailFromSetting.settingValue !== settingsData.senderEmail) {
+          if (emailFromSetting) {
+            await storage.updateSetting('EMAIL_FROM', settingsData.senderEmail);
+            console.log(`Updated EMAIL_FROM setting to: ${settingsData.senderEmail}`);
+          } else {
+            await storage.saveSetting({
+              settingKey: 'EMAIL_FROM',
+              settingValue: settingsData.senderEmail,
+              settingType: 'string',
+              description: 'Default sender email address'
+            });
+            console.log(`Created EMAIL_FROM setting with value: ${settingsData.senderEmail}`);
+          }
+        }
+      }
+      
       res.status(200).json({
         success: true,
         message: "Settings updated successfully"
