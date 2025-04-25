@@ -158,11 +158,12 @@ const SettingsPage: React.FC = () => {
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: ApiKeySettings) => {
       try {
-        // apiRequest expects (url, options) not (method, url, options)
-        return await apiRequest('/api/admin/settings', {
-          method: 'POST', 
-          body: JSON.stringify(newSettings)
-        });
+        // apiRequest expects (method, url, body, options)
+        return await apiRequest(
+          'POST',
+          '/api/admin/settings',
+          newSettings
+        );
       } catch (error) {
         console.error("Error updating settings:", error);
         throw error;
@@ -232,11 +233,12 @@ const SettingsPage: React.FC = () => {
           }
         }
         
-        // apiRequest expects (url, options)
-        const response = await apiRequest(`/api/admin/settings/test/${serviceType}`, {
-          method: 'POST',
-          body: JSON.stringify({ apiKey }) // Send the API key for testing
-        });
+        // apiRequest expects (method, url, body, options)
+        const response = await apiRequest(
+          'POST',
+          `/api/admin/settings/test/${serviceType}`,
+          { apiKey } // Body will be automatically JSON stringified
+        );
         return response; // This is already the parsed JSON response
       } catch (error) {
         console.error("Error testing service:", error);
