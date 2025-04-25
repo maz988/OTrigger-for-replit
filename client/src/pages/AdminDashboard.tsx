@@ -291,9 +291,27 @@ const AdminDashboard: React.FC = () => {
     enabled: activeTab === 'subscribers',
   });
   
+  // Fetch settings when settings tab is active
+  const { data: settingsResponse, isLoading: settingsLoading, refetch: refetchSettings } = useQuery({
+    queryKey: ['/api/admin/settings'],
+    queryFn: getQueryFn(),
+    enabled: activeTab === 'settings',
+  });
+  
   // Blog posts data
   const blogPosts: BlogPost[] = postsResponse?.data || [];
   const subscribers: EmailSubscriber[] = subscribersResponse?.data || [];
+  
+  // Settings data - restructure for easier access
+  const settings = React.useMemo(() => {
+    if (!settingsResponse?.data) return {};
+    
+    // Convert settings array to object for easier lookup
+    return settingsResponse.data.reduce((acc: any, setting: any) => {
+      acc[setting.name] = setting.value;
+      return acc;
+    }, {});
+  }, [settingsResponse?.data]);
   
   // Blog post mutations
   const createPostMutation = useMutation({
