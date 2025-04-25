@@ -42,32 +42,57 @@ export function sanitizeHtml(html: string): string {
   if (!html) return '';
   
   try {
-    // Remove DOCTYPE and other potentially problematic tags that would cause issues
+    // Try a very aggressive HTML sanitization approach to ensure JSON compatibility
+    // First, remove all problematic HTML elements and structures
     let sanitized = html
-      .replace(/<!DOCTYPE[^>]*>/i, '')
-      .replace(/<\?xml[^>]*\?>/gi, '')
+      // Remove DOCTYPE declarations that cause the most issues
+      .replace(/<!DOCTYPE[^>]*>/ig, '')
+      // Remove XML declarations
+      .replace(/<\?xml[^>]*\?>/ig, '')
+      // Remove HTML comments
       .replace(/<!--[\s\S]*?-->/g, '')
-      // Remove any script tags that might cause issues
+      // Remove <head> section entirely
+      .replace(/<head[\s\S]*?<\/head>/ig, '')
+      // Remove <html> and </html> tags
+      .replace(/<html[^>]*>/ig, '')
+      .replace(/<\/html>/ig, '')
+      // Remove <body> and </body> tags
+      .replace(/<body[^>]*>/ig, '')
+      .replace(/<\/body>/ig, '')
+      // Remove any script tags
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      // Remove style tags
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
       // Normalize quotes to prevent JSON parsing issues
-      .replace(/"/g, '"')
-      .replace(/"/g, '"')
-      .replace(/'/g, "'")
-      .replace(/'/g, "'")
-      // Remove any control characters that might break JSON
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+      .replace(/"/g, '&quot;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;')
+      .replace(/'/g, '&apos;')
+      // Replace problematic characters
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+      .replace(/[\u2028\u2029]/g, ' ')  // Remove line/paragraph separators
       .trim();
     
-    // Validate that the content can be safely serialized to JSON and back
-    JSON.parse(JSON.stringify({ content: sanitized }));
+    // For maximum safety, try JSON serialization
+    try {
+      JSON.parse(JSON.stringify({ content: sanitized }));
+    } catch (jsonError) {
+      console.error('JSON test failed, further sanitizing HTML content');
+      // If JSON test fails, apply more aggressive sanitization
+      sanitized = sanitized
+        // Convert all tags to their HTML entity equivalents
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
     
     return sanitized;
   } catch (error) {
     console.error('Error during HTML sanitization:', error);
-    // If there's an error, perform more aggressive sanitization
+    // If all else fails, just convert to plain text
     return html
-      .replace(/<[^>]*>/g, '') // Remove all HTML tags as a last resort
+      .replace(/<[^>]*>/g, '') // Remove all HTML tags completely
       .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+      .replace(/[<>]/g, '') // Remove any remaining < or > characters
       .trim();
   }
 }

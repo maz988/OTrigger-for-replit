@@ -106,39 +106,77 @@ interface EmailQueue {
 }
 
 // Function to encode HTML content for safe transmission
+// Aggressive sanitization and encoding to safely transmit HTML content
 const encodeHtmlContent = (html: string): string => {
   if (!html) return '';
-  // Use Base64 encoding to safely transmit HTML content
+  
+  // First layer of sanitization - remove all problematic HTML elements
+  let sanitized = html
+    // Remove DOCTYPE declarations (most common issue)
+    .replace(/<!DOCTYPE[^>]*>/ig, '')
+    // Remove XML declarations
+    .replace(/<\?xml[^>]*\?>/ig, '')
+    // Remove HTML comments
+    .replace(/<!--[\s\S]*?-->/g, '')
+    // Remove <head> section entirely
+    .replace(/<head[\s\S]*?<\/head>/ig, '')
+    // Remove <html> and </html> tags
+    .replace(/<html[^>]*>/ig, '')
+    .replace(/<\/html>/ig, '')
+    // Remove <body> and </body> tags
+    .replace(/<body[^>]*>/ig, '')
+    .replace(/<\/body>/ig, '')
+    // Remove problematic characters
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, ''); // Remove control characters
+  
   try {
-    return btoa(html); // Base64 encode
+    // Use Base64 encoding to maximize safety for JSON transport
+    return btoa(sanitized);
   } catch (error) {
     console.error('Error encoding HTML content:', error);
-    // Fallback to basic sanitization if encoding fails
-    return html
-      .replace(/<!DOCTYPE[^>]*>/i, '')
-      .replace(/<\?xml[^>]*\?>/gi, '')
-      .replace(/<!--[\s\S]*?-->/g, '')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;')
+    
+    // If encoding fails, convert tags to HTML entities as a last resort
+    return sanitized
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;')
+      .replace(/&/g, '&amp;')
       .trim();
   }
 };
 
-// Function to decode HTML content
+// Decode HTML content (from Base64 or entity-encoded)
 const decodeHtmlContent = (encoded: string): string => {
   if (!encoded) return '';
-  // Try to decode from Base64
+  
   try {
-    // Check if it's already Base64 encoded
+    // First, check if the content is Base64 encoded
     if (/^[A-Za-z0-9+/=]+$/.test(encoded.trim())) {
-      return atob(encoded); // Base64 decode
+      const decoded = atob(encoded);
+      
+      // Further sanitize the decoded content by removing any DOCTYPE that slipped through
+      return decoded
+        .replace(/<!DOCTYPE[^>]*>/ig, '')
+        .replace(/<html[^>]*>/ig, '')
+        .replace(/<\/html>/ig, '')
+        .replace(/<head[\s\S]*?<\/head>/ig, '')
+        .replace(/<body[^>]*>/ig, '')
+        .replace(/<\/body>/ig, '');
     }
-    return encoded; // Return as is if not Base64
+    
+    // If not Base64, unescape HTML entities
+    return encoded
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&amp;/g, '&');
   } catch (error) {
     console.error('Error decoding HTML content:', error);
-    return encoded; // Return original if decode fails
+    
+    // If all else fails, at least try to strip any problematic DOCTYPE tags
+    return encoded.replace(/<!DOCTYPE[^>]*>/ig, '');
   }
 };
 

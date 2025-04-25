@@ -10,14 +10,29 @@ interface BasicRichTextEditorProps {
   readOnly?: boolean;
 }
 
-// Function to sanitize HTML content before it's used
+// Function to aggressively sanitize HTML content before it's used
 const sanitizeHtml = (html: string): string => {
   if (!html) return '';
-  // Remove DOCTYPE, XML declarations, and comments that can cause issues
+  
+  // Aggressively strip all problematic HTML elements and attributes that can cause JSON issues
   return html
-    .replace(/<!DOCTYPE[^>]*>/i, '')
-    .replace(/<\?xml[^>]*\?>/gi, '')
+    // Strip DOCTYPE declarations (most common issue)
+    .replace(/<!DOCTYPE[^>]*>/ig, '')
+    // Strip XML declarations
+    .replace(/<\?xml[^>]*\?>/ig, '')
+    // Strip HTML comments
     .replace(/<!--[\s\S]*?-->/g, '')
+    // Strip <head> section entirely
+    .replace(/<head[\s\S]*?<\/head>/ig, '')
+    // Strip <html> and </html> tags
+    .replace(/<html[^>]*>/ig, '')
+    .replace(/<\/html>/ig, '')
+    // Strip <body> and </body> tags
+    .replace(/<body[^>]*>/ig, '')
+    .replace(/<\/body>/ig, '')
+    // Replace problematic characters
+    .replace(/\u0000/g, '')    // NULL
+    .replace(/[\u2028\u2029]/g, ' ')  // Line separators that break JSON
     .trim();
 };
 
