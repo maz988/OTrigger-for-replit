@@ -1597,6 +1597,174 @@ const AdminDashboard: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* View Blog Post Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>View Blog Post</DialogTitle>
+            <DialogDescription>View blog post details</DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <div className="flex flex-col space-y-1">
+              <h3 className="text-lg font-semibold text-primary">{formData.title}</h3>
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Badge variant="outline" className="mr-2">{formData.category}</Badge>
+                <Calendar className="h-4 w-4 mr-1" />
+                <span>
+                  {selectedPostId && 
+                    new Date(blogPosts.find(p => p.id === selectedPostId)?.publishedAt || '').toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+            
+            <div className="prose max-w-none dark:prose-invert">
+              <div dangerouslySetInnerHTML={{ __html: formData.content }}></div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setIsViewDialogOpen(false);
+              handleEditPost(blogPosts.find(p => p.id === selectedPostId)!);
+            }}>
+              <Pencil className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Blog Post Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Edit Blog Post</DialogTitle>
+            <DialogDescription>Make changes to the blog post</DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-title">Title</Label>
+              <Input
+                id="edit-title"
+                value={formData.title}
+                onChange={handleTitleChange}
+                placeholder="Blog post title"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="edit-slug">Slug</Label>
+              <Input
+                id="edit-slug"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                placeholder="url-friendly-slug"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-category">Category</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Attraction">Attraction</SelectItem>
+                    <SelectItem value="Communication">Communication</SelectItem>
+                    <SelectItem value="Dating">Dating</SelectItem>
+                    <SelectItem value="Relationships">Relationships</SelectItem>
+                    <SelectItem value="Psychology">Psychology</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit-keyword">Keyword</Label>
+                <Input
+                  id="edit-keyword"
+                  value={formData.keyword}
+                  onChange={(e) => setFormData({ ...formData, keyword: e.target.value })}
+                  placeholder="Main keyword"
+                />
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="edit-content">Content</Label>
+              <RichTextEditor
+                value={formData.content}
+                onChange={(value) => setFormData({ ...formData, content: value })}
+                minHeight="400px"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedPostId) {
+                  updatePostMutation.mutate({ id: selectedPostId, data: formData });
+                }
+              }}
+              disabled={updatePostMutation.isPending}
+            >
+              {updatePostMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Saving...</span>
+                </div>
+              ) : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Blog Post Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the blog post
+              "{selectedPostId && blogPosts.find(p => p.id === selectedPostId)?.title}" and remove it from the website.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedPostId) {
+                  deletePostMutation.mutate(selectedPostId);
+                }
+              }}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {deletePostMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Deleting...</span>
+                </div>
+              ) : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
