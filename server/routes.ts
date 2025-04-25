@@ -179,13 +179,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/generate-lead-magnet", async (req, res) => {
     try {
-      const { email, firstName, leadMagnetName } = req.body;
+      const { email, firstName, lastName, leadMagnetName } = req.body;
       
       if (!email || !firstName || !leadMagnetName) {
         return res.status(400).json({
           success: false,
           error: "Email, firstName, and leadMagnetName are required"
         });
+      }
+      
+      // First, send the subscriber to the active email service provider
+      try {
+        // Import dynamically to avoid circular dependencies
+        const { sendSubscriberToEmailService } = await import('./services/emailDispatcher');
+        
+        // Name to use for sending to email service
+        const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+        
+        // Send to email service with lead magnet as source
+        const result = await sendSubscriberToEmailService({
+          name: fullName,
+          email: email,
+          source: 'lead-magnet'
+        });
+        
+        if (result.success) {
+          console.log(`Lead magnet subscriber successfully sent to email service: ${result.message}`);
+        } else {
+          console.error(`Error sending lead magnet subscriber to email service: ${result.error}`);
+          // Continue processing to generate and deliver lead magnet even if ESP fails
+        }
+      } catch (emailError: any) {
+        console.error(`Error in lead magnet email service integration: ${emailError.message}`);
+        // Continue processing to deliver lead magnet even if email service fails
       }
       
       // In a real implementation, generate a PDF and email it to the user
