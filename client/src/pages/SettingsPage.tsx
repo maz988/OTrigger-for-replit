@@ -29,6 +29,7 @@ import {
 interface ServiceSettings {
   id: string;
   name: string;
+  displayName: string;
   value: string;
   active: boolean;
   category: 'ai' | 'image' | 'email' | 'storage' | 'blog' | 'other';

@@ -2045,7 +2045,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Map the settings to match the ServiceSettings interface that the frontend expects
       const mappedSettings = settings.map(setting => ({
         id: setting.id.toString(),
-        name: setting.description || setting.settingKey,
+        name: setting.settingKey, // Always use the actual key for proper lookup
+        displayName: setting.description || setting.settingKey, // Use description for display purposes
         value: setting.settingValue || '',
         active: setting.settingType === 'boolean' ? setting.settingValue === 'true' : true,
         category: getCategoryForSetting(setting.settingKey),
