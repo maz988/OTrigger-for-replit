@@ -23,7 +23,18 @@ export function sanitizeApiKey(apiKey: string): string {
  * @returns True if the key appears to be valid
  */
 export function validateApiKey(apiKey: string): boolean {
-  // MailerLite API keys are 64 character alphanumeric strings
+  // MailerLite API keys can be either:
+  // 1. 64 character alphanumeric strings (classic API keys)
+  // 2. JWT tokens (starting with "eyJ")
+  if (!apiKey) return false;
+  
+  // Check if it's a JWT token (starts with eyJ which is base64 for {"typ"...)
+  if (apiKey.startsWith('eyJ')) {
+    // Make sure it has at least 3 parts separated by dots (header.payload.signature)
+    return apiKey.split('.').length >= 3;
+  }
+  
+  // Otherwise check if it matches the classic format
   return /^[a-zA-Z0-9]{64}$/.test(apiKey);
 }
 
@@ -290,7 +301,7 @@ export async function testConnection(apiKey: string): Promise<{ success: boolean
     if (!validateApiKey(apiKey)) {
       return {
         success: false,
-        error: 'Invalid MailerLite API key format. It should be a 64 character alphanumeric string.'
+        error: 'Invalid MailerLite API key format. It should be either a 64 character alphanumeric string or a valid JWT token.'
       };
     }
 
@@ -352,7 +363,7 @@ export async function sendToMailerLite(
     if (!validateApiKey(apiKey)) {
       return {
         success: false,
-        error: 'Invalid MailerLite API key format'
+        error: 'Invalid MailerLite API key format. It should be either a 64 character alphanumeric string or a valid JWT token.'
       };
     }
     
