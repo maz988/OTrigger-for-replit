@@ -184,9 +184,8 @@ export default function NotificationsPage() {
         
         // Refresh templates
         const templatesResponse = await apiRequest('GET', '/api/admin/notifications/templates');
-        const templatesData = await templatesResponse.json();
-        if (templatesData.success) {
-          setTemplates(templatesData.data || []);
+        if (templatesResponse.success) {
+          setTemplates(templatesResponse.data || []);
         }
         
         // Reset form
@@ -200,7 +199,7 @@ export default function NotificationsPage() {
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to save template",
+          description: response.error || "Failed to save template",
           variant: "destructive"
         });
       }
@@ -224,9 +223,8 @@ export default function NotificationsPage() {
     
     try {
       const response = await apiRequest('DELETE', `/api/admin/notifications/templates/${id}`);
-      const data = await response.json();
       
-      if (data.success) {
+      if (response.success) {
         toast({
           title: "Success",
           description: "Template deleted successfully"
@@ -237,7 +235,7 @@ export default function NotificationsPage() {
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to delete template",
+          description: response.error || "Failed to delete template",
           variant: "destructive"
         });
       }
@@ -275,9 +273,7 @@ export default function NotificationsPage() {
         sendForm
       );
       
-      const data = await response.json();
-      
-      if (data.success) {
+      if (response.success) {
         toast({
           title: "Success",
           description: "Notification sent successfully"
@@ -285,9 +281,8 @@ export default function NotificationsPage() {
         
         // Refresh logs
         const logsResponse = await apiRequest('GET', '/api/admin/notifications/logs');
-        const logsData = await logsResponse.json();
-        if (logsData.success) {
-          setLogs(logsData.data || []);
+        if (logsResponse.success) {
+          setLogs(logsResponse.data || []);
         }
         
         // Reset form
@@ -300,7 +295,7 @@ export default function NotificationsPage() {
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to send notification",
+          description: response.error || "Failed to send notification",
           variant: "destructive"
         });
       }
