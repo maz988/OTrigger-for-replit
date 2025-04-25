@@ -171,6 +171,9 @@ const SettingsPage: React.FC = () => {
     enabled: false, // Don't fetch automatically, we'll fetch manually when needed
   });
   
+  // Ensure we always have a valid array for lists
+  const emailLists: EmailList[] = emailListsResponse?.data || [];
+  
   // Form setup with the schema
   const form = useForm<ApiKeySettings>({
     resolver: zodResolver(apiKeySettingsSchema),
@@ -1062,7 +1065,7 @@ const SettingsPage: React.FC = () => {
                             onValueChange={field.onChange}
                             defaultValue={field.value}
                             value={field.value}
-                            disabled={!emailListsResponse?.data?.length}
+                            disabled={!emailLists.length}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -1070,8 +1073,8 @@ const SettingsPage: React.FC = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">No List (Don't Use)</SelectItem>
-                              {emailListsResponse?.data?.map((list: EmailList) => (
+                              <SelectItem value="none">No List (Don't Use)</SelectItem>
+                              {emailLists.map((list: EmailList) => (
                                 <SelectItem key={list.id} value={list.id}>
                                   {list.name} {list.isDefault ? " (Default)" : ""}
                                 </SelectItem>
@@ -1096,7 +1099,7 @@ const SettingsPage: React.FC = () => {
                             onValueChange={field.onChange}
                             defaultValue={field.value}
                             value={field.value}
-                            disabled={!emailListsResponse?.data?.length}
+                            disabled={!emailLists.length}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -1104,8 +1107,8 @@ const SettingsPage: React.FC = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">No List (Use Default)</SelectItem>
-                              {emailListsResponse?.data?.map((list: EmailList) => (
+                              <SelectItem value="none">No List (Use Default)</SelectItem>
+                              {emailLists.map((list: EmailList) => (
                                 <SelectItem key={list.id} value={list.id}>
                                   {list.name} {list.isDefault ? " (Default)" : ""}
                                 </SelectItem>
@@ -1130,7 +1133,7 @@ const SettingsPage: React.FC = () => {
                             onValueChange={field.onChange}
                             defaultValue={field.value}
                             value={field.value}
-                            disabled={!emailListsResponse?.data?.length}
+                            disabled={!emailLists.length}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -1138,8 +1141,8 @@ const SettingsPage: React.FC = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">No List (Use Default)</SelectItem>
-                              {emailListsResponse?.data?.map((list: EmailList) => (
+                              <SelectItem value="none">No List (Use Default)</SelectItem>
+                              {emailLists.map((list: EmailList) => (
                                 <SelectItem key={list.id} value={list.id}>
                                   {list.name} {list.isDefault ? " (Default)" : ""}
                                 </SelectItem>
