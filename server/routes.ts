@@ -3494,7 +3494,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/admin/email/templates", authenticateAdmin, async (req, res) => {
     try {
-      const template = await storage.saveEmailTemplate(req.body);
+      // Sanitize HTML content to prevent JSON issues
+      const sanitizedData = { ...req.body };
+      
+      if (sanitizedData.content) {
+        // Remove DOCTYPE and other XML declarations that might cause issues
+        sanitizedData.content = sanitizedData.content
+          .replace(/<!DOCTYPE[^>]*>/i, '')
+          .replace(/<\?xml[^>]*\?>/gi, '')
+          .replace(/<!--[\s\S]*?-->/g, '')
+          .trim();
+      }
+      
+      const template = await storage.saveEmailTemplate(sanitizedData);
       
       res.status(201).json({
         success: true,
@@ -3512,7 +3524,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/email/templates/:id", authenticateAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const updatedTemplate = await storage.updateEmailTemplate(id, req.body);
+      
+      // Sanitize HTML content to prevent JSON issues
+      const sanitizedData = { ...req.body };
+      
+      if (sanitizedData.content) {
+        // Remove DOCTYPE and other XML declarations that might cause issues
+        sanitizedData.content = sanitizedData.content
+          .replace(/<!DOCTYPE[^>]*>/i, '')
+          .replace(/<\?xml[^>]*\?>/gi, '')
+          .replace(/<!--[\s\S]*?-->/g, '')
+          .trim();
+      }
+      
+      const updatedTemplate = await storage.updateEmailTemplate(id, sanitizedData);
       
       if (!updatedTemplate) {
         return res.status(404).json({
