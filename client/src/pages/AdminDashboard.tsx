@@ -348,8 +348,9 @@ const AdminDashboard: React.FC = () => {
   
   const updatePostMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: typeof formData }) => {
+      // apiRequest already returns the parsed JSON data
       const response = await apiRequest('PATCH', `/api/admin/blog/posts/${id}`, data);
-      return await response.json();
+      return response.data;
     },
     onSuccess: () => {
       toast({
@@ -371,8 +372,9 @@ const AdminDashboard: React.FC = () => {
   
   const deletePostMutation = useMutation({
     mutationFn: async (id: number) => {
+      // apiRequest already returns the parsed JSON data
       const response = await apiRequest('DELETE', `/api/admin/blog/posts/${id}`);
-      return await response.json();
+      return response.data;
     },
     onSuccess: () => {
       toast({
@@ -395,8 +397,9 @@ const AdminDashboard: React.FC = () => {
   // Subscriber mutations
   const addSubscriberMutation = useMutation({
     mutationFn: async (newSubscriber: typeof subscriberFormData) => {
+      // apiRequest already returns the parsed JSON data
       const response = await apiRequest('POST', '/api/admin/subscribers', newSubscriber);
-      return await response.json();
+      return response.data;
     },
     onSuccess: () => {
       toast({
