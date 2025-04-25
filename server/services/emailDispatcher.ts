@@ -63,6 +63,159 @@ export async function getProviderConfig(): Promise<EmailProviderConfig> {
 }
 
 /**
+ * Send subscriber data to the active email service provider
+ * This function is called when a user submits their information through any form
+ * (quiz, lead magnet, blog sidebar, etc.)
+ */
+export async function sendSubscriberToEmailService({
+  name, 
+  email, 
+  source
+}: {
+  name: string;
+  email: string;
+  source?: string;
+}): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    // Get provider configuration
+    const providerConfig = await getProviderConfig();
+    
+    // Determine which service to use
+    const emailServiceSetting = await storage.getSettingByKey('EMAIL_SERVICE');
+    const service = emailServiceSetting?.settingValue || 'sendgrid';
+    
+    // Check if we have a valid API key
+    if (!providerConfig.apiKey) {
+      console.error(`No API key configured for ${service}`);
+      return {
+        success: false,
+        error: `No API key configured for ${service}`
+      };
+    }
+    
+    // Store subscriber in database first 
+    let existingSubscriber = await storage.getSubscriberByEmail(email);
+    
+    if (!existingSubscriber) {
+      // Create new subscriber record
+      existingSubscriber = await storage.saveSubscriber({
+        email,
+        firstName: name,
+        lastName: null,
+        source: source || 'website',
+        unsubscribeToken: generateUnsubscribeToken(email),
+        isSubscribed: true
+      });
+      
+      console.log(`New subscriber added to database: ${name} (${email}) from ${source || 'website'}`);
+    } else {
+      console.log(`Existing subscriber found: ${existingSubscriber.firstName} (${email})`);
+    }
+    
+    // Send to appropriate email provider
+    switch (service) {
+      case 'mailerlite': {
+        try {
+          // Dynamically import to avoid circular dependencies
+          const { sendToMailerLite } = await import('./emailProviders/mailerlite');
+          const result = await sendToMailerLite(email, name, source, providerConfig.apiKey);
+          
+          if (result.success) {
+            return {
+              success: true,
+              message: `Subscriber successfully sent to MailerLite: ${name} (${email})`
+            };
+          } else {
+            return {
+              success: false,
+              error: result.error || 'Unknown error sending to MailerLite'
+            };
+          }
+        } catch (error) {
+          console.error('Error sending to MailerLite:', error);
+          return {
+            success: false,
+            error: `MailerLite error: ${error.message}`
+          };
+        }
+      }
+        
+      case 'brevo': {
+        try {
+          // Dynamically import to avoid circular dependencies
+          const { sendToBrevo } = await import('./emailProviders/brevo');
+          const result = await sendToBrevo(email, name, source, providerConfig.apiKey);
+          
+          if (result.success) {
+            return {
+              success: true,
+              message: `Subscriber successfully sent to Brevo: ${name} (${email})`
+            };
+          } else {
+            return {
+              success: false,
+              error: result.error || 'Unknown error sending to Brevo'
+            };
+          }
+        } catch (error) {
+          console.error('Error sending to Brevo:', error);
+          return {
+            success: false,
+            error: `Brevo error: ${error.message}`
+          };
+        }
+      }
+        
+      case 'sendgrid':
+      default: {
+        try {
+          // Dynamically import to avoid circular dependencies
+          const { sendToSendGrid } = await import('./emailProviders/sendgrid');
+          const result = await sendToSendGrid(email, name, source, providerConfig.apiKey);
+          
+          if (result.success) {
+            return {
+              success: true,
+              message: `Subscriber successfully sent to SendGrid: ${name} (${email})`
+            };
+          } else {
+            return {
+              success: false,
+              error: result.error || 'Unknown error sending to SendGrid'
+            };
+          }
+        } catch (error) {
+          console.error('Error sending to SendGrid:', error);
+          return {
+            success: false,
+            error: `SendGrid error: ${error.message}`
+          };
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in sendSubscriberToEmailService:', error);
+    return {
+      success: false,
+      error: `Failed to send subscriber to email service: ${error.message}`
+    };
+  }
+}
+
+/**
+ * Generate a unique unsubscribe token for new subscribers
+ */
+function generateUnsubscribeToken(email: string): string {
+  const timestamp = Date.now().toString();
+  const randomPart = Math.random().toString(36).substring(2, 10);
+  return Buffer.from(`${email}:${timestamp}:${randomPart}`).toString('base64');
+}
+
+/**
  * Send an email using the configured provider
  */
 export async function sendEmail(
