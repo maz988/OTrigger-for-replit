@@ -26,6 +26,9 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogPost} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/contact-us" component={ContactUs} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/quiz-analytics">
         {() => (

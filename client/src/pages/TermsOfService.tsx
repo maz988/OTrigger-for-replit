@@ -1,6 +1,6 @@
 import React from 'react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { Separator } from '@/components/ui/separator';
 
 const TermsOfService = () => {
@@ -11,7 +11,7 @@ const TermsOfService = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <Header />
       
       <main className="flex-1 container mx-auto py-8 px-4 md:px-6 max-w-4xl">
         <h1 className="text-3xl font-bold mb-6 text-center">Terms of Service</h1>

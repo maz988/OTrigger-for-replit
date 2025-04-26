@@ -1,6 +1,6 @@
 import React from 'react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,7 +81,7 @@ const ContactUs = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <Header />
       
       <main className="flex-1 container mx-auto py-8 px-4 md:px-6">
         <h1 className="text-3xl font-bold mb-6 text-center">Contact Us</h1>
