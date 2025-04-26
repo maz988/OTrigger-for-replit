@@ -707,6 +707,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Website Builder API routes
+  // Public routes (no authentication required)
+  app.get("/api/website/sections", async (req, res) => {
+    try {
+      const sections = await storage.getAllWebsiteSections();
+      res.json({ success: true, data: sections });
+    } catch (error) {
+      console.error('Error getting website sections:', error);
+      res.status(500).json({ success: false, error: 'Failed to get website sections' });
+    }
+  });
+  
+  app.get("/api/website/sections/:id", async (req, res) => {
+    try {
+      const section = await storage.getWebsiteSectionById(req.params.id);
+      if (!section) {
+        return res.status(404).json({ success: false, error: 'Section not found' });
+      }
+      res.json({ success: true, data: section });
+    } catch (error) {
+      console.error('Error getting website section:', error);
+      res.status(500).json({ success: false, error: 'Failed to get website section' });
+    }
+  });
+  
+  // Admin-only website builder routes
+  app.post("/api/admin/website/sections", authenticateAdmin, async (req, res) => {
+    try {
+      const section = await storage.saveWebsiteSection(req.body);
+      res.status(201).json({ success: true, data: section });
+    } catch (error) {
+      console.error('Error creating website section:', error);
+      res.status(500).json({ success: false, error: 'Failed to create website section' });
+    }
+  });
+  
+  app.patch("/api/admin/website/sections/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const section = await storage.updateWebsiteSection(req.params.id, req.body);
+      if (!section) {
+        return res.status(404).json({ success: false, error: 'Section not found' });
+      }
+      res.json({ success: true, data: section });
+    } catch (error) {
+      console.error('Error updating website section:', error);
+      res.status(500).json({ success: false, error: 'Failed to update website section' });
+    }
+  });
+  
+  app.delete("/api/admin/website/sections/:id", authenticateAdmin, async (req, res) => {
+    try {
+      const success = await storage.deleteWebsiteSection(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: 'Section not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting website section:', error);
+      res.status(500).json({ success: false, error: 'Failed to delete website section' });
+    }
+  });
+  
+  app.post("/api/admin/website/sections/reorder", authenticateAdmin, async (req, res) => {
+    try {
+      const { sectionIds } = req.body;
+      if (!sectionIds || !Array.isArray(sectionIds)) {
+        return res.status(400).json({ success: false, error: 'sectionIds array is required' });
+      }
+      
+      const success = await storage.reorderWebsiteSections(sectionIds);
+      if (!success) {
+        return res.status(400).json({ success: false, error: 'Failed to reorder sections, check that all IDs exist' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error reordering website sections:', error);
+      res.status(500).json({ success: false, error: 'Failed to reorder website sections' });
+    }
+  });
+  
+  app.get("/api/admin/website/sections/:id/versions", authenticateAdmin, async (req, res) => {
+    try {
+      const versions = await storage.getSectionVersions(req.params.id);
+      res.json({ success: true, data: versions });
+    } catch (error) {
+      console.error('Error getting section versions:', error);
+      res.status(500).json({ success: false, error: 'Failed to get section versions' });
+    }
+  });
+  
+  app.post("/api/admin/website/versions/:id/restore", authenticateAdmin, async (req, res) => {
+    try {
+      const versionId = parseInt(req.params.id, 10);
+      if (isNaN(versionId)) {
+        return res.status(400).json({ success: false, error: 'Invalid version ID' });
+      }
+      
+      const section = await storage.restoreSectionVersion(versionId);
+      if (!section) {
+        return res.status(404).json({ success: false, error: 'Version not found or section no longer exists' });
+      }
+      
+      res.json({ success: true, data: section });
+    } catch (error) {
+      console.error('Error restoring section version:', error);
+      res.status(500).json({ success: false, error: 'Failed to restore section version' });
+    }
+  });
+  
   // Get current admin user
   app.get("/api/admin/me", authenticateAdmin, async (req, res) => {
     try {
