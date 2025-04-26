@@ -348,22 +348,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Name to use for sending to email service
           const fullName = lastName ? `${firstName} ${lastName}` : firstName;
           
-          // Get the default list ID from settings
+          // First try to get the EMAIL_SERVICE setting to force it to update from the file
+          const emailServiceSetting = await storage.getSettingByKey('EMAIL_SERVICE');
+          if (emailServiceSetting) {
+            // Update the value with brevo to ensure consistency
+            await storage.updateSetting('EMAIL_SERVICE', 'brevo');
+            console.log('Updated EMAIL_SERVICE to brevo for consistency');
+          }
+          
+          // Get the default list ID from settings using uppercase version first
           const listIdSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
-          const listId = listIdSetting?.settingValue || '';
+          let listId = listIdSetting?.settingValue || '';
+          
+          // If uppercase version not found, try the camelCase version as fallback
+          if (!listId) {
+            const camelCaseListIdSetting = await storage.getSettingByKey('defaultListId');
+            listId = camelCaseListIdSetting?.settingValue || '';
+          }
           
           // Debug all available email list settings
           const allSettings = await storage.getAllSettings();
-          const listSettings = allSettings.filter(s => s.settingKey.includes('LIST_ID'));
+          const listSettings = allSettings.filter(s => s.settingKey.includes('LIST_ID') || s.settingKey.includes('ListId'));
           console.log('DEBUG: All available list ID settings for blog lead:', listSettings.map(s => ({
             key: s.settingKey,
             value: s.settingValue
           })));
           
           if (!listId) {
-            console.log(`WARNING: No DEFAULT_LIST_ID setting found for blog subscriber: ${email}`);
+            console.log(`WARNING: No DEFAULT_LIST_ID or defaultListId setting found for blog subscriber: ${email}`);
+            // Use hardcoded value as last resort
+            listId = '2';
           }
-          console.log(`Using list ID ${listId || 'default'} for blog subscriber: ${email}`);
+          
+          console.log(`Using list ID ${listId} for blog subscriber: ${email}`);
           
           // Send to email service
           const result = await sendSubscriberToEmailService({
