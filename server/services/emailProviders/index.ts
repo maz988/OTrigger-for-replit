@@ -139,5 +139,6 @@ export {
   EmailProviderConfig,
   BrevoProvider,
   SendGridProvider,
-  MailerLiteProvider
+  MailerLiteProvider,
+  CustomProvider
 };

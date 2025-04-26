@@ -3183,6 +3183,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Add new custom email provider
+  app.post("/api/admin/email-providers/add", authenticateAdmin, async (req, res) => {
+    try {
+      const { 
+        name, 
+        displayName, 
+        description, 
+        iconUrl,
+        configFields,
+        initialConfig
+      } = req.body;
+      
+      if (!name || !displayName) {
+        return res.status(400).json({
+          success: false,
+          error: "Provider name and display name are required"
+        });
+      }
+      
+      // Normalize name
+      const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      // Import required modules
+      const { 
+        getProvider, 
+        registerProvider, 
+        configureProvider,
+        CustomProvider 
+      } = await import('./services/emailProviders');
+      
+      // Check if a provider with this name already exists
+      const existingProvider = getProvider(normalizedName);
+      if (existingProvider) {
+        return res.status(400).json({
+          success: false,
+          error: `A provider with name '${normalizedName}' already exists`
+        });
+      }
+      
+      // Create a new custom provider
+      try {
+        const provider = new CustomProvider(
+          normalizedName,
+          displayName,
+          description || `Custom provider for ${displayName}`,
+          iconUrl || '/images/email-providers/custom.svg',
+          configFields || []
+        );
+        
+        // Register the provider
+        const registered = registerProvider(provider);
+        
+        if (!registered) {
+          throw new Error(`Failed to register provider '${normalizedName}'`);
+        }
+        
+        // Configure the provider if initial config is provided
+        if (initialConfig) {
+          configureProvider(normalizedName, initialConfig);
+        }
+        
+        // Store the provider configuration in settings
+        await storage.createSetting({
+          settingKey: `EMAIL_PROVIDER_${normalizedName.toUpperCase()}`,
+          settingValue: JSON.stringify({
+            name: normalizedName,
+            displayName,
+            description,
+            iconUrl,
+            configFields,
+            config: initialConfig
+          }),
+          settingType: 'json',
+          description: `Configuration for custom email provider '${displayName}'`,
+          lastUpdated: new Date()
+        });
+        
+        res.status(201).json({
+          success: true,
+          message: `Provider '${displayName}' created successfully`,
+          data: {
+            name: normalizedName,
+            displayName,
+            description,
+            iconUrl
+          }
+        });
+      } catch (error: any) {
+        console.error(`Error creating custom provider: ${error.message}`);
+        return res.status(500).json({
+          success: false,
+          error: error.message || "Failed to create custom provider"
+        });
+      }
+    } catch (err: any) {
+      console.error(`Error adding custom email provider: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
   app.post("/api/admin/email-providers/test-email", authenticateAdmin, async (req, res) => {
     try {
       const { email, providerName, apiKey } = req.body;
