@@ -26,10 +26,19 @@ const BlogCategory: React.FC = () => {
   }, [categorySlug]);
   
   // Get posts by category
-  const { data: posts, isLoading, isError } = useQuery({
+  const { data: postsResponse, isLoading, isError } = useQuery({
     queryKey: ['/api/blog/posts', { category: categorySlug }],
     enabled: !!categorySlug,
+    queryFn: (context) => {
+      const { queryKey } = context;
+      const [endpoint, params] = queryKey;
+      const queryParams = params && typeof params === 'object' ? `?category=${params.category}` : '';
+      console.log(`Fetching from: ${endpoint}${queryParams}`);
+      return fetch(`${endpoint}${queryParams}`).then(res => res.json());
+    }
   });
+  
+  const posts = postsResponse?.success && postsResponse?.data ? postsResponse.data : [];
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">

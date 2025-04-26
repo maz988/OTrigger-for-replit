@@ -23,7 +23,13 @@ interface BlogPostListProps {
 const BlogPostList: React.FC<BlogPostListProps> = ({ categorySlug }) => {
   const { data: blogPostsResponse, isLoading } = useQuery({
     queryKey: ['/api/blog/posts', categorySlug ? { category: categorySlug } : undefined],
-    queryFn: getQueryFn<BlogPost[]>(),
+    queryFn: (context) => {
+      const { queryKey } = context;
+      const [endpoint, params] = queryKey;
+      const queryParams = params && typeof params === 'object' ? `?category=${params.category}` : '';
+      console.log(`BlogPostList: Fetching from: ${endpoint}${queryParams}`);
+      return fetch(`${endpoint}${queryParams}`).then(res => res.json());
+    }
   });
 
   const blogPosts = blogPostsResponse?.success && blogPostsResponse?.data ? 
@@ -74,7 +80,7 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ categorySlug }) => {
 
   return (
     <div className="space-y-6">
-      {blogPosts.map((post) => (
+      {blogPosts.map((post: BlogPost) => (
         <Card key={post.id} className="overflow-hidden hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl text-[#f24b7c]">{post.title}</CardTitle>

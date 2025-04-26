@@ -79,6 +79,7 @@ export default function BlogSidebar({
                   key={category.slug}
                   href={`/blog/category/${category.slug}`}
                   className="block text-[#f24b7c] hover:underline"
+                  onClick={() => console.log(`Navigating to category: ${category.slug}`)}
                 >
                   {category.name}
                 </Link>
