@@ -47,7 +47,16 @@ interface ApiKeySettings {
   sendgridApiKey: string;
   mailerliteApiKey: string;
   brevoApiKey: string;
-  activeEmailService: 'sendgrid' | 'mailerlite' | 'brevo' | 'none';
+  omnisendApiKey: string;
+  mailchimpApiKey: string;
+  mailchimpServerPrefix: string;
+  sendpulseUserId: string;
+  sendpulseApiKey: string;
+  aweberAccessToken: string;
+  aweberAccountId: string;
+  convertkitApiKey: string;
+  convertkitApiSecret: string;
+  activeEmailService: 'sendgrid' | 'mailerlite' | 'brevo' | 'omnisend' | 'mailchimp' | 'sendpulse' | 'aweber' | 'convertkit' | 'none';
   senderEmail: string;
   leadMagnetFolder: string;
   autoEmailDelivery: boolean;
@@ -72,6 +81,15 @@ const defaultSettings: ApiKeySettings = {
   sendgridApiKey: '',
   mailerliteApiKey: '',
   brevoApiKey: '',
+  omnisendApiKey: '',
+  mailchimpApiKey: '',
+  mailchimpServerPrefix: '',
+  sendpulseUserId: '',
+  sendpulseApiKey: '',
+  aweberAccessToken: '',
+  aweberAccountId: '',
+  convertkitApiKey: '',
+  convertkitApiSecret: '',
   activeEmailService: 'none',
   senderEmail: '',
   leadMagnetFolder: 'lead_magnets',
@@ -98,7 +116,16 @@ const apiKeySettingsSchema = z.object({
   sendgridApiKey: z.string().optional(),
   mailerliteApiKey: z.string().optional(),
   brevoApiKey: z.string().optional(),
-  activeEmailService: z.enum(['sendgrid', 'mailerlite', 'brevo', 'none']),
+  omnisendApiKey: z.string().optional(),
+  mailchimpApiKey: z.string().optional(),
+  mailchimpServerPrefix: z.string().optional(),
+  sendpulseUserId: z.string().optional(),
+  sendpulseApiKey: z.string().optional(),
+  aweberAccessToken: z.string().optional(),
+  aweberAccountId: z.string().optional(),
+  convertkitApiKey: z.string().optional(),
+  convertkitApiSecret: z.string().optional(),
+  activeEmailService: z.enum(['sendgrid', 'mailerlite', 'brevo', 'omnisend', 'mailchimp', 'sendpulse', 'aweber', 'convertkit', 'none']),
   senderEmail: z.string().email().optional(),
   leadMagnetFolder: z.string(),
   autoEmailDelivery: z.boolean(),
@@ -262,6 +289,24 @@ const SettingsPage: React.FC = () => {
         'mailerliteApiKey': 'mailerliteApiKey',
         'BREVO_API_KEY': 'brevoApiKey',
         'brevoApiKey': 'brevoApiKey',
+        'OMNISEND_API_KEY': 'omnisendApiKey',
+        'omnisendApiKey': 'omnisendApiKey',
+        'MAILCHIMP_API_KEY': 'mailchimpApiKey',
+        'mailchimpApiKey': 'mailchimpApiKey',
+        'MAILCHIMP_SERVER_PREFIX': 'mailchimpServerPrefix',
+        'mailchimpServerPrefix': 'mailchimpServerPrefix',
+        'SENDPULSE_USER_ID': 'sendpulseUserId',
+        'sendpulseUserId': 'sendpulseUserId',
+        'SENDPULSE_API_KEY': 'sendpulseApiKey',
+        'sendpulseApiKey': 'sendpulseApiKey',
+        'AWEBER_ACCESS_TOKEN': 'aweberAccessToken',
+        'aweberAccessToken': 'aweberAccessToken',
+        'AWEBER_ACCOUNT_ID': 'aweberAccountId',
+        'aweberAccountId': 'aweberAccountId',
+        'CONVERTKIT_API_KEY': 'convertkitApiKey',
+        'convertkitApiKey': 'convertkitApiKey',
+        'CONVERTKIT_API_SECRET': 'convertkitApiSecret',
+        'convertkitApiSecret': 'convertkitApiSecret',
         'autoEmailDelivery': 'autoEmailDelivery',
         'useExternalStorage': 'useExternalStorage',
         'autoBlogPublishing': 'autoBlogPublishing',
@@ -1204,6 +1249,11 @@ const SettingsPage: React.FC = () => {
                               <SelectItem value="sendgrid">SendGrid</SelectItem>
                               <SelectItem value="mailerlite">MailerLite</SelectItem>
                               <SelectItem value="brevo">Brevo (Sendinblue)</SelectItem>
+                              <SelectItem value="omnisend">Omnisend</SelectItem>
+                              <SelectItem value="mailchimp">Mailchimp</SelectItem>
+                              <SelectItem value="sendpulse">SendPulse</SelectItem>
+                              <SelectItem value="aweber">AWeber</SelectItem>
+                              <SelectItem value="convertkit">ConvertKit</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormDescription>
