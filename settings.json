@@ -1,0 +1,221 @@
+{
+  "settings": {
+    "BREVO_API_KEY": {
+      "settingKey": "BREVO_API_KEY",
+      "settingValue": "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",
+      "settingType": "string",
+      "description": "Brevo API Key",
+      "id": 17,
+      "lastUpdated": "2025-04-26T19:08:53.757Z"
+    },
+    "EMAIL_SERVICE": {
+      "id": 5,
+      "settingKey": "EMAIL_SERVICE",
+      "settingValue": "brevo",
+      "settingType": "string",
+      "lastUpdated": "2025-04-26T19:14:05.689Z",
+      "description": "Primary email service provider"
+    },
+    "openaiApiKey": {
+      "settingKey": "openaiApiKey",
+      "settingValue": "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",
+      "settingType": "string",
+      "description": "OpenAI API Key for AI content generation",
+      "id": 18,
+      "lastUpdated": "2025-04-26T19:09:18.724Z"
+    },
+    "geminiApiKey": {
+      "settingKey": "geminiApiKey",
+      "settingValue": "AIzaSyDhz9GvjNholxcoeKHmY0zE7ifTvMEo0vQ",
+      "settingType": "string",
+      "description": "Google Gemini API Key for AI content enhancement",
+      "id": 19,
+      "lastUpdated": "2025-04-26T19:09:18.725Z"
+    },
+    "defaultAiProvider": {
+      "settingKey": "defaultAiProvider",
+      "settingValue": "both",
+      "settingType": "string",
+      "description": "Default AI provider to use for content generation",
+      "id": 20,
+      "lastUpdated": "2025-04-26T19:09:18.726Z"
+    },
+    "pexelsApiKey": {
+      "settingKey": "pexelsApiKey",
+      "settingValue": "NokF4DGRgLaDJuPEL2lzaLs4aF8XLnkCQU7PbemKkT4BCcV5pdZC7RFc",
+      "settingType": "string",
+      "description": "Pexels API Key for blog images",
+      "id": 21,
+      "lastUpdated": "2025-04-26T19:09:18.728Z"
+    },
+    "unsplashApiKey": {
+      "settingKey": "unsplashApiKey",
+      "settingValue": "",
+      "settingType": "string",
+      "description": "Unsplash API Key for alternative blog images",
+      "id": 22,
+      "lastUpdated": "2025-04-26T19:09:18.729Z"
+    },
+    "defaultImageProvider": {
+      "settingKey": "defaultImageProvider",
+      "settingValue": "pexels",
+      "settingType": "string",
+      "description": "Default image provider to use",
+      "id": 23,
+      "lastUpdated": "2025-04-26T19:09:18.730Z"
+    },
+    "sendgridApiKey": {
+      "settingKey": "sendgridApiKey",
+      "settingValue": "",
+      "settingType": "string",
+      "description": "SendGrid API Key for email delivery",
+      "id": 24,
+      "lastUpdated": "2025-04-26T19:09:18.731Z"
+    },
+    "mailerliteApiKey": {
+      "settingKey": "mailerliteApiKey",
+      "settingValue": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0IiwianRpIjoiZTdlOTMwNzA2MTg5ZGVmYzMwNmVlZTFhYzQ1ODg1M2RiOWJiMTU3OTdiZjUxZjlhMGY2MTBmMmFjZmI3NGI3Njc0ZDRmYTlkNjEwZDI0YmMiLCJpYXQiOjE3NDU1MzUwMjMuNDk5MzcxLCJuYmYiOjE3NDU1MzUwMjMuNDk5MzczLCJleHAiOjQ5MDEyMDg2MjMuNDk0MzY2LCJzdWIiOiIxMDI0NTg0Iiwic2NvcGVzIjpbXX0.Bj2Z1hoI-KgIBkXO_XiBlZP55tXoWoZPYGQ8KUrTF5zqJ9OyY3bVAe43dhZt6I5LkSt41w1FFMwaESFDClV-cnsSLg40oXIHKPfnYzGtgRJBtL6Nn2UgioflAv7OWOVC5fdVwlb1MPyNeAqBhBJ3Yb51HOhRFbKxHJkdVFSQNfQXwEokezM6Buh4F9wOenr1GBmeRpIkKXk-7JN-rkb0IoSy7pt5nZsGSvcH8pzhfU8fDI9PATAYhLPTXI1ZXsQSIXlgUdCte1OJq71eA7PhbH8CkzwDSPFc_ROkbKCfeWZ63_Al3Q1FQSXpzaI2GNCR_6V9z7MnWKyeoj89YWYDDec6g6fUrXLxF6nHMQcPRI6d8DtuYGnMHeJEO9rZ3Y_iuHEJDvaSXvujSdruopV4CjRXubQIXTJL7bBztvV_fSk4cm71K0ntpWRirg4XFvP4Y3YuW-aMuqvddxlVP1BoErZj7EWfUpIPavZVxtjVKRhd4kUxM1FE4mh_cA4CVUqLiA1MGP7fuqdKvZc2mrkdGlKmLc4U-G-CvVizpN0-xzQ90mBPIDo5mOq6l7-9YztCfnBCexknlyDv91vnlrBS74Q0LobjSmyxodFzLqRumJyJfd7FHpQfcw5n4CyRZeCI1O9KR5IB85h0aLhtysjaNhZW4NcaXSwxQknJlz43dFs",
+      "settingType": "string",
+      "description": "MailerLite API Key for email marketing",
+      "id": 25,
+      "lastUpdated": "2025-04-26T19:09:18.732Z"
+    },
+    "brevoApiKey": {
+      "settingKey": "brevoApiKey",
+      "settingValue": "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",
+      "settingType": "string",
+      "description": "Brevo API Key for alternative email delivery",
+      "id": 26,
+      "lastUpdated": "2025-04-26T19:09:18.734Z"
+    },
+    "activeEmailService": {
+      "settingKey": "activeEmailService",
+      "settingValue": "brevo",
+      "settingType": "string",
+      "description": "Currently active email service provider",
+      "id": 27,
+      "lastUpdated": "2025-04-26T19:09:18.735Z"
+    },
+    "senderEmail": {
+      "settingKey": "senderEmail",
+      "settingValue": "",
+      "settingType": "string",
+      "description": "Default sender email address",
+      "id": 28,
+      "lastUpdated": "2025-04-26T19:09:18.736Z"
+    },
+    "leadMagnetFolder": {
+      "settingKey": "leadMagnetFolder",
+      "settingValue": "lead_magnets",
+      "settingType": "string",
+      "description": "Folder where lead magnets are stored",
+      "id": 29,
+      "lastUpdated": "2025-04-26T19:09:18.737Z"
+    },
+    "autoEmailDelivery": {
+      "settingKey": "autoEmailDelivery",
+      "settingValue": "true",
+      "settingType": "string",
+      "description": "Enable automatic email delivery for lead magnets",
+      "id": 30,
+      "lastUpdated": "2025-04-26T19:09:18.738Z"
+    },
+    "useExternalStorage": {
+      "settingKey": "useExternalStorage",
+      "settingValue": "false",
+      "settingType": "string",
+      "description": "Use external storage for media assets",
+      "id": 31,
+      "lastUpdated": "2025-04-26T19:09:18.739Z"
+    },
+    "externalStorageProvider": {
+      "settingKey": "externalStorageProvider",
+      "settingValue": "none",
+      "settingType": "string",
+      "description": "External storage provider to use",
+      "id": 32,
+      "lastUpdated": "2025-04-26T19:09:18.741Z"
+    },
+    "externalStorageKey": {
+      "settingKey": "externalStorageKey",
+      "settingValue": "",
+      "settingType": "string",
+      "description": "API Key or configuration for external storage",
+      "id": 33,
+      "lastUpdated": "2025-04-26T19:09:18.744Z"
+    },
+    "blogKeywordsFile": {
+      "settingKey": "blogKeywordsFile",
+      "settingValue": "keywords.txt",
+      "settingType": "string",
+      "description": "File path for blog keywords list",
+      "id": 34,
+      "lastUpdated": "2025-04-26T19:09:18.744Z"
+    },
+    "autoBlogPublishing": {
+      "settingKey": "autoBlogPublishing",
+      "settingValue": "false",
+      "settingType": "string",
+      "description": "Enable automatic blog post generation and publishing",
+      "id": 35,
+      "lastUpdated": "2025-04-26T19:09:18.746Z"
+    },
+    "pdfGuideImageUrl": {
+      "settingKey": "pdfGuideImageUrl",
+      "settingValue": "/images/pdf-guide-icon.svg",
+      "settingType": "string",
+      "description": "Setting for pdfGuideImageUrl",
+      "id": 36,
+      "lastUpdated": "2025-04-26T19:09:18.747Z"
+    },
+    "quizListId": {
+      "settingKey": "quizListId",
+      "settingValue": "2",
+      "settingType": "string",
+      "description": "Setting for quizListId",
+      "id": 37,
+      "lastUpdated": "2025-04-26T19:09:18.747Z"
+    },
+    "leadMagnetListId": {
+      "settingKey": "leadMagnetListId",
+      "settingValue": "2",
+      "settingType": "string",
+      "description": "Setting for leadMagnetListId",
+      "id": 38,
+      "lastUpdated": "2025-04-26T19:09:18.749Z"
+    },
+    "defaultListId": {
+      "settingKey": "defaultListId",
+      "settingValue": "2",
+      "settingType": "string",
+      "description": "Setting for defaultListId",
+      "id": 39,
+      "lastUpdated": "2025-04-26T19:09:18.751Z"
+    },
+    "QUIZ_LIST_ID": {
+      "settingKey": "QUIZ_LIST_ID",
+      "settingValue": "2",
+      "settingType": "string",
+      "description": "Email list ID for quiz subscribers",
+      "id": 40,
+      "lastUpdated": "2025-04-26T19:09:18.752Z"
+    },
+    "LEAD_MAGNET_LIST_ID": {
+      "settingKey": "LEAD_MAGNET_LIST_ID",
+      "settingValue": "2",
+      "settingType": "string",
+      "description": "Email list ID for lead magnet subscribers",
+      "id": 41,
+      "lastUpdated": "2025-04-26T19:09:18.753Z"
+    },
+    "DEFAULT_LIST_ID": {
+      "settingKey": "DEFAULT_LIST_ID",
+      "settingValue": "2",
+      "settingType": "string",
+      "description": "Default email list ID for subscribers when not specified",
+      "id": 42,
+      "lastUpdated": "2025-04-26T19:09:18.754Z"
+    }
+  },
+  "lastUpdated": "2025-04-26T19:14:05.689Z"
+}

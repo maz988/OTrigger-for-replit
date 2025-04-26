@@ -186,11 +186,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Determine which list ID to use based on source
       let listIdSetting;
-      if (source === 'quiz') {
+      if (source === 'quiz' || source === 'quiz-result' || source === 'quiz-form') {
+        // Quiz-related sources
         listIdSetting = await storage.getSettingByKey('QUIZ_LIST_ID');
-      } else if (source === 'lead-magnet') {
+      } else if (source === 'lead-magnet' || source === 'lead_magnet' || source === 'pdf-guide') {
+        // Lead magnet related sources
         listIdSetting = await storage.getSettingByKey('LEAD_MAGNET_LIST_ID');
       } else {
+        // All other sources (blog-sidebar, homepage, footer, etc.)
         listIdSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
       }
       
