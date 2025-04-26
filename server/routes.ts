@@ -2541,6 +2541,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { serviceType } = req.params;
       
+      console.log(`Testing service connection for: ${serviceType}`, req.body);
+      
       switch(serviceType) {
         case 'sendgrid': {
           const apiKey = req.body.apiKey || process.env.SENDGRID_API_KEY;
