@@ -4000,6 +4000,330 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         }
         
+        case 'omnisend': {
+          const apiKey = settingsObj.omnisendApiKey || settingsObj.OMNISEND_API_KEY || process.env.OMNISEND_API_KEY;
+          console.log("Using Omnisend API key:", apiKey ? `${apiKey.substring(0, 5)}...` : "none");
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "Omnisend API key not configured"
+            });
+          }
+          
+          try {
+            // Get all lists from Omnisend
+            const response = await fetch('https://api.omnisend.com/v3/lists', {
+              method: 'GET',
+              headers: {
+                'X-API-KEY': apiKey,
+                'Accept': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Omnisend lists found:", data.lists?.length || 0);
+              
+              if (data.lists && Array.isArray(data.lists)) {
+                lists = data.lists.map((list: any) => ({
+                  id: list.listID,
+                  name: list.name,
+                  subscriberCount: list.count || 0,
+                  description: list.name,
+                  createdAt: list.dateCreated || new Date().toISOString(),
+                  isDefault: false
+                }));
+              } else {
+                console.log("Unexpected Omnisend response format:", data);
+                throw new Error("Unexpected response format from Omnisend API");
+              }
+            } else {
+              const errorData = await response.json().catch(() => ({ message: response.statusText }));
+              throw new Error(`Omnisend API error: ${response.status} - ${errorData.message || response.statusText}`);
+            }
+          } catch (error: any) {
+            console.error("Error fetching Omnisend lists:", error);
+            return res.status(500).json({
+              success: false,
+              error: error.message || "Failed to fetch Omnisend lists"
+            });
+          }
+          break;
+        }
+        
+        case 'mailchimp': {
+          const apiKey = settingsObj.mailchimpApiKey || settingsObj.MAILCHIMP_API_KEY || process.env.MAILCHIMP_API_KEY;
+          const serverPrefix = settingsObj.mailchimpServerPrefix || settingsObj.MAILCHIMP_SERVER_PREFIX || process.env.MAILCHIMP_SERVER_PREFIX;
+          console.log("Using Mailchimp API key:", apiKey ? `${apiKey.substring(0, 5)}...` : "none");
+          
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "Mailchimp API key not configured"
+            });
+          }
+          
+          if (!serverPrefix) {
+            return res.status(400).json({
+              success: false,
+              error: "Mailchimp server prefix not configured"
+            });
+          }
+          
+          try {
+            // Get all lists from Mailchimp
+            const response = await fetch(`https://${serverPrefix}.api.mailchimp.com/3.0/lists?count=100`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Basic ${Buffer.from(`anystring:${apiKey}`).toString('base64')}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Mailchimp lists found:", data.lists?.length || 0);
+              
+              if (data.lists && Array.isArray(data.lists)) {
+                lists = data.lists.map((list: any) => ({
+                  id: list.id,
+                  name: list.name,
+                  subscriberCount: list.stats?.member_count || 0,
+                  description: list.description || list.name,
+                  createdAt: list.date_created || new Date().toISOString(),
+                  isDefault: false
+                }));
+              } else {
+                console.log("Unexpected Mailchimp response format:", data);
+                throw new Error("Unexpected response format from Mailchimp API");
+              }
+            } else {
+              const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+              throw new Error(`Mailchimp API error: ${response.status} - ${errorData.detail || response.statusText}`);
+            }
+          } catch (error: any) {
+            console.error("Error fetching Mailchimp lists:", error);
+            return res.status(500).json({
+              success: false,
+              error: error.message || "Failed to fetch Mailchimp lists"
+            });
+          }
+          break;
+        }
+        
+        case 'sendpulse': {
+          const clientId = settingsObj.sendpulseClientId || settingsObj.SENDPULSE_CLIENT_ID || process.env.SENDPULSE_CLIENT_ID;
+          const clientSecret = settingsObj.sendpulseClientSecret || settingsObj.SENDPULSE_CLIENT_SECRET || process.env.SENDPULSE_CLIENT_SECRET;
+          console.log("Using SendPulse credentials:", clientId ? `${clientId.substring(0, 5)}...` : "none");
+          
+          if (!clientId || !clientSecret) {
+            return res.status(400).json({
+              success: false,
+              error: "SendPulse client ID or client secret not configured"
+            });
+          }
+          
+          try {
+            // First get the access token
+            const tokenResponse = await fetch('https://api.sendpulse.com/oauth/access_token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                grant_type: 'client_credentials',
+                client_id: clientId,
+                client_secret: clientSecret
+              })
+            });
+            
+            if (!tokenResponse.ok) {
+              const errorData = await tokenResponse.json().catch(() => ({ error_description: tokenResponse.statusText }));
+              throw new Error(`SendPulse auth error: ${tokenResponse.status} - ${errorData.error_description || tokenResponse.statusText}`);
+            }
+            
+            const tokenData = await tokenResponse.json();
+            const accessToken = tokenData.access_token;
+            
+            // Now get the address books (lists)
+            const response = await fetch('https://api.sendpulse.com/addressbooks', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log("SendPulse addressbooks found:", data?.length || 0);
+              
+              if (Array.isArray(data)) {
+                lists = data.map((book: any) => ({
+                  id: book.id.toString(),
+                  name: book.name,
+                  subscriberCount: book.all_email_qty || 0,
+                  description: book.description || book.name,
+                  createdAt: book.create_date || new Date().toISOString(),
+                  isDefault: false
+                }));
+              } else {
+                console.log("Unexpected SendPulse response format:", data);
+                throw new Error("Unexpected response format from SendPulse API");
+              }
+            } else {
+              const errorData = await response.json().catch(() => ({ message: response.statusText }));
+              throw new Error(`SendPulse API error: ${response.status} - ${errorData.message || response.statusText}`);
+            }
+          } catch (error: any) {
+            console.error("Error fetching SendPulse lists:", error);
+            return res.status(500).json({
+              success: false,
+              error: error.message || "Failed to fetch SendPulse lists"
+            });
+          }
+          break;
+        }
+        
+        case 'aweber': {
+          const accessToken = settingsObj.aweberAccessToken || settingsObj.AWEBER_ACCESS_TOKEN || process.env.AWEBER_ACCESS_TOKEN;
+          console.log("Using AWeber access token:", accessToken ? `${accessToken.substring(0, 5)}...` : "none");
+          
+          if (!accessToken) {
+            return res.status(400).json({
+              success: false,
+              error: "AWeber access token not configured"
+            });
+          }
+          
+          try {
+            // Get all lists from AWeber
+            const response = await fetch('https://api.aweber.com/1.0/accounts/1/lists', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log("AWeber lists found:", data.entries?.length || 0);
+              
+              if (data.entries && Array.isArray(data.entries)) {
+                lists = data.entries.map((list: any) => ({
+                  id: list.id.toString(),
+                  name: list.name,
+                  subscriberCount: list.total_subscribers || 0,
+                  description: list.description || list.name,
+                  createdAt: new Date().toISOString(), // AWeber doesn't provide creation date in the lists endpoint
+                  isDefault: false
+                }));
+              } else {
+                console.log("Unexpected AWeber response format:", data);
+                throw new Error("Unexpected response format from AWeber API");
+              }
+            } else {
+              const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
+              throw new Error(`AWeber API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+            }
+          } catch (error: any) {
+            console.error("Error fetching AWeber lists:", error);
+            return res.status(500).json({
+              success: false,
+              error: error.message || "Failed to fetch AWeber lists"
+            });
+          }
+          break;
+        }
+        
+        case 'convertkit': {
+          const apiKey = settingsObj.convertkitApiKey || settingsObj.CONVERTKIT_API_KEY || process.env.CONVERTKIT_API_KEY;
+          console.log("Using ConvertKit API key:", apiKey ? `${apiKey.substring(0, 5)}...` : "none");
+          
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "ConvertKit API key not configured"
+            });
+          }
+          
+          try {
+            // Get all forms from ConvertKit (they function like lists)
+            const response = await fetch(`https://api.convertkit.com/v3/forms?api_key=${apiKey}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log("ConvertKit forms found:", data.forms?.length || 0);
+              
+              // Get all tags as well (they can also function as lists)
+              const tagsResponse = await fetch(`https://api.convertkit.com/v3/tags?api_key=${apiKey}`, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              if (tagsResponse.ok) {
+                const tagsData = await tagsResponse.json();
+                console.log("ConvertKit tags found:", tagsData.tags?.length || 0);
+                
+                // Combine forms and tags as available lists
+                const formsList = Array.isArray(data.forms) ? data.forms.map((form: any) => ({
+                  id: `form_${form.id}`,
+                  name: `Form: ${form.name}`,
+                  subscriberCount: form.subscribers_count || 0,
+                  description: form.description || form.name,
+                  createdAt: new Date().toISOString(), // ConvertKit doesn't provide creation date
+                  isDefault: false
+                })) : [];
+                
+                const tagsList = Array.isArray(tagsData.tags) ? tagsData.tags.map((tag: any) => ({
+                  id: `tag_${tag.id}`,
+                  name: `Tag: ${tag.name}`,
+                  subscriberCount: tag.subscriber_count || 0,
+                  description: tag.name,
+                  createdAt: new Date().toISOString(), // ConvertKit doesn't provide creation date
+                  isDefault: false
+                })) : [];
+                
+                // Combine both lists
+                lists = [...formsList, ...tagsList];
+              } else {
+                // If tags endpoint fails, just use forms
+                if (Array.isArray(data.forms)) {
+                  lists = data.forms.map((form: any) => ({
+                    id: `form_${form.id}`,
+                    name: `Form: ${form.name}`,
+                    subscriberCount: form.subscribers_count || 0,
+                    description: form.description || form.name,
+                    createdAt: new Date().toISOString(),
+                    isDefault: false
+                  }));
+                } else {
+                  console.log("Unexpected ConvertKit response format:", data);
+                  throw new Error("Unexpected response format from ConvertKit API");
+                }
+              }
+            } else {
+              const errorData = await response.json().catch(() => ({ error: response.statusText }));
+              throw new Error(`ConvertKit API error: ${response.status} - ${errorData.error || response.statusText}`);
+            }
+          } catch (error: any) {
+            console.error("Error fetching ConvertKit lists:", error);
+            return res.status(500).json({
+              success: false,
+              error: error.message || "Failed to fetch ConvertKit lists"
+            });
+          }
+          break;
+        }
+        
         default:
           return res.status(400).json({
             success: false,
