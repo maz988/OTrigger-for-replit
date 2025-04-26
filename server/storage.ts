@@ -41,7 +41,11 @@ import {
   type NotificationTemplate,
   type InsertNotificationTemplate,
   type NotificationLog,
-  type InsertNotificationLog
+  type InsertNotificationLog,
+  type WebsiteSection,
+  type InsertWebsiteSection,
+  type SectionVersion,
+  type InsertSectionVersion
 } from "@shared/schema";
 import { loadSettings, saveSetting as persistSetting, deleteSetting as persistDeleteSetting } from './settingsPersistence';
 
@@ -213,6 +217,19 @@ export interface IStorage {
   getAllNotificationLogs(): Promise<NotificationLog[]>;
   getNotificationLogsBySubscriberId(subscriberId: number): Promise<NotificationLog[]>;
   logNotification(log: InsertNotificationLog): Promise<NotificationLog>;
+
+  // Website Builder methods
+  getAllWebsiteSections(): Promise<WebsiteSection[]>;
+  getWebsiteSectionById(id: string): Promise<WebsiteSection | undefined>;
+  saveWebsiteSection(section: InsertWebsiteSection): Promise<WebsiteSection>;
+  updateWebsiteSection(id: string, section: Partial<InsertWebsiteSection>): Promise<WebsiteSection | undefined>;
+  deleteWebsiteSection(id: string): Promise<boolean>;
+  reorderWebsiteSections(sectionIds: string[]): Promise<boolean>;
+  
+  // Section Version History methods
+  getSectionVersions(sectionId: string): Promise<SectionVersion[]>;
+  saveSectionVersion(version: InsertSectionVersion): Promise<SectionVersion>;
+  restoreSectionVersion(versionId: number): Promise<WebsiteSection | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -230,6 +247,8 @@ export class MemStorage implements IStorage {
   private systemSettings: Map<string, SystemSetting>;
   private notificationTemplates: Map<number, NotificationTemplate>;
   private notificationLogs: Map<number, NotificationLog>;
+  private websiteSections: Map<string, WebsiteSection>;
+  private sectionVersions: Map<number, SectionVersion>;
   private keywords: Set<string>;
   private autoSchedulingEnabled: boolean;
   
@@ -345,6 +364,8 @@ export class MemStorage implements IStorage {
   private notificationTemplateCurrentId: number;
   private notificationLogCurrentId: number;
 
+  private sectionVersionCurrentId: number;
+  
   constructor() {
     this.users = new Map();
     this.quizResponses = new Map();
@@ -360,6 +381,8 @@ export class MemStorage implements IStorage {
     this.systemSettings = new Map();
     this.notificationTemplates = new Map();
     this.notificationLogs = new Map();
+    this.websiteSections = new Map();
+    this.sectionVersions = new Map();
     this.keywords = new Set();
     this.autoSchedulingEnabled = true;
     
@@ -377,6 +400,7 @@ export class MemStorage implements IStorage {
     this.systemSettingCurrentId = 1;
     this.notificationTemplateCurrentId = 1;
     this.notificationLogCurrentId = 1;
+    this.sectionVersionCurrentId = 1;
     
     // Create a default admin user with password "admin123"
     this.createDefaultAdmin();
@@ -1941,6 +1965,162 @@ If you'd like a personalized assessment of your unique relationship situation, t
     }
     
     console.log('Default notification templates initialized');
+  }
+
+  // Website Builder methods
+  async getAllWebsiteSections(): Promise<WebsiteSection[]> {
+    return Array.from(this.websiteSections.values())
+      .sort((a, b) => a.order - b.order);
+  }
+  
+  async getWebsiteSectionById(id: string): Promise<WebsiteSection | undefined> {
+    return this.websiteSections.get(id);
+  }
+  
+  async saveWebsiteSection(section: InsertWebsiteSection): Promise<WebsiteSection> {
+    // Generate UUID for the new section
+    const id = crypto.randomUUID();
+    
+    const websiteSection: WebsiteSection = {
+      ...section,
+      id,
+      visible: section.visible ?? true,
+      order: section.order ?? 999, // Default to end of list if no order provided
+      settings: section.settings ?? {},
+      createdAt: new Date(),
+      updatedAt: null
+    };
+    
+    this.websiteSections.set(id, websiteSection);
+    
+    // Create initial version history
+    this.saveSectionVersion({
+      sectionId: id,
+      settings: websiteSection.settings,
+      createdBy: null,
+      versionNote: 'Initial version'
+    });
+    
+    return websiteSection;
+  }
+  
+  async updateWebsiteSection(id: string, updates: Partial<InsertWebsiteSection>): Promise<WebsiteSection | undefined> {
+    const section = this.websiteSections.get(id);
+    
+    if (!section) {
+      return undefined;
+    }
+    
+    // Create updated section with new values
+    const updatedSection: WebsiteSection = {
+      ...section,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.websiteSections.set(id, updatedSection);
+    
+    // If settings were updated, create a new version entry
+    if (updates.settings) {
+      this.saveSectionVersion({
+        sectionId: id,
+        settings: updatedSection.settings,
+        createdBy: null,
+        versionNote: 'Updated settings'
+      });
+    }
+    
+    return updatedSection;
+  }
+  
+  async deleteWebsiteSection(id: string): Promise<boolean> {
+    if (!this.websiteSections.has(id)) {
+      return false;
+    }
+    
+    this.websiteSections.delete(id);
+    
+    // Delete associated versions
+    const versionsToDelete = Array.from(this.sectionVersions.entries())
+      .filter(([_, version]) => version.sectionId === id);
+      
+    for (const [versionId, _] of versionsToDelete) {
+      this.sectionVersions.delete(versionId);
+    }
+    
+    return true;
+  }
+  
+  async reorderWebsiteSections(sectionIds: string[]): Promise<boolean> {
+    // Validate that all sections exist
+    for (const id of sectionIds) {
+      if (!this.websiteSections.has(id)) {
+        return false;
+      }
+    }
+    
+    // Update order of all provided sections
+    sectionIds.forEach((id, index) => {
+      const section = this.websiteSections.get(id);
+      if (section) {
+        section.order = index;
+      }
+    });
+    
+    return true;
+  }
+  
+  // Section Version History methods
+  async getSectionVersions(sectionId: string): Promise<SectionVersion[]> {
+    return Array.from(this.sectionVersions.values())
+      .filter(version => version.sectionId === sectionId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Most recent first
+  }
+  
+  async saveSectionVersion(version: InsertSectionVersion): Promise<SectionVersion> {
+    const id = this.sectionVersionCurrentId++;
+    
+    const sectionVersion: SectionVersion = {
+      ...version,
+      id,
+      createdAt: new Date()
+    };
+    
+    this.sectionVersions.set(id, sectionVersion);
+    return sectionVersion;
+  }
+  
+  async restoreSectionVersion(versionId: number): Promise<WebsiteSection | undefined> {
+    const version = this.sectionVersions.get(versionId);
+    
+    if (!version) {
+      return undefined;
+    }
+    
+    const section = this.websiteSections.get(version.sectionId);
+    
+    if (!section) {
+      return undefined;
+    }
+    
+    // Update the section with the version's settings
+    const updatedSection: WebsiteSection = {
+      ...section,
+      settings: version.settings,
+      updatedAt: new Date()
+    };
+    
+    this.websiteSections.set(section.id, updatedSection);
+    
+    // Create a new version entry for the restore
+    this.saveSectionVersion({
+      sectionId: section.id,
+      settings: version.settings,
+      createdBy: version.createdBy,
+      versionNote: `Restored from version ${versionId}`
+    });
+    
+    return updatedSection;
   }
 }
 
