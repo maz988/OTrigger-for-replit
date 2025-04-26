@@ -174,9 +174,6 @@ const SettingsPage: React.FC = () => {
   const [testResults, setTestResults] = useState<{success: boolean, message: string} | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [loadingLists, setLoadingLists] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<EmailProvider | null>(null);
-  const [isProviderConfigDialogOpen, setIsProviderConfigDialogOpen] = useState(false);
-  const [isNewProviderDialogOpen, setIsNewProviderDialogOpen] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState('');
   
   // Fetch settings
