@@ -2194,6 +2194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Convert boolean values to strings for storage
         const stringValue = typeof value === 'boolean' ? value.toString() : value?.toString() || '';
         
+        // Save with the original key
         if (existing) {
           await storage.updateSetting(key, stringValue);
         } else {
@@ -2204,6 +2205,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
             settingType,
             description: getDescriptionForSetting(key)
           });
+        }
+        
+        // Special handling for list IDs - ensure we have standardized uppercase versions
+        if (key === 'quizListId') {
+          await storage.saveSetting({
+            settingKey: 'QUIZ_LIST_ID',
+            settingValue: stringValue,
+            settingType: 'string',
+            description: 'Email list ID for quiz subscribers'
+          });
+          console.log(`Standardized quizListId to QUIZ_LIST_ID: ${stringValue}`);
+        } else if (key === 'leadMagnetListId') {
+          await storage.saveSetting({
+            settingKey: 'LEAD_MAGNET_LIST_ID',
+            settingValue: stringValue,
+            settingType: 'string',
+            description: 'Email list ID for lead magnet subscribers'
+          });
+          console.log(`Standardized leadMagnetListId to LEAD_MAGNET_LIST_ID: ${stringValue}`);
+        } else if (key === 'defaultListId') {
+          await storage.saveSetting({
+            settingKey: 'DEFAULT_LIST_ID',
+            settingValue: stringValue,
+            settingType: 'string',
+            description: 'Default email list ID for subscribers when not specified'
+          });
+          console.log(`Standardized defaultListId to DEFAULT_LIST_ID: ${stringValue}`);
         }
       }
       
