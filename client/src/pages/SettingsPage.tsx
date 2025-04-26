@@ -415,6 +415,8 @@ const SettingsPage: React.FC = () => {
         
         // Get the current value of the API key from the form
         let apiKey;
+        let additionalConfig = {};
+        
         switch(serviceType) {
           case 'openai':
             apiKey = form.getValues().openaiApiKey;
@@ -437,12 +439,31 @@ const SettingsPage: React.FC = () => {
           case 'brevo':
             apiKey = form.getValues().brevoApiKey;
             break;
+          case 'omnisend':
+            apiKey = form.getValues().omnisendApiKey;
+            break;
+          case 'mailchimp':
+            apiKey = form.getValues().mailchimpApiKey;
+            additionalConfig = { serverPrefix: form.getValues().mailchimpServerPrefix };
+            break;
+          case 'sendpulse':
+            apiKey = form.getValues().sendpulseApiKey;
+            additionalConfig = { userId: form.getValues().sendpulseUserId };
+            break;
+          case 'aweber':
+            apiKey = form.getValues().aweberAccessToken;
+            additionalConfig = { accountId: form.getValues().aweberAccountId };
+            break;
+          case 'convertkit':
+            apiKey = form.getValues().convertkitApiKey;
+            additionalConfig = { apiSecret: form.getValues().convertkitApiSecret };
+            break;
         }
         
         // If API key is empty, provide a helpful message
         if (!apiKey) {
           // If this is an email service, show a message about using environment variables
-          if (['sendgrid', 'mailerlite', 'brevo'].includes(serviceType)) {
+          if (['sendgrid', 'mailerlite', 'brevo', 'omnisend', 'mailchimp', 'sendpulse', 'aweber', 'convertkit'].includes(serviceType)) {
             toast({
               title: 'No API key provided',
               description: 'Using API key from environment variables if available.',
@@ -455,7 +476,7 @@ const SettingsPage: React.FC = () => {
         const response = await apiRequest(
           'POST',
           `/api/admin/settings/test/${serviceType}`,
-          { apiKey } // Body will be automatically JSON stringified
+          { apiKey, ...additionalConfig } // Body will be automatically JSON stringified
         );
         return response; // This is already the parsed JSON response
       } catch (error) {
@@ -1189,6 +1210,370 @@ const SettingsPage: React.FC = () => {
                         size="sm"
                         disabled={!form.getValues().brevoApiKey}
                         onClick={() => handleTestService('brevo')}
+                      >
+                        Test Connection
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Omnisend Integration</CardTitle>
+                    <CardDescription>
+                      Configure Omnisend email marketing service
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="omnisendApiKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Omnisend API Key</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Enter Omnisend API key"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            API key for Omnisend integration
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="font-medium text-sm">
+                        Status: 
+                        <span className={getStatusColor(
+                          form.getValues().activeEmailService === 'omnisend', 
+                          isSettingConfigured('omnisendApiKey', settings) || !!form.getValues().omnisendApiKey
+                        )}>
+                          {' '}{getStatusText(
+                            form.getValues().activeEmailService === 'omnisend', 
+                            isSettingConfigured('omnisendApiKey', settings) || !!form.getValues().omnisendApiKey
+                          )}
+                        </span>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!form.getValues().omnisendApiKey}
+                        onClick={() => handleTestService('omnisend')}
+                      >
+                        Test Connection
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Mailchimp Integration</CardTitle>
+                    <CardDescription>
+                      Configure Mailchimp email marketing platform
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="mailchimpApiKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mailchimp API Key</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Enter Mailchimp API key"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            API key for Mailchimp integration
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="mailchimpServerPrefix"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mailchimp Server Prefix</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder="us1, us2, etc."
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Server prefix from your Mailchimp account (e.g., us1)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="font-medium text-sm">
+                        Status: 
+                        <span className={getStatusColor(
+                          form.getValues().activeEmailService === 'mailchimp', 
+                          (isSettingConfigured('mailchimpApiKey', settings) || !!form.getValues().mailchimpApiKey) &&
+                          (isSettingConfigured('mailchimpServerPrefix', settings) || !!form.getValues().mailchimpServerPrefix)
+                        )}>
+                          {' '}{getStatusText(
+                            form.getValues().activeEmailService === 'mailchimp', 
+                            (isSettingConfigured('mailchimpApiKey', settings) || !!form.getValues().mailchimpApiKey) &&
+                            (isSettingConfigured('mailchimpServerPrefix', settings) || !!form.getValues().mailchimpServerPrefix)
+                          )}
+                        </span>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!form.getValues().mailchimpApiKey || !form.getValues().mailchimpServerPrefix}
+                        onClick={() => handleTestService('mailchimp')}
+                      >
+                        Test Connection
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>SendPulse Integration</CardTitle>
+                    <CardDescription>
+                      Configure SendPulse email marketing service
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="sendpulseUserId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>SendPulse User ID</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder="Enter SendPulse User ID"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Your SendPulse Account User ID
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="sendpulseApiKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>SendPulse API Key</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Enter SendPulse API Key"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            API key for SendPulse integration
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="font-medium text-sm">
+                        Status: 
+                        <span className={getStatusColor(
+                          form.getValues().activeEmailService === 'sendpulse', 
+                          (isSettingConfigured('sendpulseUserId', settings) || !!form.getValues().sendpulseUserId) &&
+                          (isSettingConfigured('sendpulseApiKey', settings) || !!form.getValues().sendpulseApiKey)
+                        )}>
+                          {' '}{getStatusText(
+                            form.getValues().activeEmailService === 'sendpulse', 
+                            (isSettingConfigured('sendpulseUserId', settings) || !!form.getValues().sendpulseUserId) &&
+                            (isSettingConfigured('sendpulseApiKey', settings) || !!form.getValues().sendpulseApiKey)
+                          )}
+                        </span>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!form.getValues().sendpulseUserId || !form.getValues().sendpulseApiKey}
+                        onClick={() => handleTestService('sendpulse')}
+                      >
+                        Test Connection
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>AWeber Integration</CardTitle>
+                    <CardDescription>
+                      Configure AWeber email marketing service
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="aweberAccessToken"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>AWeber Access Token</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Enter AWeber Access Token"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Access token for AWeber API
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="aweberAccountId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>AWeber Account ID</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder="Enter AWeber Account ID"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Your AWeber Account ID
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="font-medium text-sm">
+                        Status: 
+                        <span className={getStatusColor(
+                          form.getValues().activeEmailService === 'aweber', 
+                          (isSettingConfigured('aweberAccessToken', settings) || !!form.getValues().aweberAccessToken) &&
+                          (isSettingConfigured('aweberAccountId', settings) || !!form.getValues().aweberAccountId)
+                        )}>
+                          {' '}{getStatusText(
+                            form.getValues().activeEmailService === 'aweber', 
+                            (isSettingConfigured('aweberAccessToken', settings) || !!form.getValues().aweberAccessToken) &&
+                            (isSettingConfigured('aweberAccountId', settings) || !!form.getValues().aweberAccountId)
+                          )}
+                        </span>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!form.getValues().aweberAccessToken || !form.getValues().aweberAccountId}
+                        onClick={() => handleTestService('aweber')}
+                      >
+                        Test Connection
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="grid gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>ConvertKit Integration</CardTitle>
+                    <CardDescription>
+                      Configure ConvertKit email marketing platform
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="convertkitApiKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ConvertKit API Key</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Enter ConvertKit API Key"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            API key for ConvertKit integration
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="convertkitApiSecret"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ConvertKit API Secret</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Enter ConvertKit API Secret"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            API secret for ConvertKit integration
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="font-medium text-sm">
+                        Status: 
+                        <span className={getStatusColor(
+                          form.getValues().activeEmailService === 'convertkit', 
+                          (isSettingConfigured('convertkitApiKey', settings) || !!form.getValues().convertkitApiKey) &&
+                          (isSettingConfigured('convertkitApiSecret', settings) || !!form.getValues().convertkitApiSecret)
+                        )}>
+                          {' '}{getStatusText(
+                            form.getValues().activeEmailService === 'convertkit', 
+                            (isSettingConfigured('convertkitApiKey', settings) || !!form.getValues().convertkitApiKey) &&
+                            (isSettingConfigured('convertkitApiSecret', settings) || !!form.getValues().convertkitApiSecret)
+                          )}
+                        </span>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        disabled={!form.getValues().convertkitApiKey || !form.getValues().convertkitApiSecret}
+                        onClick={() => handleTestService('convertkit')}
                       >
                         Test Connection
                       </Button>
