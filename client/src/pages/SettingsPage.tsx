@@ -1014,6 +1014,109 @@ const SettingsPage: React.FC = () => {
 
             {/* Email Services Tab */}
             <TabsContent value="email" className="space-y-6">
+              {/* Email Provider Management Panel */}
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle>Email Provider Management</CardTitle>
+                  <CardDescription>
+                    Manage your email service providers and select which one to use for sending emails
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {providersLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="ml-2">Loading email providers...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        {emailProviders.map((provider) => (
+                          <Card key={provider.name} className={`border-2 ${provider.isActive ? 'border-primary' : 'border-muted'}`}>
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between items-center">
+                                <CardTitle className="text-base flex items-center">
+                                  {provider.iconUrl && (
+                                    <img 
+                                      src={provider.iconUrl} 
+                                      alt={provider.displayName} 
+                                      className="w-5 h-5 mr-2" 
+                                    />
+                                  )}
+                                  {provider.displayName}
+                                </CardTitle>
+                                {provider.isActive && (
+                                  <Badge variant="outline" className="bg-primary text-primary-foreground border-primary px-2 py-0 text-xs">
+                                    Active
+                                  </Badge>
+                                )}
+                              </div>
+                              <CardDescription className="text-xs">
+                                {provider.description}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-0 pb-2">
+                              <div className="flex justify-between mt-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-xs px-2 h-7"
+                                  onClick={() => handleConfigureProvider(provider)}
+                                >
+                                  Configure
+                                </Button>
+                                {!provider.isActive && (
+                                  <Button 
+                                    variant="default" 
+                                    size="sm" 
+                                    className="text-xs px-2 h-7"
+                                    onClick={() => handleSetActiveProvider(provider.name)}
+                                  >
+                                    Set Active
+                                  </Button>
+                                )}
+                                {provider.isActive && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-xs px-2 h-7"
+                                    onClick={() => setIsTestDialogOpen(true)}
+                                  >
+                                    Send Test
+                                  </Button>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-4">
+                        <p className="text-sm text-muted-foreground mb-2">Send a test email to verify your configuration</p>
+                        <div className="flex items-end gap-2">
+                          <div className="flex-1">
+                            <Label htmlFor="test-email" className="text-xs mb-1 block">Email Address</Label>
+                            <Input 
+                              id="test-email" 
+                              placeholder="your@email.com" 
+                              value={testEmailAddress} 
+                              onChange={(e) => setTestEmailAddress(e.target.value)}
+                            />
+                          </div>
+                          <Button 
+                            onClick={() => handleSendTestEmail(testEmailAddress)}
+                            disabled={!testEmailAddress}
+                            className="mb-[1px]"
+                          >
+                            Send Test Email
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+              
               <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
