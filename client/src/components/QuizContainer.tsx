@@ -11,6 +11,7 @@ import { saveQuizResponse } from '@/lib/firebase';
 import { generatePDF } from '@/lib/pdf-generator';
 import { useToast } from '@/hooks/use-toast';
 import { parseTrackingParams, type ReferralSource } from '@shared/blog-integration';
+import { trackQuizLeadConversion } from '@/services/emailSignup';
 
 const QuizContainer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -123,10 +124,28 @@ const QuizContainer: React.FC = () => {
       };
       
       // Save to Firebase with referral data
-      await saveQuizResponse(
+      const saveResponse = await saveQuizResponse(
         { ...quizData, ...enhancedData },
         aiAdvice
       );
+      
+      // Send the quiz lead to the email subscription endpoint for proper subscription
+      if (saveResponse.success && saveResponse.id) {
+        console.log('Sending user data to quiz lead conversion endpoint...');
+        try {
+          // Pass the quiz response ID and user data to the email service
+          await trackQuizLeadConversion(
+            parseInt(saveResponse.id.toString().replace('mock-id-', '')),
+            data.email,
+            data.firstName,
+            data.lastName || undefined
+          );
+          console.log('Quiz subscriber data sent to email service successfully');
+        } catch (subscribeError) {
+          console.error('Failed to send quiz subscriber to email service', subscribeError);
+          // Continue processing even if email service fails
+        }
+      }
       
       // Generate PDF 
       const affiliateLink = "https://hop.clickbank.net/?affiliate=yourID&vendor=hissecobs";

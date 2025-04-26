@@ -108,15 +108,20 @@ export async function trackBlogLeadConversion(
  * Track lead conversion from quiz
  * @param quizResponseId ID of the quiz response
  * @param email User email
+ * @param firstName Optional first name
+ * @param lastName Optional last name
  * @returns Promise with the response
  */
 export async function trackQuizLeadConversion(
   quizResponseId: number | undefined,
-  email: string
+  email: string,
+  firstName?: string,
+  lastName?: string
 ): Promise<void> {
   if (!quizResponseId) return;
   
   try {
+    console.log(`Tracking quiz lead conversion for ${email} (ID: ${quizResponseId})`);
     const response = await fetch('/api/quiz/lead-conversion', {
       method: 'POST',
       headers: {
@@ -124,13 +129,17 @@ export async function trackQuizLeadConversion(
       },
       body: JSON.stringify({
         quizResponseId,
-        email
+        email,
+        firstName,
+        lastName
       }),
     });
     
     if (!response.ok) {
       throw new Error('Failed to track quiz lead conversion');
     }
+    
+    console.log('Quiz lead conversion tracked successfully');
   } catch (error) {
     console.error('Error tracking quiz lead conversion:', error);
   }
