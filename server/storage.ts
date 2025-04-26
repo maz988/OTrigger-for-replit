@@ -13,6 +13,8 @@ import {
   systemSettings,
   notificationTemplates,
   notificationLog,
+  websiteSections,
+  sectionVersions,
   type User, 
   type InsertUser,
   type QuizResponse,

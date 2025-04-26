@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -292,3 +292,42 @@ export type NotificationTemplate = typeof notificationTemplates.$inferSelect;
 export type InsertNotificationTemplate = z.infer<typeof insertNotificationTemplateSchema>;
 export type NotificationLog = typeof notificationLog.$inferSelect;
 export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
+
+// Website Section Builder
+export const websiteSections = pgTable("website_sections", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  type: text("type").notNull(), // hero, quizIntro, leadMagnet, blogSidebar, blogCta, footer, popup, etc.
+  title: text("title").notNull(),
+  visible: boolean("visible").notNull().default(true),
+  order: integer("order").notNull().default(0),
+  settings: jsonb("settings").notNull().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+});
+
+// Section version history for rollback functionality
+export const sectionVersions = pgTable("section_versions", {
+  id: serial("id").primaryKey(),
+  sectionId: uuid("section_id").notNull().references(() => websiteSections.id, { onDelete: 'cascade' }),
+  settings: jsonb("settings").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => adminUsers.id),
+  versionNote: text("version_note")
+});
+
+export const insertWebsiteSectionSchema = createInsertSchema(websiteSections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertSectionVersionSchema = createInsertSchema(sectionVersions).omit({
+  id: true,
+  createdAt: true
+});
+
+// Website Section Types
+export type WebsiteSection = typeof websiteSections.$inferSelect;
+export type InsertWebsiteSection = z.infer<typeof insertWebsiteSectionSchema>;
+export type SectionVersion = typeof sectionVersions.$inferSelect;
+export type InsertSectionVersion = z.infer<typeof insertSectionVersionSchema>;

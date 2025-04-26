@@ -1,0 +1,92 @@
+Create a "Simple Website Builder" inside the admin dashboard that allows managing the entire site using a **section-based system** — similar to a mini no-code CMS.
+
+📍 Admin Page: `/admin/website-builder`
+
+🎯 PURPOSE:
+Allow admin to add, edit, reorder, hide, and delete website sections such as homepage hero, quiz intro, lead magnet offer, blog sidebar opt-in, footers, popups — without touching the code.
+
+---
+
+# 📦 SECTION STRUCTURE (Dynamic Blocks)
+
+Each Section Object should include:
+- `id`: Unique ID
+- `type`: Section Type (Hero, Quiz Intro, Sidebar Optin, Footer, Blog CTA, etc.)
+- `title`: Admin Title for easy identification
+- `visible`: Boolean (Show/Hide)
+- `settings`: 
+  - **Text Fields** (Headline, Subtitle, Button Text)
+  - **Image Fields** (Hero Images, Sidebar Images)
+  - **Links** (CTAs, Lead Magnets, Affiliate Links)
+  - **Background Color** (optional)
+  - **Meta Info** (SEO for the section if needed)
+
+Store all sections inside Firestore or a JSON structure like `/content/websiteSections.json`.
+
+---
+
+# ✏️ Admin Features Needed:
+
+| Feature | Description |
+|:--------|:------------|
+| Add New Section | Select Section Type (Hero, Quiz, Sidebar, Blog CTA, Footer, etc.) |
+| Edit Section | Change texts, images, buttons, links inside the section |
+| Hide/Show Section | Toggle if the section is live |
+| Reorder Sections | Drag-and-drop to reorder blocks (or move up/down) |
+| Delete Section | Remove the section permanently |
+| Save Changes | Save and instantly update public site |
+
+✅ All sections must be reflected dynamically on the public frontend pages (Homepage, Quiz Pages, Blog Sidebar, etc.)
+
+✅ Render the sections in order saved (based on the order array in Firestore or JSON)
+
+---
+
+# 🎨 UI DESIGN FOR ADMIN PAGE:
+
+| UI Element | Notes |
+|:-----------|:------|
+| Section Cards | Show each section as a collapsible card |
+| Edit Button | Opens input fields (texts, images, links) |
+| Add Section Button | Opens modal to select new section type |
+| Drag Handle | For reordering sections |
+| Save Button | Save all changes |
+
+Use Tailwind CSS or Bootstrap for beautiful, responsive admin UI.
+
+---
+
+# ⚡ FRONTEND RENDERING:
+
+On page load:
+- Fetch sections
+- Loop through and render:
+  - If section `visible: true`, display according to `type` and `settings`
+  - If not visible, skip
+
+Each type must have its own frontend render component (Hero, QuizIntro, SidebarOptin, Footer, BlogCTA).
+
+---
+
+# 🛡️ SECURITY:
+
+- Only Admins can create/edit/delete sections
+- Store version history optionally (for rollback later)
+
+---
+
+# 📂 FILE STRUCTURE:
+
+| File | Purpose |
+|:-----|:--------|
+| `/admin/website-builder.jsx` | Admin page for full control |
+| `/components/sections/` | All section types (Hero, QuizIntro, SidebarOptin, Footer) |
+| `/content/websiteSections.json` | Stores all site content dynamically |
+
+---
+
+# 🔥 GOAL:
+
+Give me full control over the website layout, texts, images, links, visibility, and order —  
+so I can update the site like a **simple website builder** without coding, like Wix or WordPress — but customized for my system.
+
