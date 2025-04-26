@@ -41,6 +41,7 @@ import {
   type NotificationLog,
   type InsertNotificationLog
 } from "@shared/schema";
+import { loadSettings, saveSetting as persistSetting, deleteSetting as persistDeleteSetting } from './settingsPersistence';
 
 // Analytics summary types
 export interface QuizAnalyticsSummary {
@@ -398,6 +399,9 @@ export class MemStorage implements IStorage {
     
     // Initialize default notification templates
     this.initializeNotificationTemplates();
+    
+    // Load any persisted settings
+    this.loadPersistedSettings();
   }
 
   // User methods
@@ -1392,6 +1396,10 @@ If you'd like a personalized assessment of your unique relationship situation, t
     };
     
     this.systemSettings.set(setting.settingKey, setting);
+    
+    // Persist the setting to file
+    persistSetting(setting.settingKey, setting);
+    
     return setting;
   }
   
@@ -1409,7 +1417,35 @@ If you'd like a personalized assessment of your unique relationship situation, t
     };
     
     this.systemSettings.set(key, updatedSetting);
+    
+    // Persist the updated setting to file
+    persistSetting(key, updatedSetting);
+    
     return updatedSetting;
+  }
+  
+  // Load persisted settings from file
+  private loadPersistedSettings(): void {
+    try {
+      const persistedSettings = loadSettings();
+      
+      // Process each persisted setting
+      Object.entries(persistedSettings).forEach(([key, setting]) => {
+        // Only load if we don't already have this setting
+        if (!this.systemSettings.has(key)) {
+          this.systemSettings.set(key, setting);
+          
+          // Update current ID counter if needed
+          if (setting.id >= this.systemSettingCurrentId) {
+            this.systemSettingCurrentId = setting.id + 1;
+          }
+        }
+      });
+      
+      console.log(`Loaded ${Object.keys(persistedSettings).length} settings from persistence file`);
+    } catch (error) {
+      console.error('Error loading persisted settings:', error);
+    }
   }
   
   async deleteSetting(key: string): Promise<boolean> {
@@ -1418,6 +1454,10 @@ If you'd like a personalized assessment of your unique relationship situation, t
     }
     
     this.systemSettings.delete(key);
+    
+    // Persist the deletion to file
+    persistDeleteSetting(key);
+    
     return true;
   }
   
@@ -1769,6 +1809,11 @@ If you'd like a personalized assessment of your unique relationship situation, t
     return Array.from(this.notificationTemplates.values()).find(
       template => template.type === type
     );
+  }
+  
+  // Implement the method required by IStorage interface
+  async getNotificationTemplate(type: string): Promise<NotificationTemplate | undefined> {
+    return this.getNotificationTemplateByType(type);
   }
   
   async saveNotificationTemplate(insertTemplate: InsertNotificationTemplate): Promise<NotificationTemplate> {
