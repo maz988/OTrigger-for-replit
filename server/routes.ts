@@ -3041,6 +3041,299 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         }
+
+        case 'omnisend': {
+          const apiKey = req.body.apiKey || process.env.OMNISEND_API_KEY;
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "Omnisend API key not configured"
+            });
+          }
+          
+          try {
+            // Make a simple request to the Omnisend API to verify the key
+            const response = await fetch('https://api.omnisend.com/v3/campaigns', {
+              headers: { 
+                'X-API-KEY': apiKey,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to Omnisend API!"
+              });
+            } else {
+              // Get response body to extract error message
+              const errorText = await response.text();
+              let errorMessage = "API Error";
+              
+              try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.error || errorData.message || `API error: ${response.status}`;
+              } catch (e) {
+                errorMessage = errorText || `API error: ${response.status}`;
+              }
+              
+              return res.status(400).json({
+                success: false,
+                error: errorMessage
+              });
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to Omnisend"
+            });
+          }
+        }
+        
+        case 'mailchimp': {
+          const apiKey = req.body.apiKey || process.env.MAILCHIMP_API_KEY;
+          const serverPrefix = req.body.serverPrefix || process.env.MAILCHIMP_SERVER_PREFIX;
+          
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "Mailchimp API key not configured"
+            });
+          }
+          
+          if (!serverPrefix) {
+            return res.status(400).json({
+              success: false,
+              error: "Mailchimp server prefix not configured (us1, us2, etc.)"
+            });
+          }
+          
+          try {
+            // Make a request to the Mailchimp API to verify the key
+            const response = await fetch(`https://${serverPrefix}.api.mailchimp.com/3.0/lists`, {
+              headers: {
+                'Authorization': 'Basic ' + Buffer.from('anystring:' + apiKey).toString('base64'),
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to Mailchimp API!"
+              });
+            } else {
+              // Get response body to extract error message
+              const errorText = await response.text();
+              let errorMessage = "API Error";
+              
+              try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.detail || errorData.error || `API error: ${response.status}`;
+              } catch (e) {
+                errorMessage = errorText || `API error: ${response.status}`;
+              }
+              
+              return res.status(400).json({
+                success: false,
+                error: errorMessage
+              });
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to Mailchimp"
+            });
+          }
+        }
+        
+        case 'sendpulse': {
+          const userId = req.body.userId || process.env.SENDPULSE_USER_ID;
+          const apiKey = req.body.apiKey || process.env.SENDPULSE_API_KEY;
+          
+          if (!userId) {
+            return res.status(400).json({
+              success: false,
+              error: "SendPulse User ID not configured"
+            });
+          }
+          
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "SendPulse API key not configured"
+            });
+          }
+          
+          try {
+            // SendPulse requires token first
+            const tokenResponse = await fetch('https://api.sendpulse.com/oauth/access_token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                grant_type: 'client_credentials',
+                client_id: userId,
+                client_secret: apiKey
+              })
+            });
+            
+            if (!tokenResponse.ok) {
+              const errorText = await tokenResponse.text();
+              return res.status(400).json({
+                success: false,
+                error: `Failed to authenticate with SendPulse: ${errorText}`
+              });
+            }
+            
+            const tokenData = await tokenResponse.json();
+            
+            if (!tokenData.access_token) {
+              return res.status(400).json({
+                success: false,
+                error: "Invalid response from SendPulse authentication"
+              });
+            }
+            
+            // Use the token to make a simple request
+            const addressBooksResponse = await fetch('https://api.sendpulse.com/addressbooks', {
+              headers: {
+                'Authorization': `Bearer ${tokenData.access_token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (addressBooksResponse.ok) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to SendPulse API!"
+              });
+            } else {
+              const errorText = await addressBooksResponse.text();
+              return res.status(400).json({
+                success: false,
+                error: `API Error: ${errorText}`
+              });
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to SendPulse"
+            });
+          }
+        }
+        
+        case 'aweber': {
+          const accessToken = req.body.accessToken || process.env.AWEBER_ACCESS_TOKEN;
+          const accountId = req.body.accountId || process.env.AWEBER_ACCOUNT_ID;
+          
+          if (!accessToken) {
+            return res.status(400).json({
+              success: false,
+              error: "AWeber Access Token not configured"
+            });
+          }
+          
+          if (!accountId) {
+            return res.status(400).json({
+              success: false,
+              error: "AWeber Account ID not configured"
+            });
+          }
+          
+          try {
+            // Make a request to get lists (called "mailing lists" in AWeber)
+            const response = await fetch(`https://api.aweber.com/1.0/accounts/${accountId}/lists`, {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to AWeber API!"
+              });
+            } else {
+              const errorText = await response.text();
+              let errorMessage = "API Error";
+              
+              try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.error?.message || errorData.message || `API error: ${response.status}`;
+              } catch (e) {
+                errorMessage = errorText || `API error: ${response.status}`;
+              }
+              
+              return res.status(400).json({
+                success: false,
+                error: errorMessage
+              });
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to AWeber"
+            });
+          }
+        }
+        
+        case 'convertkit': {
+          const apiKey = req.body.apiKey || process.env.CONVERTKIT_API_KEY;
+          const apiSecret = req.body.apiSecret || process.env.CONVERTKIT_API_SECRET;
+          
+          if (!apiKey) {
+            return res.status(400).json({
+              success: false,
+              error: "ConvertKit API key not configured"
+            });
+          }
+          
+          if (!apiSecret) {
+            return res.status(400).json({
+              success: false,
+              error: "ConvertKit API Secret not configured"
+            });
+          }
+          
+          try {
+            // Make a request to the ConvertKit API to verify the key
+            const response = await fetch(`https://api.convertkit.com/v3/forms?api_key=${apiKey}`, {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              return res.status(200).json({
+                success: true,
+                message: "Successfully connected to ConvertKit API!"
+              });
+            } else {
+              const errorText = await response.text();
+              let errorMessage = "API Error";
+              
+              try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.error || errorData.message || `API error: ${response.status}`;
+              } catch (e) {
+                errorMessage = errorText || `API error: ${response.status}`;
+              }
+              
+              return res.status(400).json({
+                success: false,
+                error: errorMessage
+              });
+            }
+          } catch (error) {
+            return res.status(400).json({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error connecting to ConvertKit"
+            });
+          }
+        }
         
         default:
           return res.status(400).json({
