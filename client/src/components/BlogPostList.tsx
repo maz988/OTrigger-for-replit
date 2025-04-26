@@ -16,9 +16,13 @@ interface BlogPost {
   publishedAt: string;
 }
 
-export function BlogPostList() {
+interface BlogPostListProps {
+  categorySlug?: string;
+}
+
+export function BlogPostList({ categorySlug }: BlogPostListProps) {
   const { data: blogPostsResponse, isLoading } = useQuery({
-    queryKey: ['/api/blog/posts'],
+    queryKey: ['/api/blog/posts', categorySlug ? { category: categorySlug } : undefined],
     queryFn: getQueryFn<BlogPost[]>(),
   });
 
