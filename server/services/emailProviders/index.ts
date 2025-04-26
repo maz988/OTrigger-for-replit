@@ -13,6 +13,7 @@ import type { EmailProviderConfig } from './interfaces';
 import { BrevoProvider } from './adapters/BrevoProvider';
 import { SendGridProvider } from './adapters/SendGridProvider';
 import { MailerLiteProvider } from './adapters/MailerLiteProvider';
+import { CustomProvider } from './adapters/CustomProvider';
 
 // Register built-in providers
 function registerBuiltInProviders() {

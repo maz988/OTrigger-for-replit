@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getQueryFn, apiRequest, queryClient } from '@/lib/queryClient';
-import { Loader2, Save, RefreshCw, Settings2, ImageIcon, Mail, Database, FileEdit, AlarmCheck, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, RefreshCw, Settings2, ImageIcon, Mail, Database, FileEdit, AlarmCheck, AlertTriangle, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -176,6 +176,7 @@ const SettingsPage: React.FC = () => {
   const [loadingLists, setLoadingLists] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<EmailProvider | null>(null);
   const [isProviderConfigDialogOpen, setIsProviderConfigDialogOpen] = useState(false);
+  const [isNewProviderDialogOpen, setIsNewProviderDialogOpen] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState('');
   
   // Fetch settings
@@ -1031,6 +1032,18 @@ const SettingsPage: React.FC = () => {
                     </div>
                   ) : (
                     <>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Available Providers</h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsNewProviderDialogOpen(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add New Provider
+                        </Button>
+                      </div>
+                      
                       <div className="grid gap-4 md:grid-cols-3">
                         {emailProviders.map((provider) => (
                           <Card key={provider.name} className={`border-2 ${provider.isActive ? 'border-primary' : 'border-muted'}`}>
@@ -2140,6 +2153,299 @@ const SettingsPage: React.FC = () => {
                   Saving...
                 </>
               ) : "Save Configuration"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add New Provider Dialog */}
+      <Dialog open={isNewProviderDialogOpen} onOpenChange={setIsNewProviderDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Plus className="h-5 w-5 mr-2" />
+              Add New Email Provider
+            </DialogTitle>
+            <DialogDescription>
+              Configure a custom email service provider to use with your application.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            {/* Provider Name */}
+            <div className="space-y-2">
+              <Label htmlFor="provider_name" className="flex items-center">
+                Provider Name <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Input
+                id="provider_name"
+                placeholder="e.g. Mailchimp, ConvertKit, etc."
+              />
+              <p className="text-xs text-muted-foreground">
+                A unique identifier for this provider (lowercase, no spaces)
+              </p>
+            </div>
+            
+            {/* Display Name */}
+            <div className="space-y-2">
+              <Label htmlFor="display_name" className="flex items-center">
+                Display Name <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Input
+                id="display_name"
+                placeholder="e.g. Mailchimp"
+              />
+              <p className="text-xs text-muted-foreground">
+                The name shown in the UI
+              </p>
+            </div>
+            
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description" className="flex items-center">
+                Description <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Input
+                id="description"
+                placeholder="e.g. Email marketing platform for small businesses"
+              />
+              <p className="text-xs text-muted-foreground">
+                A brief description of this email service
+              </p>
+            </div>
+            
+            {/* Icon URL */}
+            <div className="space-y-2">
+              <Label htmlFor="icon_url" className="flex items-center">
+                Icon URL
+              </Label>
+              <Input
+                id="icon_url"
+                placeholder="https://example.com/icon.png"
+              />
+              <p className="text-xs text-muted-foreground">
+                URL to the provider's logo (recommended size: 32x32px)
+              </p>
+            </div>
+            
+            {/* API Base URL */}
+            <div className="space-y-2">
+              <Label htmlFor="api_base_url" className="flex items-center">
+                API Base URL <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Input
+                id="api_base_url"
+                placeholder="https://api.example.com/v3/"
+              />
+              <p className="text-xs text-muted-foreground">
+                The base URL for the provider's API
+              </p>
+            </div>
+            
+            {/* API Key Field Name */}
+            <div className="space-y-2">
+              <Label htmlFor="api_key_field" className="flex items-center">
+                API Key Field Name <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Input
+                id="api_key_field"
+                placeholder="e.g. api_key"
+                defaultValue="api_key"
+              />
+              <p className="text-xs text-muted-foreground">
+                The name of the field used for authentication
+              </p>
+            </div>
+            
+            {/* Authentication Header */}
+            <div className="space-y-2">
+              <Label htmlFor="auth_header" className="flex items-center">
+                Authentication Header <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Input
+                id="auth_header"
+                placeholder="e.g. Authorization"
+                defaultValue="Authorization"
+              />
+              <p className="text-xs text-muted-foreground">
+                HTTP header used for authentication
+              </p>
+            </div>
+            
+            {/* Authentication Method */}
+            <div className="space-y-2">
+              <Label htmlFor="auth_method" className="flex items-center">
+                Authentication Method <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Select defaultValue="bearer">
+                <SelectTrigger id="auth_method">
+                  <SelectValue placeholder="Select authentication method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bearer">Bearer Token</SelectItem>
+                  <SelectItem value="basic">Basic Auth</SelectItem>
+                  <SelectItem value="api_key">API Key in Header</SelectItem>
+                  <SelectItem value="query_param">Query Parameter</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                How the API key should be used for authentication
+              </p>
+            </div>
+            
+            {/* Data Format */}
+            <div className="space-y-2">
+              <Label htmlFor="data_format" className="flex items-center">
+                Data Format <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <Select defaultValue="json">
+                <SelectTrigger id="data_format">
+                  <SelectValue placeholder="Select data format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="json">JSON</SelectItem>
+                  <SelectItem value="form">Form Data</SelectItem>
+                  <SelectItem value="xml">XML</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The format used for API requests
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewProviderDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              onClick={() => {
+                // Collect form data
+                const name = (document.getElementById('provider_name') as HTMLInputElement)?.value.toLowerCase().replace(/\s+/g, '_');
+                const displayName = (document.getElementById('display_name') as HTMLInputElement)?.value;
+                const description = (document.getElementById('description') as HTMLInputElement)?.value;
+                const iconUrl = (document.getElementById('icon_url') as HTMLInputElement)?.value;
+                const apiBaseUrl = (document.getElementById('api_base_url') as HTMLInputElement)?.value;
+                const apiKeyField = (document.getElementById('api_key_field') as HTMLInputElement)?.value;
+                const authHeader = (document.getElementById('auth_header') as HTMLInputElement)?.value;
+                const authMethod = (document.getElementById('auth_method') as HTMLInputElement)?.value;
+                const dataFormat = (document.getElementById('data_format') as HTMLInputElement)?.value;
+                
+                // Validation
+                if (!name || !displayName || !description || !apiBaseUrl || !apiKeyField || !authHeader) {
+                  toast({
+                    title: 'Validation Error',
+                    description: 'Please fill in all required fields',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+                
+                // Create provider configuration
+                const providerConfig = {
+                  name,
+                  displayName,
+                  description,
+                  iconUrl: iconUrl || `/images/email-providers/${name}.svg`, // Default icon path
+                  configFields: [
+                    {
+                      name: 'api_key',
+                      displayName: 'API Key',
+                      type: 'string',
+                      required: true,
+                      secret: true,
+                      description: `Your ${displayName} API key`
+                    },
+                    {
+                      name: 'api_base_url',
+                      displayName: 'API Base URL',
+                      type: 'string',
+                      required: true,
+                      default: apiBaseUrl,
+                      description: 'Base URL for API requests'
+                    },
+                    {
+                      name: 'api_key_field',
+                      displayName: 'API Key Field',
+                      type: 'string',
+                      required: true,
+                      default: apiKeyField,
+                      description: 'Field name for the API key'
+                    },
+                    {
+                      name: 'auth_header',
+                      displayName: 'Auth Header',
+                      type: 'string',
+                      required: true,
+                      default: authHeader,
+                      description: 'Header used for authentication'
+                    },
+                    {
+                      name: 'auth_method',
+                      displayName: 'Auth Method',
+                      type: 'select',
+                      required: true,
+                      default: authMethod,
+                      description: 'Authentication method',
+                      options: [
+                        { value: 'bearer', label: 'Bearer Token' },
+                        { value: 'basic', label: 'Basic Auth' },
+                        { value: 'api_key', label: 'API Key in Header' },
+                        { value: 'query_param', label: 'Query Parameter' }
+                      ]
+                    },
+                    {
+                      name: 'data_format',
+                      displayName: 'Data Format',
+                      type: 'select',
+                      required: true,
+                      default: dataFormat,
+                      description: 'Format used for API requests',
+                      options: [
+                        { value: 'json', label: 'JSON' },
+                        { value: 'form', label: 'Form Data' },
+                        { value: 'xml', label: 'XML' }
+                      ]
+                    },
+                    {
+                      name: 'sender_email',
+                      displayName: 'Sender Email',
+                      type: 'string',
+                      required: true,
+                      description: 'Default sender email address'
+                    },
+                    {
+                      name: 'sender_name',
+                      displayName: 'Sender Name',
+                      type: 'string',
+                      required: true,
+                      description: 'Default sender name'
+                    }
+                  ]
+                };
+                
+                // Call API to add the provider
+                apiRequest('POST', '/api/admin/email-providers/add', providerConfig)
+                  .then(() => {
+                    toast({
+                      title: 'Provider Added',
+                      description: `${displayName} has been added as a new email provider.`,
+                      variant: 'default',
+                    });
+                    refetchProviders();
+                    setIsNewProviderDialogOpen(false);
+                  })
+                  .catch(error => {
+                    toast({
+                      title: 'Error Adding Provider',
+                      description: error.message || "Failed to add provider",
+                      variant: 'destructive',
+                    });
+                  });
+              }}
+            >
+              Add Provider
             </Button>
           </DialogFooter>
         </DialogContent>
