@@ -1431,14 +1431,22 @@ If you'd like a personalized assessment of your unique relationship situation, t
       
       // Process each persisted setting
       Object.entries(persistedSettings).forEach(([key, setting]) => {
-        // Only load if we don't already have this setting
-        if (!this.systemSettings.has(key)) {
-          this.systemSettings.set(key, setting);
+        // IMPORTANT: Always override with the persisted setting
+        // This ensures that changes made to the settings.json file take precedence
+        this.systemSettings.set(key, setting);
+        
+        // Update current ID counter if needed
+        if (setting.id >= this.systemSettingCurrentId) {
+          this.systemSettingCurrentId = setting.id + 1;
+        }
+        
+        // Special case: For EMAIL_SERVICE, ensure proper case normalization
+        if (key === 'EMAIL_SERVICE' && setting.settingValue) {
+          console.log(`Setting EMAIL_SERVICE to "${setting.settingValue}" from settings file`);
           
-          // Update current ID counter if needed
-          if (setting.id >= this.systemSettingCurrentId) {
-            this.systemSettingCurrentId = setting.id + 1;
-          }
+          // Normalize to lowercase to prevent case sensitivity issues
+          setting.settingValue = setting.settingValue.toLowerCase();
+          this.systemSettings.set(key, setting);
         }
       });
       
@@ -1766,13 +1774,16 @@ If you'd like a personalized assessment of your unique relationship situation, t
       { key: 'GEMINI_API_KEY', value: process.env.GEMINI_API_KEY || '', type: 'string', description: 'API key for Google Gemini integration' },
       { key: 'PEXELS_API_KEY', value: process.env.PEXELS_API_KEY || '', type: 'string', description: 'API key for Pexels image integration' },
       { key: 'BLOG_AUTO_SCHEDULE', value: 'true', type: 'boolean', description: 'Automatically schedule blog posts' },
-      { key: 'EMAIL_SERVICE', value: 'sendgrid', type: 'string', description: 'Primary email service provider' },
+      { key: 'EMAIL_SERVICE', value: 'brevo', type: 'string', description: 'Primary email service provider' },
       { key: 'EMAIL_FROM', value: 'info@obsessiontrigger.com', type: 'string', description: 'Default from email address' },
       { key: 'EMAIL_FROM_NAME', value: 'Obsession Trigger Team', type: 'string', description: 'Default from name for emails' },
       { key: 'EMAIL_REPLY_TO', value: 'support@obsessiontrigger.com', type: 'string', description: 'Default reply-to email address' },
       { key: 'SENDGRID_API_KEY', value: process.env.SENDGRID_API_KEY || '', type: 'string', description: 'API key for SendGrid integration' },
       { key: 'MAILERLITE_API_KEY', value: process.env.MAILERLITE_API_KEY || '', type: 'string', description: 'API key for MailerLite integration' },
       { key: 'BREVO_API_KEY', value: process.env.BREVO_API_KEY || '', type: 'string', description: 'API key for Brevo integration' },
+      { key: 'DEFAULT_LIST_ID', value: '2', type: 'string', description: 'Default email list ID for general subscribers' },
+      { key: 'QUIZ_LIST_ID', value: '2', type: 'string', description: 'Email list ID for quiz subscribers' },
+      { key: 'LEAD_MAGNET_LIST_ID', value: '2', type: 'string', description: 'Email list ID for lead magnet subscribers' },
       { key: 'DEFAULT_LEAD_MAGNET', value: '1', type: 'number', description: 'Default lead magnet ID for new subscribers' },
       { key: 'QUIZ_LEAD_MAGNET', value: '1', type: 'number', description: 'Lead magnet ID for quiz completions' },
       { key: 'BLOG_LEAD_MAGNET', value: '2', type: 'number', description: 'Lead magnet ID for blog opt-ins' },
