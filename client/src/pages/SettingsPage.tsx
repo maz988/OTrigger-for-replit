@@ -146,6 +146,25 @@ interface EmailList {
   isDefault?: boolean;
 }
 
+// Interface for email provider metadata
+interface EmailProvider {
+  name: string;
+  displayName: string;
+  description: string;
+  iconUrl: string;
+  isActive: boolean;
+  configFields: {
+    name: string;
+    displayName: string;
+    type: 'string' | 'boolean' | 'number' | 'select';
+    required: boolean;
+    description?: string;
+    secret?: boolean;
+    options?: Array<{ value: string; label: string }>;
+    default?: any;
+  }[];
+}
+
 const SettingsPage: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('ai');
@@ -154,12 +173,24 @@ const SettingsPage: React.FC = () => {
   const [testResults, setTestResults] = useState<{success: boolean, message: string} | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [loadingLists, setLoadingLists] = useState(false);
-
+  const [selectedProvider, setSelectedProvider] = useState<EmailProvider | null>(null);
+  const [isProviderConfigDialogOpen, setIsProviderConfigDialogOpen] = useState(false);
+  const [testEmailAddress, setTestEmailAddress] = useState('');
+  
   // Fetch settings
   const { data: settingsResponse, isLoading: settingsLoading, refetch: refetchSettings } = useQuery({
     queryKey: ['/api/admin/settings'],
     queryFn: getQueryFn(),
   });
+  
+  // Fetch email providers
+  const { data: providersResponse, isLoading: providersLoading, refetch: refetchProviders } = useQuery({
+    queryKey: ['/api/admin/email-providers'],
+    queryFn: getQueryFn(),
+  });
+  
+  // Parse providers from API response
+  const emailProviders: EmailProvider[] = providersResponse?.data || [];
 
   // Parse settings from API response
   const settings: ServiceSettings[] = settingsResponse?.data || [];
