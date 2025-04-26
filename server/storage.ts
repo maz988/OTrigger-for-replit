@@ -426,6 +426,9 @@ export class MemStorage implements IStorage {
     // Initialize default notification templates
     this.initializeNotificationTemplates();
     
+    // Initialize default website sections
+    this.initializeWebsiteSections();
+    
     // Load any persisted settings
     this.loadPersistedSettings();
   }
@@ -1965,6 +1968,158 @@ If you'd like a personalized assessment of your unique relationship situation, t
     }
     
     console.log('Default notification templates initialized');
+  }
+  
+  // Initialize default website sections
+  private async initializeWebsiteSections(): Promise<void> {
+    try {
+      // Check if we already have website sections
+      const existingSections = Array.from(this.websiteSections.values());
+      
+      if (existingSections.length > 0) {
+        console.log(`Website builder already has ${existingSections.length} sections, skipping initialization`);
+        return;
+      }
+      
+      // Create default sections
+      const defaultSections = [
+        {
+          name: 'Hero',
+          sectionType: 'hero',
+          order: 0,
+          visible: true,
+          settings: {
+            headline: 'Discover the Secret Emotional Triggers That Make Him Fall in Love',
+            subheadline: 'Take our relationship assessment quiz to get personalized advice',
+            buttonText: 'Start Free Quiz',
+            buttonLink: '/quiz',
+            backgroundImage: '/img/hero-background.jpg'
+          }
+        },
+        {
+          name: 'Features',
+          sectionType: 'features',
+          order: 1,
+          visible: true,
+          settings: {
+            headline: 'Why Women Trust Our Relationship Advice',
+            features: [
+              {
+                title: 'Science-Based',
+                description: 'Our advice is backed by psychological research',
+                icon: 'brain'
+              },
+              {
+                title: 'Personalized',
+                description: 'Get customized recommendations for your specific situation',
+                icon: 'sparkles'
+              },
+              {
+                title: 'Actionable',
+                description: 'Clear, practical steps you can take immediately',
+                icon: 'check-circle'
+              }
+            ]
+          }
+        },
+        {
+          name: 'Testimonials',
+          sectionType: 'testimonials',
+          order: 2,
+          visible: true,
+          settings: {
+            headline: 'Success Stories',
+            testimonials: [
+              {
+                quote: "The insights from the quiz helped me understand my boyfriend's behavior in a completely new way. We're communicating better than ever!",
+                author: "Jessica T.",
+                location: "Boston, MA"
+              },
+              {
+                quote: "I was about to give up on my relationship when I found this site. The advice was exactly what I needed to turn things around.",
+                author: "Michelle K.",
+                location: "Denver, CO"
+              },
+              {
+                quote: "I'm amazed at how accurate the quiz results were. It was like the advice was written specifically for my situation.",
+                author: "Sarah L.",
+                location: "Atlanta, GA"
+              }
+            ]
+          }
+        },
+        {
+          name: 'Call to Action',
+          sectionType: 'cta',
+          order: 3,
+          visible: true,
+          settings: {
+            headline: 'Ready to Transform Your Relationship?',
+            subheadline: 'Take our free quiz and get personalized advice in minutes',
+            buttonText: 'Take the Quiz Now',
+            buttonLink: '/quiz',
+            backgroundColor: '#f8f9fa'
+          }
+        },
+        {
+          name: 'Blog Highlights',
+          sectionType: 'blog',
+          order: 4,
+          visible: true,
+          settings: {
+            headline: 'Latest Relationship Advice',
+            postsToShow: 3,
+            showCategories: true,
+            showExcerpt: true
+          }
+        },
+        {
+          name: 'About',
+          sectionType: 'content',
+          order: 5,
+          visible: true,
+          settings: {
+            headline: 'About Obsession Trigger',
+            content: `<p>At Obsession Trigger, we believe every woman deserves a fulfilling relationship where she feels cherished and understood.</p>
+            <p>Our team of relationship experts has helped thousands of women worldwide transform their relationships through evidence-based psychological triggers and communication strategies.</p>
+            <p>Whether you're struggling with a confusing situation or just want to deepen your connection, our personalized approach helps you create the relationship you've always wanted.</p>`
+          }
+        },
+        {
+          name: 'Footer',
+          sectionType: 'footer',
+          order: 6,
+          visible: true,
+          settings: {
+            companyName: 'Obsession Trigger',
+            tagline: 'Transforming relationships through emotional understanding',
+            links: [
+              { text: 'Home', url: '/' },
+              { text: 'Quiz', url: '/quiz' },
+              { text: 'Blog', url: '/blog' },
+              { text: 'Privacy Policy', url: '/privacy' },
+              { text: 'Terms of Service', url: '/terms' }
+            ],
+            showNewsletterSignup: true,
+            newsletterHeadline: 'Get Free Relationship Tips',
+            socialLinks: [
+              { platform: 'facebook', url: '#' },
+              { platform: 'instagram', url: '#' },
+              { platform: 'pinterest', url: '#' }
+            ]
+          }
+        }
+      ];
+      
+      // Create each section
+      for (const section of defaultSections) {
+        await this.saveWebsiteSection(section);
+      }
+      
+      console.log(`Initialized ${defaultSections.length} default website sections`);
+    } catch (error) {
+      console.error('Error initializing website sections:', error);
+    }
   }
 
   // Website Builder methods
