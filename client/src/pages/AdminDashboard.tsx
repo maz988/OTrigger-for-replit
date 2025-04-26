@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -61,7 +62,16 @@ import {
   RefreshCw,
   Settings,
   CalendarClock,
-  FileEdit
+  FileEdit,
+  MoreVertical,
+  LayoutTemplate,
+  EyeOff,
+  History,
+  ArrowUp,
+  ArrowDown,
+  RotateCcw,
+  Loader2,
+  Trash
 } from 'lucide-react';
 
 // Dashboard analytics data types
@@ -1536,6 +1546,453 @@ const AdminDashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        {/* Website Builder Tab */}
+        <TabsContent value="website" className="space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Website Builder</h2>
+              <p className="text-muted-foreground">Manage your website sections and content</p>
+            </div>
+            <Button onClick={handleCreateSection}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Section
+            </Button>
+          </div>
+          
+          {sectionsLoading ? (
+            <div className="grid grid-cols-1 gap-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardHeader className="pb-2">
+                    <div className="h-5 w-32 bg-muted rounded mb-2"></div>
+                    <div className="h-4 w-48 bg-muted rounded"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-20 bg-muted rounded"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : websiteSections.length === 0 ? (
+            <Card className="border-dashed border-2">
+              <CardContent className="py-8 text-center">
+                <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <LayoutTemplate className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium mb-1">No Website Sections</h3>
+                <p className="text-muted-foreground mb-4">Get started by adding your first website section.</p>
+                <Button onClick={handleCreateSection}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Section
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {websiteSections
+                .sort((a, b) => a.order - b.order)
+                .map((section) => (
+                  <Card key={section.id} className={!section.visible ? "opacity-60" : undefined}>
+                    <CardHeader className="pb-2 flex flex-row items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-lg">{section.name}</CardTitle>
+                          {!section.visible && (
+                            <Badge variant="outline" className="text-xs">Hidden</Badge>
+                          )}
+                        </div>
+                        <CardDescription>
+                          Type: {section.sectionType.charAt(0).toUpperCase() + section.sectionType.slice(1)}
+                        </CardDescription>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditSection(section)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewVersionHistory(section.id)}>
+                            <History className="h-4 w-4 mr-2" />
+                            Version History
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleDeleteSection(section.id)}>
+                            <Trash className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="p-3 bg-muted rounded-md">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-emerald-500 mr-2"></div>
+                            <span className="text-xs font-medium">Order: {section.order}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              disabled={section.order === 1}
+                              onClick={() => {
+                                const ids = websiteSections
+                                  .sort((a, b) => a.order - b.order)
+                                  .map(s => s.id);
+                                const currentIndex = ids.indexOf(section.id);
+                                if (currentIndex > 0) {
+                                  [ids[currentIndex], ids[currentIndex - 1]] = [ids[currentIndex - 1], ids[currentIndex]];
+                                  handleReorderSections(ids);
+                                }
+                              }}
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              disabled={section.order === websiteSections.length}
+                              onClick={() => {
+                                const ids = websiteSections
+                                  .sort((a, b) => a.order - b.order)
+                                  .map(s => s.id);
+                                const currentIndex = ids.indexOf(section.id);
+                                if (currentIndex < ids.length - 1) {
+                                  [ids[currentIndex], ids[currentIndex + 1]] = [ids[currentIndex + 1], ids[currentIndex]];
+                                  handleReorderSections(ids);
+                                }
+                              }}
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-xs font-mono bg-background p-2 rounded overflow-auto max-h-24">
+                          {JSON.stringify(section.settings, null, 2)}
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-end pt-0">
+                      <Button variant="outline" size="sm" className="mr-2" onClick={() => {
+                        updateSectionMutation.mutate({
+                          id: section.id,
+                          data: { visible: !section.visible }
+                        });
+                      }}>
+                        {section.visible ? (
+                          <>
+                            <EyeOff className="h-4 w-4 mr-2" />
+                            Hide Section
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Show Section
+                          </>
+                        )}
+                      </Button>
+                      <Button size="sm" onClick={() => handleEditSection(section)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+            </div>
+          )}
+          
+          {/* Create Section Dialog */}
+          <Dialog open={isCreateSectionDialogOpen} onOpenChange={setIsCreateSectionDialogOpen}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Create New Website Section</DialogTitle>
+                <DialogDescription>
+                  Add a new section to your website. Configure the content and settings.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">Name</Label>
+                  <Input
+                    id="name"
+                    value={sectionFormData.name}
+                    onChange={(e) => setSectionFormData({...sectionFormData, name: e.target.value})}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="type" className="text-right">Type</Label>
+                  <Select
+                    value={sectionFormData.sectionType}
+                    onValueChange={(value) => setSectionFormData({...sectionFormData, sectionType: value})}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select a section type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hero">Hero</SelectItem>
+                      <SelectItem value="content">Content</SelectItem>
+                      <SelectItem value="feature">Feature</SelectItem>
+                      <SelectItem value="testimonial">Testimonial</SelectItem>
+                      <SelectItem value="cta">Call to Action</SelectItem>
+                      <SelectItem value="faq">FAQ</SelectItem>
+                      <SelectItem value="contact">Contact</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="visible" className="text-right">Visibility</Label>
+                  <div className="flex items-center col-span-3">
+                    <Switch
+                      id="visible"
+                      checked={sectionFormData.visible}
+                      onCheckedChange={(checked) => setSectionFormData({...sectionFormData, visible: checked})}
+                    />
+                    <Label htmlFor="visible" className="ml-2">
+                      {sectionFormData.visible ? 'Visible' : 'Hidden'}
+                    </Label>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="settings" className="text-right pt-2">Settings</Label>
+                  <div className="col-span-3">
+                    <Textarea
+                      id="settings"
+                      value={JSON.stringify(sectionFormData.settings, null, 2)}
+                      onChange={(e) => {
+                        try {
+                          const settings = JSON.parse(e.target.value);
+                          setSectionFormData({...sectionFormData, settings});
+                        } catch (error) {
+                          // Allow invalid JSON during editing
+                        }
+                      }}
+                      className="font-mono h-32"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter section settings as JSON. Example: {"{ \"title\": \"Welcome\", \"subtitle\": \"Learn more\" }"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateSectionDialogOpen(false)}>Cancel</Button>
+                <Button 
+                  onClick={() => createSectionMutation.mutate(sectionFormData)} 
+                  disabled={createSectionMutation.isPending || !sectionFormData.name || !sectionFormData.sectionType}
+                >
+                  {createSectionMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Section
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Edit Section Dialog */}
+          <Dialog open={isEditSectionDialogOpen} onOpenChange={setIsEditSectionDialogOpen}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Edit Website Section</DialogTitle>
+                <DialogDescription>
+                  Update the content and settings for this section.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-name" className="text-right">Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={sectionFormData.name}
+                    onChange={(e) => setSectionFormData({...sectionFormData, name: e.target.value})}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-type" className="text-right">Type</Label>
+                  <Select
+                    value={sectionFormData.sectionType}
+                    onValueChange={(value) => setSectionFormData({...sectionFormData, sectionType: value})}
+                  >
+                    <SelectTrigger className="col-span-3" id="edit-type">
+                      <SelectValue placeholder="Select a section type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hero">Hero</SelectItem>
+                      <SelectItem value="content">Content</SelectItem>
+                      <SelectItem value="feature">Feature</SelectItem>
+                      <SelectItem value="testimonial">Testimonial</SelectItem>
+                      <SelectItem value="cta">Call to Action</SelectItem>
+                      <SelectItem value="faq">FAQ</SelectItem>
+                      <SelectItem value="contact">Contact</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-visible" className="text-right">Visibility</Label>
+                  <div className="flex items-center col-span-3">
+                    <Switch
+                      id="edit-visible"
+                      checked={sectionFormData.visible}
+                      onCheckedChange={(checked) => setSectionFormData({...sectionFormData, visible: checked})}
+                    />
+                    <Label htmlFor="edit-visible" className="ml-2">
+                      {sectionFormData.visible ? 'Visible' : 'Hidden'}
+                    </Label>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="edit-settings" className="text-right pt-2">Settings</Label>
+                  <div className="col-span-3">
+                    <Textarea
+                      id="edit-settings"
+                      value={JSON.stringify(sectionFormData.settings, null, 2)}
+                      onChange={(e) => {
+                        try {
+                          const settings = JSON.parse(e.target.value);
+                          setSectionFormData({...sectionFormData, settings});
+                        } catch (error) {
+                          // Allow invalid JSON during editing
+                        }
+                      }}
+                      className="font-mono h-32"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter section settings as JSON. Example: {"{ \"title\": \"Welcome\", \"subtitle\": \"Learn more\" }"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleViewVersionHistory(selectedSectionId!)}
+                  className="mr-auto"
+                >
+                  <History className="mr-2 h-4 w-4" />
+                  View History
+                </Button>
+                <Button variant="outline" onClick={() => setIsEditSectionDialogOpen(false)}>Cancel</Button>
+                <Button 
+                  onClick={() => {
+                    if (selectedSectionId) {
+                      updateSectionMutation.mutate({
+                        id: selectedSectionId,
+                        data: sectionFormData
+                      });
+                    }
+                  }} 
+                  disabled={updateSectionMutation.isPending || !sectionFormData.name || !sectionFormData.sectionType}
+                >
+                  {updateSectionMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Delete Section Dialog */}
+          <AlertDialog open={isDeleteSectionDialogOpen} onOpenChange={setIsDeleteSectionDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete this
+                  website section and may affect your live website.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (selectedSectionId) {
+                      deleteSectionMutation.mutate(selectedSectionId);
+                    }
+                  }}
+                  className="bg-red-600 focus:ring-red-600"
+                >
+                  {deleteSectionMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash className="mr-2 h-4 w-4" />
+                  )}
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          
+          {/* Version History Dialog */}
+          <Dialog open={isVersionHistoryDialogOpen} onOpenChange={setIsVersionHistoryDialogOpen}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Version History</DialogTitle>
+                <DialogDescription>
+                  View and restore previous versions of this section.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                {getSectionVersionsMutation.isPending ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : sectionVersions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-1">No Previous Versions</h3>
+                    <p className="text-muted-foreground">This section has no version history yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {sectionVersions.map((version) => (
+                      <Card key={version.id}>
+                        <CardHeader className="py-2">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <CardTitle className="text-sm">Version {version.id}</CardTitle>
+                              <CardDescription>
+                                {new Date(version.createdAt).toLocaleString()}
+                                {version.createdBy && ` by ${version.createdBy}`}
+                              </CardDescription>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleRestoreVersion(version.id)}
+                              disabled={restoreVersionMutation.isPending}
+                            >
+                              {restoreVersionMutation.isPending ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                              )}
+                              Restore
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="py-2">
+                          {version.versionNote && (
+                            <div className="text-sm mb-2 italic">"{version.versionNote}"</div>
+                          )}
+                          <div className="text-xs font-mono bg-muted p-2 rounded overflow-auto max-h-32">
+                            {JSON.stringify(version.settings, null, 2)}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button onClick={() => setIsVersionHistoryDialogOpen(false)}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
         
         {/* Settings Tab */}
