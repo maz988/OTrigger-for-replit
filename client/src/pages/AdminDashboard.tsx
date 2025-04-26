@@ -141,6 +141,27 @@ interface EmailTemplate {
   updatedAt: string | null;
 }
 
+// Website section types
+interface WebsiteSection {
+  id: string;
+  name: string;
+  sectionType: string;
+  order: number;
+  visible: boolean;
+  settings: Record<string, any>;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+interface SectionVersion {
+  id: number;
+  sectionId: string;
+  settings: Record<string, any>;
+  createdAt: string;
+  createdBy: string | null;
+  versionNote: string;
+}
+
 interface SystemSetting {
   id: number;
   settingKey: string;
@@ -307,9 +328,40 @@ const AdminDashboard: React.FC = () => {
     enabled: activeTab === 'settings',
   });
   
+  // Fetch website sections when website tab is active
+  const { data: websiteSectionsResponse, isLoading: sectionsLoading, refetch: refetchSections } = useQuery({
+    queryKey: ['/api/admin/website/sections'],
+    queryFn: getQueryFn(),
+    enabled: activeTab === 'website',
+  });
+  
   // Blog posts data
   const blogPosts: BlogPost[] = postsResponse?.data || [];
   const subscribers: EmailSubscriber[] = subscribersResponse?.data || [];
+  
+  // Website sections data
+  const websiteSections: WebsiteSection[] = websiteSectionsResponse?.data || [];
+  
+  // Website builder state
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [isEditSectionDialogOpen, setIsEditSectionDialogOpen] = useState(false);
+  const [isCreateSectionDialogOpen, setIsCreateSectionDialogOpen] = useState(false);
+  const [isDeleteSectionDialogOpen, setIsDeleteSectionDialogOpen] = useState(false);
+  const [isVersionHistoryDialogOpen, setIsVersionHistoryDialogOpen] = useState(false);
+  const [sectionVersions, setSectionVersions] = useState<SectionVersion[]>([]);
+  
+  // Section form data
+  const [sectionFormData, setSectionFormData] = useState<{
+    name: string;
+    sectionType: string;
+    visible: boolean;
+    settings: Record<string, any>;
+  }>({
+    name: '',
+    sectionType: 'content',
+    visible: true,
+    settings: {}
+  });
   
   // Settings data - restructure for easier access
   const settings = React.useMemo(() => {
@@ -443,6 +495,140 @@ const AdminDashboard: React.FC = () => {
     }
   });
   
+  // Website builder mutations
+  const createSectionMutation = useMutation({
+    mutationFn: async (newSection: typeof sectionFormData) => {
+      const response = await apiRequest('POST', '/api/admin/website/sections', newSection);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Section Created',
+        description: 'The website section has been created successfully.',
+        variant: 'default',
+      });
+      setIsCreateSectionDialogOpen(false);
+      refetchSections();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Creating Section',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  const updateSectionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<typeof sectionFormData> }) => {
+      const response = await apiRequest('PATCH', `/api/admin/website/sections/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Section Updated',
+        description: 'The website section has been updated successfully.',
+        variant: 'default',
+      });
+      setIsEditSectionDialogOpen(false);
+      refetchSections();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Updating Section',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  const deleteSectionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/admin/website/sections/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Section Deleted',
+        description: 'The website section has been deleted successfully.',
+        variant: 'default',
+      });
+      setIsDeleteSectionDialogOpen(false);
+      refetchSections();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Deleting Section',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  const reorderSectionsMutation = useMutation({
+    mutationFn: async (sectionIds: string[]) => {
+      const response = await apiRequest('POST', '/api/admin/website/sections/reorder', { sectionIds });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Sections Reordered',
+        description: 'The website sections have been reordered successfully.',
+        variant: 'default',
+      });
+      refetchSections();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Reordering Sections',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Section version history
+  const getSectionVersionsMutation = useMutation({
+    mutationFn: async (sectionId: string) => {
+      const response = await apiRequest('GET', `/api/admin/website/sections/${sectionId}/versions`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setSectionVersions(data);
+      setIsVersionHistoryDialogOpen(true);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Fetching Version History',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  const restoreVersionMutation = useMutation({
+    mutationFn: async ({ sectionId, versionId }: { sectionId: string; versionId: number }) => {
+      const response = await apiRequest('POST', `/api/admin/website/sections/${sectionId}/restore/${versionId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Version Restored',
+        description: 'The website section has been restored to the selected version.',
+        variant: 'default',
+      });
+      setIsVersionHistoryDialogOpen(false);
+      refetchSections();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Restoring Version',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
   // Helper functions
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const title = e.target.value;
@@ -520,6 +706,55 @@ const AdminDashboard: React.FC = () => {
         variant: 'default',
       });
     }
+  };
+  
+  // Website section helper functions
+  const resetSectionFormData = () => {
+    setSectionFormData({
+      name: '',
+      sectionType: 'content',
+      visible: true,
+      settings: {}
+    });
+  };
+  
+  const handleCreateSection = () => {
+    resetSectionFormData();
+    setIsCreateSectionDialogOpen(true);
+  };
+  
+  const handleEditSection = (section: WebsiteSection) => {
+    setSelectedSectionId(section.id);
+    setSectionFormData({
+      name: section.name,
+      sectionType: section.sectionType,
+      visible: section.visible,
+      settings: section.settings
+    });
+    setIsEditSectionDialogOpen(true);
+  };
+  
+  const handleDeleteSection = (sectionId: string) => {
+    setSelectedSectionId(sectionId);
+    setIsDeleteSectionDialogOpen(true);
+  };
+  
+  const handleViewVersionHistory = (sectionId: string) => {
+    setSelectedSectionId(sectionId);
+    getSectionVersionsMutation.mutate(sectionId);
+  };
+  
+  const handleRestoreVersion = (versionId: number) => {
+    if (selectedSectionId) {
+      restoreVersionMutation.mutate({ 
+        sectionId: selectedSectionId, 
+        versionId 
+      });
+    }
+  };
+  
+  const handleReorderSections = (updatedIds: string[]) => {
+    reorderSectionsMutation.mutate(updatedIds);
   };
   
   return (
