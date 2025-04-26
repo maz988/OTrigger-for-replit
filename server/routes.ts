@@ -197,7 +197,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         listIdSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
       }
       
-      const listId = listIdSetting?.settingValue || '';
+      // If list ID is not set, try to use default list ID as a fallback
+      let listId = listIdSetting?.settingValue || '';
+      if (!listId) {
+        const defaultListSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
+        listId = defaultListSetting?.settingValue || '';
+        if (!listId) {
+          console.log(`WARNING: No list ID found for subscriber with source: ${source || 'website'}`);
+        } else {
+          console.log(`Using DEFAULT_LIST_ID as fallback for subscriber with source: ${source || 'website'}`);
+        }
+      }
       console.log(`Using list ID ${listId || 'default'} for subscriber with source: ${source || 'website'}`);
       
       // Send subscriber to the active email service provider
@@ -252,7 +262,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Get the lead magnet list ID from settings
         const listIdSetting = await storage.getSettingByKey('LEAD_MAGNET_LIST_ID');
-        const listId = listIdSetting?.settingValue || '';
+        // If lead magnet list ID is not set, try to use default list ID
+        let listId = listIdSetting?.settingValue || '';
+        if (!listId) {
+          const defaultListSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
+          listId = defaultListSetting?.settingValue || '';
+        }
         console.log(`Using list ID ${listId || 'default'} for lead magnet subscriber: ${email}`);
         
         // Send to email service with lead magnet as source
@@ -323,6 +338,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Get the default list ID from settings
           const listIdSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
           const listId = listIdSetting?.settingValue || '';
+          if (!listId) {
+            console.log(`WARNING: No DEFAULT_LIST_ID setting found for blog subscriber: ${email}`);
+          }
           console.log(`Using list ID ${listId || 'default'} for blog subscriber: ${email}`);
           
           // Send to email service
@@ -382,7 +400,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Get the quiz list ID from settings
           const listIdSetting = await storage.getSettingByKey('QUIZ_LIST_ID');
-          const listId = listIdSetting?.settingValue || '';
+          // If quiz list ID is not set, try to use default list ID
+          let listId = listIdSetting?.settingValue || '';
+          if (!listId) {
+            const defaultListSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
+            listId = defaultListSetting?.settingValue || '';
+          }
           console.log(`Using list ID ${listId || 'default'} for quiz subscriber: ${email}`);
           
           // Send to email service
