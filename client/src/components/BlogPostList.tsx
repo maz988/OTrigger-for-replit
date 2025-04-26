@@ -20,7 +20,7 @@ interface BlogPostListProps {
   categorySlug?: string;
 }
 
-export function BlogPostList({ categorySlug }: BlogPostListProps) {
+const BlogPostList: React.FC<BlogPostListProps> = ({ categorySlug }) => {
   const { data: blogPostsResponse, isLoading } = useQuery({
     queryKey: ['/api/blog/posts', categorySlug ? { category: categorySlug } : undefined],
     queryFn: getQueryFn<BlogPost[]>(),
