@@ -1,27 +1,34 @@
+/**
+ * Email Provider Registry
+ * 
+ * This registry maintains a list of available email service providers
+ * and manages the active provider.
+ */
+
 import { IEmailServiceProvider, EmailProviderConfig } from './interfaces';
 
-/**
- * Email Service Provider Registry
- * 
- * Central registry that manages all available email service providers.
- * Provides methods to register, unregister, and retrieve providers.
- */
-class EmailServiceProviderRegistry {
+class EmailProviderRegistry {
   private providers: Map<string, IEmailServiceProvider> = new Map();
-  private providerConfigs: Map<string, EmailProviderConfig> = new Map();
-  private activeProvider: string | null = null;
+  private activeProviderName: string | null = null;
   
   /**
    * Register a new email service provider
-   * @param provider The provider instance to register
+   * @param provider The provider implementation to register
    */
   registerProvider(provider: IEmailServiceProvider): void {
-    if (this.providers.has(provider.name)) {
-      throw new Error(`Provider with name "${provider.name}" is already registered`);
+    const providerName = provider.name.toLowerCase();
+    
+    if (this.providers.has(providerName)) {
+      console.warn(`Provider with name '${providerName}' is already registered. Replacing...`);
     }
     
-    this.providers.set(provider.name, provider);
-    console.log(`Email provider "${provider.displayName}" registered`);
+    this.providers.set(providerName, provider);
+    console.log(`Registered email provider: ${provider.displayName}`);
+    
+    // If this is the first provider, set it as active
+    if (this.providers.size === 1 && !this.activeProviderName) {
+      this.setActiveProvider(providerName);
+    }
   }
   
   /**
@@ -29,113 +36,114 @@ class EmailServiceProviderRegistry {
    * @param providerName The name of the provider to unregister
    */
   unregisterProvider(providerName: string): void {
-    if (!this.providers.has(providerName)) {
-      throw new Error(`Provider with name "${providerName}" is not registered`);
+    const normalizedName = providerName.toLowerCase();
+    
+    if (!this.providers.has(normalizedName)) {
+      throw new Error(`Provider '${providerName}' is not registered`);
     }
     
-    this.providers.delete(providerName);
-    this.providerConfigs.delete(providerName);
+    this.providers.delete(normalizedName);
+    console.log(`Unregistered email provider: ${providerName}`);
     
-    // If this was the active provider, reset active provider
-    if (this.activeProvider === providerName) {
-      this.activeProvider = null;
+    // If this was the active provider, clear it
+    if (this.activeProviderName === normalizedName) {
+      this.activeProviderName = null;
+      
+      // If there are other providers, set the first one as active
+      if (this.providers.size > 0) {
+        const firstProvider = this.providers.keys().next().value;
+        this.setActiveProvider(firstProvider);
+      }
     }
-    
-    console.log(`Email provider "${providerName}" unregistered`);
+  }
+  
+  /**
+   * Get a provider by name
+   * @param providerName The name of the provider to get
+   * @returns The provider implementation or undefined if not found
+   */
+  getProvider(providerName: string): IEmailServiceProvider | undefined {
+    return this.providers.get(providerName?.toLowerCase());
   }
   
   /**
    * Get all registered providers
+   * @returns Array of provider implementations
    */
   getAllProviders(): IEmailServiceProvider[] {
     return Array.from(this.providers.values());
   }
   
   /**
-   * Get all registered provider names
-   */
-  getAllProviderNames(): string[] {
-    return Array.from(this.providers.keys());
-  }
-  
-  /**
-   * Get a specific provider by name
-   * @param providerName The name of the provider to retrieve
-   */
-  getProvider(providerName: string): IEmailServiceProvider | undefined {
-    return this.providers.get(providerName);
-  }
-  
-  /**
-   * Set the configuration for a specific provider
-   * @param providerName The name of the provider to configure
-   * @param config The configuration to set
-   */
-  setProviderConfig(providerName: string, config: EmailProviderConfig): void {
-    const provider = this.getProvider(providerName);
-    if (!provider) {
-      throw new Error(`Provider with name "${providerName}" is not registered`);
-    }
-    
-    // Update the provider instance with the new config
-    provider.setConfig(config);
-    
-    // Also store the config in our registry
-    this.providerConfigs.set(providerName, config);
-    
-    console.log(`Configuration updated for provider "${providerName}"`);
-  }
-  
-  /**
-   * Get the configuration for a specific provider
-   * @param providerName The name of the provider to get config for
-   */
-  getProviderConfig(providerName: string): EmailProviderConfig | undefined {
-    return this.providerConfigs.get(providerName);
-  }
-  
-  /**
-   * Set the active email service provider
+   * Set the active provider
    * @param providerName The name of the provider to set as active
+   * @throws Error if provider does not exist
    */
   setActiveProvider(providerName: string): void {
-    if (!this.providers.has(providerName)) {
-      throw new Error(`Cannot set active provider: "${providerName}" is not registered`);
+    const normalizedName = providerName.toLowerCase();
+    
+    if (!this.providers.has(normalizedName)) {
+      throw new Error(`Cannot set active provider: '${providerName}' is not registered`);
     }
     
-    this.activeProvider = providerName;
-    console.log(`Active email provider set to "${providerName}"`);
+    this.activeProviderName = normalizedName;
+    console.log(`Set active email provider to: ${providerName}`);
   }
   
   /**
-   * Get the currently active email service provider
+   * Get the active provider
+   * @returns The active provider implementation or null if none is set
    */
   getActiveProvider(): IEmailServiceProvider | null {
-    if (!this.activeProvider) {
+    if (!this.activeProviderName) {
       return null;
     }
     
-    return this.providers.get(this.activeProvider) || null;
+    return this.providers.get(this.activeProviderName) || null;
   }
   
   /**
-   * Get the name of the currently active email service provider
+   * Get the name of the active provider
+   * @returns The name of the active provider or null if none is set
    */
   getActiveProviderName(): string | null {
-    return this.activeProvider;
+    return this.activeProviderName;
   }
   
   /**
-   * Check if a provider exists by name
-   * @param providerName The name of the provider to check
+   * Set configuration for a specific provider
+   * @param providerName The name of the provider to configure
+   * @param config The configuration to apply
+   * @throws Error if provider does not exist
    */
-  hasProvider(providerName: string): boolean {
-    return this.providers.has(providerName);
+  setProviderConfig(providerName: string, config: EmailProviderConfig): void {
+    const normalizedName = providerName.toLowerCase();
+    const provider = this.providers.get(normalizedName);
+    
+    if (!provider) {
+      throw new Error(`Cannot configure provider: '${providerName}' is not registered`);
+    }
+    
+    provider.setConfig(config);
+    console.log(`Configured email provider: ${providerName}`);
+  }
+  
+  /**
+   * Get provider configuration
+   * @param providerName The name of the provider to get configuration for
+   * @returns The provider configuration or null if provider not found
+   */
+  getProviderConfig(providerName: string): EmailProviderConfig | null {
+    const normalizedName = providerName.toLowerCase();
+    const provider = this.providers.get(normalizedName);
+    
+    if (!provider) {
+      return null;
+    }
+    
+    return provider.getConfig();
   }
 }
 
 // Create and export a singleton instance
-export const emailProviderRegistry = new EmailServiceProviderRegistry();
-
-// Export the class for types
-export { EmailServiceProviderRegistry };
+export const emailProviderRegistry = new EmailProviderRegistry();
