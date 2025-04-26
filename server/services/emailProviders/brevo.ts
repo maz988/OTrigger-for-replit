@@ -181,7 +181,8 @@ export async function sendToBrevo(
   email: string,
   name: string,
   source?: string,
-  apiKey?: string
+  apiKey?: string,
+  listId?: string
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
     // Validate API key if provided
@@ -222,6 +223,13 @@ export async function sendToBrevo(
       updateEnabled: true // Update if contact already exists
     };
     
+    // Log if a list ID is provided
+    if (listId) {
+      console.log(`Adding subscriber to Brevo list ID: ${listId}`);
+    } else {
+      console.log('No list ID provided for Brevo. Contact will be added but not assigned to a list.');
+    }
+    
     // Use Brevo Contacts API to add or update contact
     const response = await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
@@ -235,6 +243,36 @@ export async function sendToBrevo(
     
     if (response.ok) {
       console.log(`Brevo contact added/updated successfully: ${email}`);
+      
+      // If listId is provided, add the contact to the specified list
+      if (listId) {
+        try {
+          console.log(`Adding contact ${email} to Brevo list ID ${listId}`);
+          
+          // Add contact to list
+          const listResponse = await fetch(`https://api.brevo.com/v3/contacts/lists/${listId}/contacts/add`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'api-key': apiKey
+            },
+            body: JSON.stringify({
+              emails: [email]
+            })
+          });
+          
+          if (listResponse.ok) {
+            console.log(`Successfully added ${email} to Brevo list ID ${listId}`);
+          } else {
+            const listError = await listResponse.json();
+            console.error(`Error adding contact to Brevo list: ${listError.message || listResponse.statusText}`);
+          }
+        } catch (listError) {
+          console.error(`Exception adding contact to Brevo list: ${listError.message}`);
+        }
+      }
+      
       return {
         success: true,
         message: `Subscriber successfully added to Brevo: ${name} (${email})`
@@ -245,6 +283,36 @@ export async function sendToBrevo(
       // Special case: If the contact already exists, this is not an error for us
       if (response.status === 400 && errorData?.message?.includes('Contact already exist')) {
         console.log(`Contact already exists in Brevo: ${email}. This is not an error.`);
+        
+        // If listId is provided, add the existing contact to the specified list
+        if (listId) {
+          try {
+            console.log(`Adding existing contact ${email} to Brevo list ID ${listId}`);
+            
+            // Add contact to list
+            const listResponse = await fetch(`https://api.brevo.com/v3/contacts/lists/${listId}/contacts/add`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'api-key': apiKey
+              },
+              body: JSON.stringify({
+                emails: [email]
+              })
+            });
+            
+            if (listResponse.ok) {
+              console.log(`Successfully added existing contact ${email} to Brevo list ID ${listId}`);
+            } else {
+              const listError = await listResponse.json();
+              console.error(`Error adding existing contact to Brevo list: ${listError.message || listResponse.statusText}`);
+            }
+          } catch (listError) {
+            console.error(`Exception adding existing contact to Brevo list: ${listError.message}`);
+          }
+        }
+        
         return {
           success: true,
           message: `Subscriber already exists in Brevo: ${name} (${email})`
