@@ -198,8 +198,18 @@ export async function sendSubscriberToEmailService({
           // Dynamically import to avoid circular dependencies
           const { sendToBrevo } = await import('./emailProviders/brevo');
           
+          // Debug logging
+          console.log('DEBUG: emailDispatcher preparing to call sendToBrevo with:');
+          console.log(`DEBUG: - Email: ${email}`);
+          console.log(`DEBUG: - Name: ${name}`);
+          console.log(`DEBUG: - Source: ${source}`);
+          console.log(`DEBUG: - API Key: ${providerConfig.apiKey ? 'Present (not shown)' : 'Missing'}`);
+          console.log(`DEBUG: - List ID: ${listId || 'Not provided'}`);
+          
           // Pass the list ID parameter to Brevo
           const result = await sendToBrevo(email, name, source, providerConfig.apiKey, listId);
+          
+          console.log('DEBUG: Brevo integration result:', result);
           
           if (result.success) {
             return {
