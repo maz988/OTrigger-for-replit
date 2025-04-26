@@ -133,7 +133,12 @@ export async function sendSubscriberToEmailService({
     
     // Determine which service to use
     const emailServiceSetting = await storage.getSettingByKey('EMAIL_SERVICE');
-    const service = emailServiceSetting?.settingValue || 'sendgrid';
+    console.log('DEBUG: Fetched EMAIL_SERVICE setting:', emailServiceSetting);
+    
+    // Default to sendgrid if no setting exists
+    // Normalize the service name to lowercase to prevent case sensitivity issues
+    const service = (emailServiceSetting?.settingValue || 'sendgrid').toLowerCase();
+    console.log(`DEBUG: Selected email service: "${service}"`)
     
     // Check if we have a valid API key
     if (!providerConfig.apiKey) {
@@ -290,7 +295,9 @@ export async function sendEmail(
   
   // Determine which service to use
   const emailServiceSetting = await storage.getSettingByKey('EMAIL_SERVICE');
-  const service = emailServiceSetting?.settingValue || 'sendgrid';
+  // Normalize the service name to lowercase to prevent case sensitivity issues
+  const service = (emailServiceSetting?.settingValue || 'sendgrid').toLowerCase();
+  console.log(`DEBUG: Selected email service for sending: "${service}"`);
   
   // Update from field with the configured values if needed
   if (!message.from.includes('<')) {
