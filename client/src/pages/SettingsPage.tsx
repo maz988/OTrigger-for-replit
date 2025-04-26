@@ -182,15 +182,6 @@ const SettingsPage: React.FC = () => {
     queryFn: getQueryFn(),
   });
   
-  // Fetch email providers
-  const { data: providersResponse, isLoading: providersLoading, refetch: refetchProviders } = useQuery({
-    queryKey: ['/api/admin/email-providers'],
-    queryFn: getQueryFn(),
-  });
-  
-  // Parse providers from API response
-  const emailProviders: EmailProvider[] = providersResponse?.data || [];
-
   // Parse settings from API response
   const settings: ServiceSettings[] = settingsResponse?.data || [];
   
@@ -199,68 +190,6 @@ const SettingsPage: React.FC = () => {
     queryKey: ['/api/admin/email/lists'],
     queryFn: getQueryFn(),
     enabled: false, // Don't fetch automatically, we'll fetch manually when needed
-  });
-  
-  // Set active email provider mutation
-  const setActiveProviderMutation = useMutation({
-    mutationFn: async (providerName: string) => {
-      return await apiRequest(
-        'POST',
-        '/api/admin/email-providers/active',
-        { providerName }
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/email-providers'] });
-      refetchProviders();
-      refetchSettings();
-      
-      toast({
-        title: 'Email Provider Updated',
-        description: 'Active email provider has been updated successfully.',
-        variant: 'default',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error Updating Provider',
-        description: error.message || "An unknown error occurred",
-        variant: 'destructive',
-      });
-    }
-  });
-  
-  // Configure email provider mutation
-  const configureProviderMutation = useMutation({
-    mutationFn: async ({ providerName, config }: { providerName: string, config: any }) => {
-      return await apiRequest(
-        'POST',
-        '/api/admin/email-providers/config',
-        { providerName, config }
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/email-providers'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/settings'] });
-      refetchProviders();
-      refetchSettings();
-      
-      toast({
-        title: 'Provider Configured',
-        description: 'Email provider configuration has been updated successfully.',
-        variant: 'default',
-      });
-      
-      // Close the config dialog
-      setIsProviderConfigDialogOpen(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error Configuring Provider',
-        description: error.message || "An unknown error occurred",
-        variant: 'destructive',
-      });
-    }
   });
   
   // Test email provider mutation
@@ -584,14 +513,24 @@ const SettingsPage: React.FC = () => {
     setActiveProviderMutation.mutate(providerName);
   };
   
-  // Handle opening the provider configuration dialog
-  const handleConfigureProvider = (provider: EmailProvider) => {
-    setSelectedProvider(provider);
-    setIsProviderConfigDialogOpen(true);
+  // Load email lists for the active provider
+  const loadEmailLists = () => {
+    setLoadingLists(true);
+    refetchEmailLists().then(() => {
+      setLoadingLists(false);
+    }).catch(error => {
+      console.error("Error loading email lists:", error);
+      setLoadingLists(false);
+      toast({
+        title: 'Error Loading Lists',
+        description: 'Failed to load email lists. Please try again.',
+        variant: 'destructive',
+      });
+    });
   };
   
   // Handle sending a test email
-  const handleSendTestEmail = (email: string, providerName?: string) => {
+  const handleSendTestEmail = (email: string) => {
     if (!email) {
       toast({
         title: 'Email Required',
@@ -602,8 +541,8 @@ const SettingsPage: React.FC = () => {
     }
     
     testEmailProviderMutation.mutate({ 
-      email, 
-      providerName: providerName || (selectedProvider ? selectedProvider.name : undefined) 
+      email,
+      providerName: form.getValues().activeEmailService !== 'none' ? form.getValues().activeEmailService : undefined
     });
   };
   
