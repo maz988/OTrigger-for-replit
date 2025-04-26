@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -2032,6 +2033,113 @@ const SettingsPage: React.FC = () => {
               onClick={() => setIsTestDialogOpen(false)}
             >
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Provider Configuration Dialog */}
+      <Dialog open={isProviderConfigDialogOpen} onOpenChange={setIsProviderConfigDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              {selectedProvider?.iconUrl && (
+                <img 
+                  src={selectedProvider.iconUrl} 
+                  alt={selectedProvider.displayName} 
+                  className="w-6 h-6 mr-2" 
+                />
+              )}
+              Configure {selectedProvider?.displayName}
+            </DialogTitle>
+            <DialogDescription>
+              Configure your integration with {selectedProvider?.displayName}. Fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProvider && (
+            <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
+              {selectedProvider.configFields.map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <Label htmlFor={field.name} className="flex items-center">
+                    {field.displayName} {field.required && <span className="text-red-500 ml-1">*</span>}
+                  </Label>
+                  
+                  {field.type === 'boolean' ? (
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        id={field.name}
+                        checked={false} // Replace with actual provider config value
+                        onCheckedChange={() => {
+                          // Update provider config
+                        }}
+                      />
+                      <Label htmlFor={field.name}>{field.displayName}</Label>
+                    </div>
+                  ) : field.type === 'select' ? (
+                    <Select defaultValue={field.default?.toString() || ''}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={`Select ${field.displayName}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {field.options?.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      id={field.name}
+                      type={field.secret ? "password" : "text"}
+                      placeholder={field.default?.toString() || `Enter ${field.displayName}`}
+                      defaultValue={field.default?.toString() || ''}
+                      onChange={(e) => {
+                        // Update provider config
+                      }}
+                    />
+                  )}
+                  
+                  {field.description && (
+                    <p className="text-xs text-muted-foreground">{field.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProviderConfigDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              onClick={() => {
+                if (!selectedProvider) return;
+                
+                // Collect and save provider config
+                const config: Record<string, any> = {};
+                selectedProvider.configFields.forEach(field => {
+                  const input = document.getElementById(field.name) as HTMLInputElement;
+                  if (input) {
+                    config[field.name] = input.value;
+                  }
+                });
+                
+                configureProviderMutation.mutate({
+                  providerName: selectedProvider.name,
+                  config
+                });
+              }}
+              disabled={configureProviderMutation.isPending}
+            >
+              {configureProviderMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : "Save Configuration"}
             </Button>
           </DialogFooter>
         </DialogContent>
