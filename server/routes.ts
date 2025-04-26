@@ -4012,7 +4012,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           try {
             // Get all lists from Omnisend
-            const response = await fetch('https://api.omnisend.com/v3/lists', {
+            // Omnisend uses 'contacts/segments' endpoint for lists functionality
+            const response = await fetch('https://api.omnisend.com/v3/contacts/segments', {
               method: 'GET',
               headers: {
                 'X-API-KEY': apiKey,
@@ -4022,15 +4023,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             if (response.ok) {
               const data = await response.json();
-              console.log("Omnisend lists found:", data.lists?.length || 0);
+              console.log("Omnisend segments found:", data.length || 0);
               
-              if (data.lists && Array.isArray(data.lists)) {
-                lists = data.lists.map((list: any) => ({
-                  id: list.listID,
-                  name: list.name,
-                  subscriberCount: list.count || 0,
-                  description: list.name,
-                  createdAt: list.dateCreated || new Date().toISOString(),
+              if (Array.isArray(data)) {
+                lists = data.map((segment: any) => ({
+                  id: segment.segmentID,
+                  name: segment.name,
+                  subscriberCount: segment.contactsCount || 0,
+                  description: segment.name,
+                  createdAt: new Date().toISOString(), // Omnisend doesn't provide created date in segments endpoint
                   isDefault: false
                 }));
               } else {
