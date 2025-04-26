@@ -5,7 +5,8 @@
  * and manages the active provider.
  */
 
-import { IEmailServiceProvider, EmailProviderConfig } from './interfaces';
+import type { IEmailServiceProvider } from './interfaces';
+import type { EmailProviderConfig } from './interfaces';
 
 class EmailProviderRegistry {
   private providers: Map<string, IEmailServiceProvider> = new Map();

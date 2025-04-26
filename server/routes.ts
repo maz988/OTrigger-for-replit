@@ -8,6 +8,7 @@ import cron from 'node-cron';
 import { randomBytes } from 'crypto';
 import fetch from 'node-fetch';
 import { InsertSystemSetting } from '@shared/schema';
+import { initializeEmailProviders } from './services/newEmailDispatcher';
 
 // Initialize OpenAI
 const openai = new OpenAI({ 
@@ -92,6 +93,19 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up JSON request body parsing
   app.use(express.json());
+  
+  // Initialize email provider system
+  try {
+    const { initializeEmailProviders } = await import('./services/newEmailDispatcher');
+    const emailInitResult = await initializeEmailProviders();
+    if (emailInitResult) {
+      console.log('Email provider system successfully initialized');
+    } else {
+      console.warn('Email provider system initialization failed, using fallback email handling');
+    }
+  } catch (error) {
+    console.error('Error initializing email provider system:', error);
+  }
   
   // Route to generate AI advice
   app.post("/api/generate-advice", async (req, res) => {
@@ -3036,6 +3050,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (err: any) {
       console.error(`Error testing service connection: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // New endpoints for email provider system
+  app.get("/api/admin/email-providers", authenticateAdmin, async (req, res) => {
+    try {
+      const { getAllProviders, getActiveProviderName } = await import('./services/emailProviders');
+      
+      const providers = getAllProviders().map(provider => ({
+        name: provider.name,
+        displayName: provider.displayName,
+        description: provider.description,
+        iconUrl: provider.iconUrl,
+        isActive: provider.name === getActiveProviderName(),
+        configFields: provider.configFields
+      }));
+      
+      res.status(200).json({
+        success: true,
+        data: providers
+      });
+    } catch (err: any) {
+      console.error(`Error getting email providers: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/email-providers/active", authenticateAdmin, async (req, res) => {
+    try {
+      const { providerName } = req.body;
+      
+      if (!providerName) {
+        return res.status(400).json({
+          success: false,
+          error: "Provider name is required"
+        });
+      }
+      
+      const { setActiveProvider, getProvider } = await import('./services/emailProviders');
+      
+      // Check if the provider exists
+      const provider = getProvider(providerName);
+      if (!provider) {
+        return res.status(404).json({
+          success: false,
+          error: `Provider '${providerName}' not found`
+        });
+      }
+      
+      // Set as active provider
+      const result = setActiveProvider(providerName);
+      
+      if (result) {
+        // Also update the EMAIL_SERVICE setting for compatibility with legacy code
+        await storage.updateSetting('EMAIL_SERVICE', providerName);
+        
+        return res.status(200).json({
+          success: true,
+          message: `Provider '${providerName}' is now active`
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: `Failed to set '${providerName}' as active provider`
+        });
+      }
+    } catch (err: any) {
+      console.error(`Error setting active email provider: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/email-providers/config", authenticateAdmin, async (req, res) => {
+    try {
+      const { providerName, config } = req.body;
+      
+      if (!providerName || !config) {
+        return res.status(400).json({
+          success: false,
+          error: "Provider name and configuration are required"
+        });
+      }
+      
+      const { configureProvider, getProvider } = await import('./services/emailProviders');
+      
+      // Check if the provider exists
+      const provider = getProvider(providerName);
+      if (!provider) {
+        return res.status(404).json({
+          success: false,
+          error: `Provider '${providerName}' not found`
+        });
+      }
+      
+      // Configure the provider
+      const result = configureProvider(providerName, config);
+      
+      if (result) {
+        // Also update the API key in settings for compatibility with legacy code
+        if (config.apiKey) {
+          const settingKey = `${providerName.toUpperCase()}_API_KEY`;
+          await storage.updateSetting(settingKey, config.apiKey);
+        }
+        
+        return res.status(200).json({
+          success: true,
+          message: `Provider '${providerName}' configuration updated`
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: `Failed to update '${providerName}' configuration`
+        });
+      }
+    } catch (err: any) {
+      console.error(`Error configuring email provider: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  app.post("/api/admin/email-providers/test-email", authenticateAdmin, async (req, res) => {
+    try {
+      const { email, providerName, apiKey } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: "Email address is required"
+        });
+      }
+      
+      const { sendTestEmail } = await import('./services/newEmailDispatcher');
+      
+      // Send test email using the specified or active provider
+      const result = await sendTestEmail(email, providerName, apiKey);
+      
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+          message: `Test email sent to ${email}`
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: result.error || "Failed to send test email"
+        });
+      }
+    } catch (err: any) {
+      console.error(`Error sending test email: ${err.message}`);
       res.status(500).json({
         success: false,
         error: err.message

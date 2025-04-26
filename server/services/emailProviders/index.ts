@@ -6,7 +6,8 @@
  */
 
 import { emailProviderRegistry } from './registry';
-import { IEmailServiceProvider, EmailProviderConfig } from './interfaces';
+import type { IEmailServiceProvider } from './interfaces';
+import type { EmailProviderConfig } from './interfaces';
 
 // Import all provider implementations
 import { BrevoProvider } from './adapters/BrevoProvider';
