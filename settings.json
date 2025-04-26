@@ -13,7 +13,7 @@
       "settingKey": "EMAIL_SERVICE",
       "settingValue": "brevo",
       "settingType": "string",
-      "lastUpdated": "2025-04-26T19:20:56.510Z",
+      "lastUpdated": "2025-04-26T19:42:56.000Z",
       "description": "Primary email service provider"
     },
     "openaiApiKey": {
