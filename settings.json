@@ -64,14 +64,6 @@
       "id": 23,
       "lastUpdated": "2025-04-26T19:20:56.704Z"
     },
-    "sendgridApiKey": {
-      "settingKey": "sendgridApiKey",
-      "settingValue": "",
-      "settingType": "string",
-      "description": "SendGrid API Key for email delivery",
-      "id": 24,
-      "lastUpdated": "2025-04-26T19:20:56.705Z"
-    },
     "mailerliteApiKey": {
       "settingKey": "mailerliteApiKey",
       "settingValue": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0IiwianRpIjoiZTdlOTMwNzA2MTg5ZGVmYzMwNmVlZTFhYzQ1ODg1M2RiOWJiMTU3OTdiZjUxZjlhMGY2MTBmMmFjZmI3NGI3Njc0ZDRmYTlkNjEwZDI0YmMiLCJpYXQiOjE3NDU1MzUwMjMuNDk5MzcxLCJuYmYiOjE3NDU1MzUwMjMuNDk5MzczLCJleHAiOjQ5MDEyMDg2MjMuNDk0MzY2LCJzdWIiOiIxMDI0NTg0Iiwic2NvcGVzIjpbXX0.Bj2Z1hoI-KgIBkXO_XiBlZP55tXoWoZPYGQ8KUrTF5zqJ9OyY3bVAe43dhZt6I5LkSt41w1FFMwaESFDClV-cnsSLg40oXIHKPfnYzGtgRJBtL6Nn2UgioflAv7OWOVC5fdVwlb1MPyNeAqBhBJ3Yb51HOhRFbKxHJkdVFSQNfQXwEokezM6Buh4F9wOenr1GBmeRpIkKXk-7JN-rkb0IoSy7pt5nZsGSvcH8pzhfU8fDI9PATAYhLPTXI1ZXsQSIXlgUdCte1OJq71eA7PhbH8CkzwDSPFc_ROkbKCfeWZ63_Al3Q1FQSXpzaI2GNCR_6V9z7MnWKyeoj89YWYDDec6g6fUrXLxF6nHMQcPRI6d8DtuYGnMHeJEO9rZ3Y_iuHEJDvaSXvujSdruopV4CjRXubQIXTJL7bBztvV_fSk4cm71K0ntpWRirg4XFvP4Y3YuW-aMuqvddxlVP1BoErZj7EWfUpIPavZVxtjVKRhd4kUxM1FE4mh_cA4CVUqLiA1MGP7fuqdKvZc2mrkdGlKmLc4U-G-CvVizpN0-xzQ90mBPIDo5mOq6l7-9YztCfnBCexknlyDv91vnlrBS74Q0LobjSmyxodFzLqRumJyJfd7FHpQfcw5n4CyRZeCI1O9KR5IB85h0aLhtysjaNhZW4NcaXSwxQknJlz43dFs",
@@ -217,5 +209,5 @@
       "lastUpdated": "2025-04-26T19:09:18.754Z"
     }
   },
-  "lastUpdated": "2025-04-26T19:20:56.753Z"
+  "lastUpdated": "2025-04-26T19:38:10.000Z"
 }
