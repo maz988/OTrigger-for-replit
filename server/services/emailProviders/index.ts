@@ -14,6 +14,11 @@ import { BrevoProvider } from './adapters/BrevoProvider';
 import { SendGridProvider } from './adapters/SendGridProvider';
 import { MailerLiteProvider } from './adapters/MailerLiteProvider';
 import { CustomProvider } from './adapters/CustomProvider';
+import { OmnisendProvider } from './adapters/OmnisendProvider';
+import { MailchimpProvider } from './adapters/MailchimpProvider';
+import { SendPulseProvider } from './adapters/SendPulseProvider';
+import { AWeberProvider } from './adapters/AWeberProvider';
+import { ConvertKitProvider } from './adapters/ConvertKitProvider';
 
 // Register built-in providers
 function registerBuiltInProviders() {
@@ -29,6 +34,26 @@ function registerBuiltInProviders() {
     // Register MailerLite provider
     const mailerLiteProvider = new MailerLiteProvider();
     emailProviderRegistry.registerProvider(mailerLiteProvider);
+    
+    // Register Omnisend provider
+    const omnisendProvider = new OmnisendProvider();
+    emailProviderRegistry.registerProvider(omnisendProvider);
+    
+    // Register Mailchimp provider
+    const mailchimpProvider = new MailchimpProvider();
+    emailProviderRegistry.registerProvider(mailchimpProvider);
+    
+    // Register SendPulse provider
+    const sendPulseProvider = new SendPulseProvider();
+    emailProviderRegistry.registerProvider(sendPulseProvider);
+    
+    // Register AWeber provider
+    const aweberProvider = new AWeberProvider();
+    emailProviderRegistry.registerProvider(aweberProvider);
+    
+    // Register ConvertKit provider
+    const convertKitProvider = new ConvertKitProvider();
+    emailProviderRegistry.registerProvider(convertKitProvider);
     
     return true;
   } catch (error) {
@@ -140,5 +165,10 @@ export {
   BrevoProvider,
   SendGridProvider,
   MailerLiteProvider,
+  OmnisendProvider,
+  MailchimpProvider,
+  SendPulseProvider,
+  AWeberProvider,
+  ConvertKitProvider,
   CustomProvider
 };
