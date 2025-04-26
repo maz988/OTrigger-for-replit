@@ -202,6 +202,93 @@ const SettingsPage: React.FC = () => {
     enabled: false, // Don't fetch automatically, we'll fetch manually when needed
   });
   
+  // Set active email provider mutation
+  const setActiveProviderMutation = useMutation({
+    mutationFn: async (providerName: string) => {
+      return await apiRequest(
+        'POST',
+        '/api/admin/email-providers/active',
+        { providerName }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/email-providers'] });
+      refetchProviders();
+      refetchSettings();
+      
+      toast({
+        title: 'Email Provider Updated',
+        description: 'Active email provider has been updated successfully.',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error Updating Provider',
+        description: error.message || "An unknown error occurred",
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Configure email provider mutation
+  const configureProviderMutation = useMutation({
+    mutationFn: async ({ providerName, config }: { providerName: string, config: any }) => {
+      return await apiRequest(
+        'POST',
+        '/api/admin/email-providers/config',
+        { providerName, config }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/email-providers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/settings'] });
+      refetchProviders();
+      refetchSettings();
+      
+      toast({
+        title: 'Provider Configured',
+        description: 'Email provider configuration has been updated successfully.',
+        variant: 'default',
+      });
+      
+      // Close the config dialog
+      setIsProviderConfigDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error Configuring Provider',
+        description: error.message || "An unknown error occurred",
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Test email provider mutation
+  const testEmailProviderMutation = useMutation({
+    mutationFn: async ({ email, providerName, apiKey }: { email: string, providerName?: string, apiKey?: string }) => {
+      return await apiRequest(
+        'POST',
+        '/api/admin/email-providers/test-email',
+        { email, providerName, apiKey }
+      );
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Test Email Sent',
+        description: 'A test email has been sent successfully. Please check your inbox.',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error Sending Test Email',
+        description: error.message || "Failed to send test email. Please check provider configuration.",
+        variant: 'destructive',
+      });
+    }
+  });
+  
   // Ensure we always have a valid array for lists
   const [emailLists, setEmailLists] = useState<EmailList[]>([]);
   
@@ -491,6 +578,34 @@ const SettingsPage: React.FC = () => {
     setTestResults(null);
     setIsTestDialogOpen(true);
     testServiceMutation.mutate(serviceType);
+  };
+  
+  // Handle setting the active email provider
+  const handleSetActiveProvider = (providerName: string) => {
+    setActiveProviderMutation.mutate(providerName);
+  };
+  
+  // Handle opening the provider configuration dialog
+  const handleConfigureProvider = (provider: EmailProvider) => {
+    setSelectedProvider(provider);
+    setIsProviderConfigDialogOpen(true);
+  };
+  
+  // Handle sending a test email
+  const handleSendTestEmail = (email: string, providerName?: string) => {
+    if (!email) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter an email address to send the test email to.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    testEmailProviderMutation.mutate({ 
+      email, 
+      providerName: providerName || (selectedProvider ? selectedProvider.name : undefined) 
+    });
   };
   
   // Fetch email lists for the currently active provider
