@@ -181,7 +181,7 @@ const AdminDashboard: React.FC = () => {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
       // Validate that the tab is one of our valid options
-      if (tabParam && ['overview', 'blog', 'content', 'subscribers', 'settings'].includes(tabParam)) {
+      if (tabParam && ['overview', 'blog', 'content', 'subscribers', 'settings', 'website'].includes(tabParam)) {
         return tabParam;
       }
     }
@@ -532,11 +532,12 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="blog">Blog Analytics</TabsTrigger>
           <TabsTrigger value="content">Blog Posts</TabsTrigger>
           <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+          <TabsTrigger value="website">Website Builder</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
