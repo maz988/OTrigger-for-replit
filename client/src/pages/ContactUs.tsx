@@ -1,6 +1,4 @@
 import React from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,200 +78,194 @@ const ContactUs = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="container mx-auto py-8 px-4 md:px-6">
+      <h1 className="text-3xl font-bold mb-6 text-center">Contact Us</h1>
+      <Separator className="mb-8 max-w-xl mx-auto" />
       
-      <main className="flex-1 container mx-auto py-8 px-4 md:px-6">
-        <h1 className="text-3xl font-bold mb-6 text-center">Contact Us</h1>
-        <Separator className="mb-8 max-w-xl mx-auto" />
-        
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-1 space-y-6">
-              <h2 className="text-2xl font-semibold mb-4">Get In Touch</h2>
-              <p className="text-muted-foreground mb-6">
-                Have questions about our services or need relationship advice? 
-                We're here to help! Fill out the form or reach out to us directly.
-              </p>
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-1 space-y-6">
+            <h2 className="text-2xl font-semibold mb-4">Get In Touch</h2>
+            <p className="text-muted-foreground mb-6">
+              Have questions about our services or need relationship advice? 
+              We're here to help! Fill out the form or reach out to us directly.
+            </p>
+            
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="p-4 flex items-center space-x-4">
+                  <Mail className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Email</p>
+                    <p className="text-sm text-muted-foreground">contact@obsessiontrigger.com</p>
+                  </div>
+                </CardContent>
+              </Card>
               
-              <div className="space-y-4">
-                <Card>
-                  <CardContent className="p-4 flex items-center space-x-4">
-                    <Mail className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Email</p>
-                      <p className="text-sm text-muted-foreground">contact@obsessiontrigger.com</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4 flex items-center space-x-4">
-                    <Phone className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Phone</p>
-                      <p className="text-sm text-muted-foreground">(555) 123-4567</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4 flex items-center space-x-4">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Address</p>
-                      <p className="text-sm text-muted-foreground">
-                        123 Relationship Avenue<br />
-                        Love City, LC 12345<br />
-                        United States
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardContent className="p-4 flex items-center space-x-4">
+                  <Phone className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Phone</p>
+                    <p className="text-sm text-muted-foreground">(555) 123-4567</p>
+                  </div>
+                </CardContent>
+              </Card>
               
-              <div className="mt-8">
-                <h3 className="text-lg font-medium mb-2">Business Hours</h3>
-                <p className="text-sm text-muted-foreground">
-                  Monday - Friday: 9:00 AM - 5:00 PM<br />
-                  Saturday: 10:00 AM - 2:00 PM<br />
-                  Sunday: Closed
-                </p>
-              </div>
+              <Card>
+                <CardContent className="p-4 flex items-center space-x-4">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">Address</p>
+                    <p className="text-sm text-muted-foreground">
+                      123 Relationship Avenue<br />
+                      Love City, LC 12345<br />
+                      United States
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             
-            <div className="md:col-span-2">
-              <div className="bg-card p-6 rounded-lg shadow-sm border">
-                <h2 className="text-2xl font-semibold mb-4">Send Us a Message</h2>
-                
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your email" type="email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="subject"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Subject</FormLabel>
-                          <FormControl>
-                            <Input placeholder="What is this regarding?" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="message"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Message</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Enter your message here..." 
-                              className="min-h-[150px]"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Please provide as much detail as possible so we can best assist you.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="flex justify-end mt-6">
-                      <Button type="submit" size="lg" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="mr-2 h-4 w-4" />
-                            Send Message
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </div>
+            <div className="mt-8">
+              <h3 className="text-lg font-medium mb-2">Business Hours</h3>
+              <p className="text-sm text-muted-foreground">
+                Monday - Friday: 9:00 AM - 5:00 PM<br />
+                Saturday: 10:00 AM - 2:00 PM<br />
+                Sunday: Closed
+              </p>
             </div>
           </div>
           
-          <div className="mt-16">
-            <h2 className="text-2xl font-semibold mb-4 text-center">Frequently Asked Questions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-              <div>
-                <h3 className="text-lg font-medium mb-2">How quickly will I receive a response?</h3>
-                <p className="text-muted-foreground">
-                  We strive to respond to all inquiries within 24-48 business hours. For urgent matters, 
-                  please call our support line directly.
-                </p>
-              </div>
+          <div className="md:col-span-2">
+            <div className="bg-card p-6 rounded-lg shadow-sm border">
+              <h2 className="text-2xl font-semibold mb-4">Send Us a Message</h2>
               
-              <div>
-                <h3 className="text-lg font-medium mb-2">Can I get personalized relationship advice?</h3>
-                <p className="text-muted-foreground">
-                  Yes! The best way to get personalized advice is to take our relationship assessment quiz, 
-                  which provides customized insights based on your specific situation.
-                </p>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-2">Do you offer relationship coaching services?</h3>
-                <p className="text-muted-foreground">
-                  While we don't currently offer one-on-one coaching, our blog and premium guides provide expert 
-                  advice on a wide range of relationship topics.
-                </p>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-2">How do I unsubscribe from emails?</h3>
-                <p className="text-muted-foreground">
-                  You can unsubscribe at any time by clicking the unsubscribe link at the bottom of any email 
-                  we send or by contacting us directly.
-                </p>
-              </div>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your email" type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input placeholder="What is this regarding?" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter your message here..." 
+                            className="min-h-[150px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Please provide as much detail as possible so we can best assist you.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end mt-6">
+                    <Button type="submit" size="lg" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="mr-2 h-4 w-4" />
+                          Send Message
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
             </div>
           </div>
         </div>
-      </main>
-      
-      <Footer />
+        
+        <div className="mt-16">
+          <h2 className="text-2xl font-semibold mb-4 text-center">Frequently Asked Questions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <div>
+              <h3 className="text-lg font-medium mb-2">How quickly will I receive a response?</h3>
+              <p className="text-muted-foreground">
+                We strive to respond to all inquiries within 24-48 business hours. For urgent matters, 
+                please call our support line directly.
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium mb-2">Can I get personalized relationship advice?</h3>
+              <p className="text-muted-foreground">
+                Yes! The best way to get personalized advice is to take our relationship assessment quiz, 
+                which provides customized insights based on your specific situation.
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium mb-2">Do you offer relationship coaching services?</h3>
+              <p className="text-muted-foreground">
+                While we don't currently offer one-on-one coaching, our blog and premium guides provide expert 
+                advice on a wide range of relationship topics.
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium mb-2">How do I unsubscribe from emails?</h3>
+              <p className="text-muted-foreground">
+                You can unsubscribe at any time by clicking the unsubscribe link at the bottom of any email 
+                we send or by contacting us directly.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
