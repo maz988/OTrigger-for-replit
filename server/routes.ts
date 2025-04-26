@@ -273,15 +273,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Name to use for sending to email service
         const fullName = lastName ? `${firstName} ${lastName}` : firstName;
         
-        // Get the lead magnet list ID from settings
+        // First try to get the EMAIL_SERVICE setting to force it to update from the file
+        const emailServiceSetting = await storage.getSettingByKey('EMAIL_SERVICE');
+        if (emailServiceSetting) {
+          // Update the value with brevo to ensure consistency
+          await storage.updateSetting('EMAIL_SERVICE', 'brevo');
+          console.log('Updated EMAIL_SERVICE to brevo for lead magnet subscriber');
+        }
+        
+        // Get the lead magnet list ID from settings using uppercase version first
         const listIdSetting = await storage.getSettingByKey('LEAD_MAGNET_LIST_ID');
-        // If lead magnet list ID is not set, try to use default list ID
         let listId = listIdSetting?.settingValue || '';
+        
+        // If uppercase version not found, try the camelCase version as fallback
+        if (!listId) {
+          const camelCaseListIdSetting = await storage.getSettingByKey('leadMagnetListId');
+          listId = camelCaseListIdSetting?.settingValue || '';
+        }
+        
+        // If still no list ID, try default list
         if (!listId) {
           const defaultListSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
           listId = defaultListSetting?.settingValue || '';
         }
-        console.log(`Using list ID ${listId || 'default'} for lead magnet subscriber: ${email}`);
+        
+        // Debug all available email list settings
+        const allSettings = await storage.getAllSettings();
+        const listSettings = allSettings.filter(s => s.settingKey.includes('LIST_ID') || s.settingKey.includes('ListId'));
+        console.log('DEBUG: All available list ID settings for lead magnet:', listSettings.map(s => ({
+          key: s.settingKey,
+          value: s.settingValue
+        })));
+        
+        if (!listId) {
+          console.log(`WARNING: No LEAD_MAGNET_LIST_ID, leadMagnetListId, or DEFAULT_LIST_ID setting found for lead magnet subscriber: ${email}`);
+          // Use hardcoded value as last resort
+          listId = '2';
+        }
+        
+        console.log(`Using list ID ${listId} for lead magnet subscriber: ${email}`);
         
         // Send to email service with lead magnet as source
         const result = await sendSubscriberToEmailService({
@@ -437,15 +467,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Name to use for sending to email service
           const fullName = lastName ? `${firstName} ${lastName}` : firstName;
           
-          // Get the quiz list ID from settings
+          // First try to get the EMAIL_SERVICE setting to force it to update from the file
+          const emailServiceSetting = await storage.getSettingByKey('EMAIL_SERVICE');
+          if (emailServiceSetting) {
+            // Update the value with brevo to ensure consistency
+            await storage.updateSetting('EMAIL_SERVICE', 'brevo');
+            console.log('Updated EMAIL_SERVICE to brevo for quiz subscriber');
+          }
+          
+          // Get the quiz list ID from settings using uppercase version first
           const listIdSetting = await storage.getSettingByKey('QUIZ_LIST_ID');
-          // If quiz list ID is not set, try to use default list ID
           let listId = listIdSetting?.settingValue || '';
+          
+          // If uppercase version not found, try the camelCase version as fallback
+          if (!listId) {
+            const camelCaseListIdSetting = await storage.getSettingByKey('quizListId');
+            listId = camelCaseListIdSetting?.settingValue || '';
+          }
+          
+          // If still no list ID, try default list
           if (!listId) {
             const defaultListSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
             listId = defaultListSetting?.settingValue || '';
           }
-          console.log(`Using list ID ${listId || 'default'} for quiz subscriber: ${email}`);
+          
+          // Debug all available email list settings
+          const allSettings = await storage.getAllSettings();
+          const listSettings = allSettings.filter(s => s.settingKey.includes('LIST_ID') || s.settingKey.includes('ListId'));
+          console.log('DEBUG: All available list ID settings for quiz subscriber:', listSettings.map(s => ({
+            key: s.settingKey,
+            value: s.settingValue
+          })));
+          
+          if (!listId) {
+            console.log(`WARNING: No QUIZ_LIST_ID, quizListId, or DEFAULT_LIST_ID setting found for quiz subscriber: ${email}`);
+            // Use hardcoded value as last resort
+            listId = '2';
+          }
+          
+          console.log(`Using list ID ${listId} for quiz subscriber: ${email}`);
           
           // Send to email service
           const result = await sendSubscriberToEmailService({
