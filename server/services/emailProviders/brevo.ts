@@ -223,11 +223,17 @@ export async function sendToBrevo(
       updateEnabled: true // Update if contact already exists
     };
     
-    // Log if a list ID is provided
+    // Log if a list ID is provided with additional debug info
     if (listId) {
-      console.log(`Adding subscriber to Brevo list ID: ${listId}`);
+      console.log(`DEBUG: Adding subscriber to Brevo list ID: ${listId}`);
+      console.log(`DEBUG: Full subscriber data:`, {
+        email,
+        name,
+        source,
+        listId
+      });
     } else {
-      console.log('No list ID provided for Brevo. Contact will be added but not assigned to a list.');
+      console.log('DEBUG: No list ID provided for Brevo. Contact will be added but not assigned to a list.');
     }
     
     // Use Brevo Contacts API to add or update contact
@@ -263,10 +269,11 @@ export async function sendToBrevo(
           });
           
           if (listResponse.ok) {
-            console.log(`Successfully added ${email} to Brevo list ID ${listId}`);
+            const successData = await listResponse.json();
+            console.log(`Successfully added ${email} to Brevo list ID ${listId}`, successData);
           } else {
             const listError = await listResponse.json();
-            console.error(`Error adding contact to Brevo list: ${listError.message || listResponse.statusText}`);
+            console.error(`Error adding contact to Brevo list: ${listError.message || listResponse.statusText}`, listError);
           }
         } catch (listError) {
           console.error(`Exception adding contact to Brevo list: ${listError.message}`);
@@ -303,10 +310,11 @@ export async function sendToBrevo(
             });
             
             if (listResponse.ok) {
-              console.log(`Successfully added existing contact ${email} to Brevo list ID ${listId}`);
+              const successData = await listResponse.json();
+              console.log(`Successfully added existing contact ${email} to Brevo list ID ${listId}`, successData);
             } else {
               const listError = await listResponse.json();
-              console.error(`Error adding existing contact to Brevo list: ${listError.message || listResponse.statusText}`);
+              console.error(`Error adding existing contact to Brevo list: ${listError.message || listResponse.statusText}`, listError);
             }
           } catch (listError) {
             console.error(`Exception adding existing contact to Brevo list: ${listError.message}`);

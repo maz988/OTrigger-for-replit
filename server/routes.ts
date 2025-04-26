@@ -199,15 +199,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If list ID is not set, try to use default list ID as a fallback
       let listId = listIdSetting?.settingValue || '';
+      console.log(`DEBUG: Initial list ID from setting: '${listId}', source: ${source}`);
+      
       if (!listId) {
         const defaultListSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
         listId = defaultListSetting?.settingValue || '';
+        console.log(`DEBUG: Fallback default list ID: '${listId}'`);
+        
         if (!listId) {
           console.log(`WARNING: No list ID found for subscriber with source: ${source || 'website'}`);
         } else {
           console.log(`Using DEFAULT_LIST_ID as fallback for subscriber with source: ${source || 'website'}`);
         }
       }
+      
+      // Debug all available email list settings
+      const allSettings = await storage.getAllSettings();
+      const listSettings = allSettings.filter(s => s.settingKey.includes('LIST_ID'));
+      console.log('DEBUG: All available list ID settings:', listSettings.map(s => ({
+        key: s.settingKey,
+        value: s.settingValue
+      })));
+      
       console.log(`Using list ID ${listId || 'default'} for subscriber with source: ${source || 'website'}`);
       
       // Send subscriber to the active email service provider
@@ -338,6 +351,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Get the default list ID from settings
           const listIdSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
           const listId = listIdSetting?.settingValue || '';
+          
+          // Debug all available email list settings
+          const allSettings = await storage.getAllSettings();
+          const listSettings = allSettings.filter(s => s.settingKey.includes('LIST_ID'));
+          console.log('DEBUG: All available list ID settings for blog lead:', listSettings.map(s => ({
+            key: s.settingKey,
+            value: s.settingValue
+          })));
+          
           if (!listId) {
             console.log(`WARNING: No DEFAULT_LIST_ID setting found for blog subscriber: ${email}`);
           }
