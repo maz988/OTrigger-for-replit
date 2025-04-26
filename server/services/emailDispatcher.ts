@@ -41,8 +41,10 @@ export async function getProviderConfig(): Promise<EmailProviderConfig> {
   const fromNameSetting = await storage.getSettingByKey('EMAIL_FROM_NAME');
   const replyToSetting = await storage.getSettingByKey('EMAIL_REPLY_TO');
   
-  // Get the correct API key based on selected service
-  const service = emailServiceSetting?.settingValue || 'sendgrid';
+  // Get the correct API key based on selected service 
+  // Normalize the service name to lowercase to prevent case sensitivity issues
+  const service = (emailServiceSetting?.settingValue || 'sendgrid').toLowerCase();
+  console.log(`DEBUG getProviderConfig: Selected email service: "${service}"`);
   let apiKeySetting;
   
   // First try to get the API key from the database (most up-to-date)
