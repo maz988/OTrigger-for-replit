@@ -13,7 +13,7 @@
       "settingKey": "EMAIL_SERVICE",
       "settingValue": "omnisend",
       "settingType": "string",
-      "lastUpdated": "2025-04-26T22:43:08.438Z",
+      "lastUpdated": "2025-04-26T22:47:17.125Z",
       "description": "Primary email service provider"
     },
     "openaiApiKey": {
@@ -289,5 +289,5 @@
       "lastUpdated": "2025-04-26T22:43:08.644Z"
     }
   },
-  "lastUpdated": "2025-04-26T22:43:08.669Z"
+  "lastUpdated": "2025-04-26T22:47:17.125Z"
 }
