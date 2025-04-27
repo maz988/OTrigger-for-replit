@@ -15,7 +15,6 @@ import SettingsPage from "@/pages/SettingsPage";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import ContactUs from "@/pages/ContactUs";
-import WebsiteBuilderPage from "@/pages/WebsiteBuilderPage";
 
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 import Header from "@/components/Header";
@@ -51,22 +50,6 @@ function Router() {
         {() => (
           <AdminAuthGuard>
             <SettingsPage />
-          </AdminAuthGuard>
-        )}
-      </Route>
-      
-      <Route path="/admin/website">
-        {() => (
-          <AdminAuthGuard>
-            <WebsiteBuilderPage />
-          </AdminAuthGuard>
-        )}
-      </Route>
-      
-      <Route path="/admin/website/page/:pageId">
-        {(params) => (
-          <AdminAuthGuard>
-            <WebsiteBuilderPage />
           </AdminAuthGuard>
         )}
       </Route>

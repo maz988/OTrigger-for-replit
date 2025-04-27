@@ -5,8 +5,8 @@
       "settingValue": "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",
       "settingType": "string",
       "description": "Brevo API Key",
-      "id": 47,
-      "lastUpdated": "2025-04-26T19:50:27.370Z"
+      "id": 105,
+      "lastUpdated": "2025-04-27T15:28:47.222Z"
     },
     "EMAIL_SERVICE": {
       "id": 5,
@@ -289,5 +289,5 @@
       "lastUpdated": "2025-04-26T22:52:57.042Z"
     }
   },
-  "lastUpdated": "2025-04-26T22:52:57.054Z"
+  "lastUpdated": "2025-04-27T15:28:47.223Z"
 }

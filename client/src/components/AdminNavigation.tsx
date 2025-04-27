@@ -34,12 +34,6 @@ const AdminNavigation: React.FC = () => {
       active: location === '/admin/blog-management'
     },
     {
-      label: 'Website Builder',
-      href: '/admin/website',
-      icon: <Globe className="h-5 w-5 mr-2" />,
-      active: location.startsWith('/admin/website')
-    },
-    {
       label: 'Settings',
       href: '/admin/settings',
       icon: <Settings className="h-5 w-5 mr-2" />,
