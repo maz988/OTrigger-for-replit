@@ -287,7 +287,39 @@
       "description": "Setting for convertkitApiSecret",
       "id": 86,
       "lastUpdated": "2025-04-27T21:45:28.555Z"
+    },
+    "settingKey": {
+      "settingKey": "settingKey",
+      "settingValue": "AFFILIATE_LINK",
+      "settingType": "string",
+      "description": "Setting for settingKey",
+      "id": 109,
+      "lastUpdated": "2025-04-27T22:34:10.488Z"
+    },
+    "settingValue": {
+      "settingKey": "settingValue",
+      "settingValue": "https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=quiz",
+      "settingType": "string",
+      "description": "Setting for settingValue",
+      "id": 110,
+      "lastUpdated": "2025-04-27T22:34:10.489Z"
+    },
+    "settingType": {
+      "settingKey": "settingType",
+      "settingValue": "string",
+      "settingType": "string",
+      "description": "Setting for settingType",
+      "id": 111,
+      "lastUpdated": "2025-04-27T22:34:10.493Z"
+    },
+    "description": {
+      "settingKey": "description",
+      "settingValue": "Default ClickBank affiliate link for monetization",
+      "settingType": "string",
+      "description": "Setting for description",
+      "id": 112,
+      "lastUpdated": "2025-04-27T22:34:10.494Z"
     }
   },
-  "lastUpdated": "2025-04-27T22:26:38.615Z"
+  "lastUpdated": "2025-04-27T22:34:10.494Z"
 }

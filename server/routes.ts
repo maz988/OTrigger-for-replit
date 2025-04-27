@@ -5021,6 +5021,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let contentSource = 'openai';
       let blogContent: any = null;
       
+      // Fetch affiliate link from settings
+      const affiliateLink = await storage.getSettingByKey('AFFILIATE_LINK')
+        .then(setting => setting?.settingValue || "https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=auto")
+        .catch(() => "https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=auto");
+        
       try {
         // First try OpenAI (our primary content source)
         if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "default_key") {
@@ -5453,6 +5458,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // If both AI services failed, use fallback content
+      // Fetch affiliate link from settings
+      const affiliateLink = await storage.getSettingByKey('AFFILIATE_LINK')
+        .then(setting => setting?.settingValue || "https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=blog")
+        .catch(() => "https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=blog");
+        
       if (!blogContent) {
         console.log("Both AI services failed or are unavailable. Using fallback content");
         blogContent = {
@@ -5470,11 +5480,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <h3>Why He Responds This Way</h3>
             <p>Men are socialized to process emotions differently, which affects how they handle situations involving ${keyword}.</p>
             
+            <div class="affiliate-callout my-6 p-4 bg-pink-50 border border-pink-200 rounded-lg">
+              <h4 class="text-lg font-bold text-pink-600 mb-2">Recommended Resource</h4>
+              <p class="mb-3">Struggling with ${keyword} in your relationship? Many women have found success with <a href="${affiliateLink}" target="_blank" rel="nofollow sponsored" class="text-pink-600 font-semibold hover:underline">His Secret Obsession</a>, a proven program that reveals the psychological triggers that make men fall deeply in love.</p>
+              <a href="${affiliateLink}" target="_blank" rel="nofollow sponsored" class="inline-block px-4 py-2 bg-pink-600 text-white font-semibold rounded-lg hover:bg-pink-700 transition-colors">Learn More About His Secret Obsession</a>
+            </div>
+            
             <h2>The Psychology Behind ${keyword}</h2>
             <p>Research shows that men have a natural instinct to protect and provide. When you understand how to connect with this instinct through the right words and actions, you'll see tremendous changes in how he responds to you.</p>
             
             <h3>The Connection To His Inner Hero</h3>
-            <p>Every man has what psychologists call the "hero instinct" - a desire to feel needed and valued in a relationship. This is particularly relevant when discussing ${keyword}.</p>
+            <p>Every man has what psychologists call the "hero instinct" - a desire to feel needed and valued in a relationship. This is particularly relevant when discussing ${keyword}. <a href="${affiliateLink}" target="_blank" rel="nofollow sponsored">This powerful concept</a> is often overlooked but can completely transform your relationship dynamic.</p>
             
             <h2>Practical Steps You Can Take</h2>
             <p>Try these techniques to create a stronger bond and watch how quickly things improve in your relationship:</p>
@@ -5482,6 +5498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <li>Focus on appreciation rather than criticism</li>
               <li>Create space for him to step up and support you</li>
               <li>Acknowledge his efforts, even the small ones</li>
+              <li>Use the right phrases that trigger his natural desire to commit (as explained in <a href="${affiliateLink}" target="_blank" rel="nofollow sponsored">His Secret Obsession</a>)</li>
             </ul>
             
             <h3>Communication Strategies That Work</h3>
@@ -5489,6 +5506,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             <h2>What Our Relationship Quiz Reveals</h2>
             <p>Our <a href="/quiz">relationship assessment quiz</a> has helped thousands of women understand their specific situation with ${keyword} and get personalized advice.</p>
+            
+            <div class="affiliate-callout my-6 p-4 bg-pink-50 border border-pink-200 rounded-lg">
+              <h4 class="text-lg font-bold text-pink-600 mb-2">Ready For A Breakthrough?</h4>
+              <p class="mb-3">If you're serious about resolving issues with ${keyword}, you need to understand the secret psychological triggers that drive men's behavior. The <a href="${affiliateLink}" target="_blank" rel="nofollow sponsored" class="text-pink-600 font-semibold hover:underline">12-word text</a> revealed in His Secret Obsession has helped thousands of women turn their relationships around.</p>
+              <a href="${affiliateLink}" target="_blank" rel="nofollow sponsored" class="inline-block px-4 py-2 bg-pink-600 text-white font-semibold rounded-lg hover:bg-pink-700 transition-colors">Discover The 12-Word Text</a>
+            </div>
             
             <h2>FAQ About ${keyword}</h2>
             <h3>How long does it take to see changes?</h3>
@@ -5498,7 +5521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <p>Yes, these psychological principles have been shown to work across different relationship types and stages.</p>
             
             <h3>What if he's completely resistant?</h3>
-            <p>In some cases, professional counseling might be needed. Our <a href="/free-guide">free relationship guide</a> covers more challenging scenarios.</p>
+            <p>In some cases, professional counseling might be needed. Our <a href="/free-guide">free relationship guide</a> covers more challenging scenarios. For particularly difficult situations, many women have found <a href="${affiliateLink}" target="_blank" rel="nofollow sponsored">specialized programs</a> to be more effective than general advice.</p>
           `,
           tags: ["relationships", keyword, "communication", "psychology", "men", "advice"],
           autoGenerated: true,
