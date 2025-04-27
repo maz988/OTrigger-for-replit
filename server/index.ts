@@ -4,8 +4,9 @@ import { setupVite, serveStatic, log } from "./vite";
 import path from 'path';
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Increase the payload size limit for JSON and form data to 50MB
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 // Serve static files from the public directory
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
