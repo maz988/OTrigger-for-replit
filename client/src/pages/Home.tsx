@@ -14,7 +14,7 @@ interface BlogPost {
   category: string;
   publishedAt: string;
   content: string;
-  imageUrl?: string; // Optional image URL
+  imageUrls?: string[]; // Array of image URLs
 }
 
 const Home: React.FC = () => {
@@ -123,9 +123,9 @@ const Home: React.FC = () => {
                   featuredPosts.map((post) => (
                     <Card key={post.id} className="bg-white shadow-md overflow-hidden h-full flex flex-col">
                       <div className="h-48 w-full bg-gray-200 overflow-hidden">
-                        {post.imageUrl ? (
+                        {post.imageUrls && post.imageUrls.length > 0 ? (
                           <img 
-                            src={post.imageUrl} 
+                            src={post.imageUrls[0]} 
                             alt={post.title}
                             className="w-full h-full object-cover transition-transform hover:scale-105" 
                           />
