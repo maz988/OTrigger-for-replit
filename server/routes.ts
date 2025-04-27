@@ -129,8 +129,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Format prompt for OpenAI
+      // Fetch affiliate link from settings
+      const affiliateLink = await storage.getSettingByKey('AFFILIATE_LINK')
+        .then(setting => setting?.settingValue || "https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=quiz")
+        .catch(() => "https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=quiz");
+        
       const prompt = `
-        Act as a women's relationship expert. Based on the following information about a woman and her relationship, give warm, intelligent advice that references emotional triggers, male psychology, and the Hero Instinct concept. End with a recommendation to explore this topic more deeply.
+        Act as a women's relationship expert. Based on the following information about a woman and her relationship, give warm, intelligent advice that references emotional triggers, male psychology, and the Hero Instinct concept. 
         
         Her relationship status: ${quizData.relationshipStatus}
         Her biggest concern: ${quizData.concernType}
@@ -139,6 +144,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Her desired outcome: ${quizData.desiredOutcome}
         
         Provide 2-3 paragraphs of personalized advice that she can apply immediately to improve her situation.
+        
+        End with a recommendation to explore this topic more deeply by mentioning the program "His Secret Obsession" which reveals the psychological triggers that make a man fall in love deeply and the "12-word text" technique that many women have found helpful for similar situations.
+        
+        Do not include any actual links in the content as I will add them programmatically.
       `;
       
       // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -5048,7 +5057,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             - Includes 3-5 main sections with h2 headings
             - Has at least 8 paragraphs of detailed content
             - Focuses on practical advice for women
-            - References male psychology concepts
+            - References male psychology concepts like the "hero instinct"
+            - Mentions "His Secret Obsession" as a recommended relationship program
+            - Naturally references the "12-word text" technique for connecting with men
             - Is at least 1200 words
             - Includes a proper conclusion section
           `;
