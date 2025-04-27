@@ -130,9 +130,26 @@ const Home: React.FC = () => {
                             className="w-full h-full object-cover transition-transform hover:scale-105" 
                           />
                         ) : (
-                          <div className="flex items-center justify-center h-full bg-gradient-to-br from-[#ffedf1] to-[#ffe4e4]">
-                            <Heart className="h-12 w-12 text-[#f24b7c] opacity-40" />
-                          </div>
+                          // Extract image from content if imageUrls is not available
+                          (() => {
+                            // Check if content has an image
+                            const imgMatch = post.content.match(/<img[^>]+src="([^"]+)"/i);
+                            if (imgMatch && imgMatch[1]) {
+                              return (
+                                <img 
+                                  src={imgMatch[1]} 
+                                  alt={post.title}
+                                  className="w-full h-full object-cover transition-transform hover:scale-105" 
+                                />
+                              );
+                            }
+                            // Fallback to heart icon
+                            return (
+                              <div className="flex items-center justify-center h-full bg-gradient-to-br from-[#ffedf1] to-[#ffe4e4]">
+                                <Heart className="h-12 w-12 text-[#f24b7c] opacity-40" />
+                              </div>
+                            );
+                          })()
                         )}
                       </div>
                       <CardHeader className="pb-2">
