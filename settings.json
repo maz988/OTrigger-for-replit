@@ -11,9 +11,9 @@
     "EMAIL_SERVICE": {
       "id": 5,
       "settingKey": "EMAIL_SERVICE",
-      "settingValue": "mailchimp",
+      "settingValue": "brevo",
       "settingType": "string",
-      "lastUpdated": "2025-04-27T21:45:28.332Z",
+      "lastUpdated": "2025-04-27T21:52:49.462Z",
       "description": "Primary email service provider"
     },
     "openaiApiKey": {
@@ -289,5 +289,5 @@
       "lastUpdated": "2025-04-27T21:45:28.555Z"
     }
   },
-  "lastUpdated": "2025-04-27T21:45:28.579Z"
+  "lastUpdated": "2025-04-27T21:52:49.462Z"
 }
