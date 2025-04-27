@@ -43,6 +43,24 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   
+  // Helper function to find an element by ID in the page structure
+  const findElementById = (elements: PageElement[], id: string | null): PageElement | null => {
+    if (!id) return null;
+    
+    for (const element of elements) {
+      if (element.id === id) {
+        return element;
+      }
+      
+      if (element.children && element.children.length > 0) {
+        const found = findElementById(element.children, id);
+        if (found) return found;
+      }
+    }
+    
+    return null;
+  };
+  
   // Handle loading page data if pageId is provided
   const { data: pageData, isLoading } = useQuery({
     queryKey: ['/api/admin/website/pages', pageId],
@@ -103,21 +121,8 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
     }
   }, [pageData]);
   
-  // Selected element
-  const selectedElement = pageElements.find(el => findElementById(el, selectedElementId)) || null;
-  
-  // Find element by ID deeply nested
-  const findElementById = (element: PageElement, id: string | null): PageElement | null => {
-    if (!id) return null;
-    if (element.id === id) return element;
-    if (element.children) {
-      for (const child of element.children) {
-        const found = findElementById(child, id);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
+  // Get the currently selected element
+  const selectedElement = selectedElementId ? findElementById(pageElements, selectedElementId) : null;
   
   // Update history whenever page elements change
   useEffect(() => {
@@ -461,6 +466,7 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
           >
             <Undo className="h-4 w-4" />
           </Button>
+          
           <Button 
             variant="ghost" 
             size="sm" 
@@ -472,11 +478,7 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
           
           <Separator orientation="vertical" className="h-6" />
           
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={handleSave}
-          >
+          <Button variant="default" size="sm" onClick={handleSave}>
             <Save className="h-4 w-4 mr-1" />
             Save
           </Button>
@@ -484,19 +486,24 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
       </div>
       
       {/* Main content */}
-      <div className="flex-1 flex">
-        {!isPreviewMode && (
+      <div className="flex-1 overflow-hidden">
+        {isPreviewMode ? (
+          <div className="h-full overflow-auto p-4 bg-gray-100">
+            <div className="bg-white min-h-[1000px] shadow-sm mx-auto">
+              {pageElements.map(element => (
+                <ElementRenderer 
+                  key={element.id}
+                  element={element}
+                  isEditMode={false}
+                />
+              ))}
+            </div>
+          </div>
+        ) : (
           <ResizablePanelGroup direction="horizontal">
-            {/* Left panel - Element Controls */}
+            {/* Left panel - Element Library */}
             <ResizablePanel defaultSize={20} minSize={15}>
-              <ElementControls 
-                onAddElement={handleAddElement}
-                onMoveElement={handleMoveElement}
-                onDeleteElement={handleDeleteElement}
-                canMoveUp={canMoveUp()}
-                canMoveDown={canMoveDown()}
-                isElementSelected={!!selectedElementId}
-              />
+              <ElementControls onAddElement={handleAddElement} />
             </ResizablePanel>
             
             {/* Center panel - Preview */}
@@ -540,37 +547,52 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
             {/* Right panel - Property Editor */}
             <ResizablePanel defaultSize={20} minSize={15}>
               <PropertyEditor 
-                selectedElement={selectedElement ? findElementById(selectedElement, selectedElementId) : null}
+                selectedElement={selectedElement}
                 onUpdateElementProps={handleUpdateElementProps}
               />
             </ResizablePanel>
           </ResizablePanelGroup>
         )}
-        
-        {/* Preview mode */}
-        {isPreviewMode && (
-          <div className="w-full h-full bg-gray-100 overflow-auto p-4">
-            <div className="bg-white min-h-[1000px] shadow-sm mx-auto">
-              {pageElements.length > 0 ? (
-                pageElements.map(element => (
-                  <ElementRenderer 
-                    key={element.id}
-                    element={element}
-                    isEditMode={false}
-                  />
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full py-20 text-center text-gray-400">
-                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 max-w-md">
-                    <h3 className="text-lg mb-2">Your page is empty</h3>
-                    <p>This page has no content to preview</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+      
+      {/* Element actions panel */}
+      {selectedElementId && !isPreviewMode && (
+        <div className="border-t bg-background p-2 flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            Element: <span className="font-medium">{selectedElement?.type}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleMoveElement('up')}
+              disabled={!canMoveUp()}
+            >
+              Move Up
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleMoveElement('down')}
+              disabled={!canMoveDown()}
+            >
+              Move Down
+            </Button>
+            <Button variant="ghost" size="sm">
+              <Copy className="h-4 w-4 mr-1" />
+              Duplicate
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleDeleteElement}
+            >
+              <Trash className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
       
       {/* Save dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
@@ -578,26 +600,29 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
           <DialogHeader>
             <DialogTitle>Save Page</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <div className="mb-4">
-              <Label htmlFor="page-title" className="mb-2 block">Page Title</Label>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="page-title">Page Title</Label>
               <Input 
-                id="page-title"
+                id="page-title" 
                 value={pageTitle} 
                 onChange={(e) => setPageTitle(e.target.value)}
-                placeholder="Enter page title"
+                placeholder="Enter page title" 
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveConfirm} disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
-                </>
-              ) : 'Save Page'}
+            <Button 
+              variant="outline" 
+              onClick={() => setIsSaveDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveConfirm}
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? 'Saving...' : 'Save Page'}
             </Button>
           </DialogFooter>
         </DialogContent>
