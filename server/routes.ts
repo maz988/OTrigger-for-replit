@@ -7,7 +7,7 @@ import express from "express";
 import cron from 'node-cron';
 import { randomBytes } from 'crypto';
 import fetch from 'node-fetch';
-import { InsertSystemSetting } from '@shared/schema';
+import { InsertSystemSetting, type InsertBlogPost } from '@shared/schema';
 import { initializeEmailProviders } from './services/newEmailDispatcher';
 
 // Initialize OpenAI
