@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Sparkles } from 'lucide-react';
+import { Heart, Sparkles, Download } from 'lucide-react';
 
 interface PDFPreviewProps {
   firstName: string;
@@ -15,6 +15,9 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ firstName, advice }) => {
   
   // Split advice into paragraphs
   const paragraphs = advice.split('\n\n');
+  
+  // Affiliate link for CTAs
+  const affiliateLink = "https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=quiz";
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 mb-6 bg-white relative">
@@ -48,9 +51,21 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ firstName, advice }) => {
       </div>
       
       {/* Call to Action */}
-      <div className="bg-[#fde8ef] p-3 rounded-md mb-3">
-        <p className="text-xs text-gray-700">To learn the full system that activates his Hero Instinct, download <span className="font-medium text-[#f24b7c]">His Secret Obsession</span>.</p>
-        <p className="text-xs text-[#f24b7c] font-medium mt-1">Click here 👉 [Affiliate Link]</p>
+      <div className="affiliate-callout bg-[#fde8ef] p-4 rounded-md mb-3">
+        <h4 className="font-medium text-[#f24b7c] mb-2 flex items-center text-sm">
+          <Sparkles className="h-4 w-4 mr-1" /> Expert Recommendation
+        </h4>
+        <p className="text-xs text-gray-700 mb-2">
+          His Secret Obsession specializes in activating a man's 'Hero Instinct' - the psychological trigger that makes a man feel a deep biological drive to protect, provide for, and commit to the woman he loves. Learn more about this powerful relationship technique:
+        </p>
+        <a 
+          href={affiliateLink}
+          target="_blank"
+          rel="noopener noreferrer" 
+          className="text-[#f24b7c] hover:underline text-sm font-medium flex items-center"
+        >
+          <Download className="h-3 w-3 mr-1" /> His Secret Obsession
+        </a>
       </div>
       
       <div className="text-xs text-gray-500 text-center">

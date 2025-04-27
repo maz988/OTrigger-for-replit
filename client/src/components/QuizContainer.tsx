@@ -147,8 +147,8 @@ const QuizContainer: React.FC = () => {
         }
       }
       
-      // Generate PDF 
-      const affiliateLink = "https://hop.clickbank.net/?affiliate=yourID&vendor=hissecobs";
+      // Generate PDF with proper affiliate link
+      const affiliateLink = "https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=quiz";
       const pdf = generatePDF({
         quizData,
         userData: enhancedData,
