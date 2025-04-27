@@ -312,6 +312,81 @@ Remember: You deserve someone who recognizes your worth consistently, not just w
     }
   });
   
+  // Track quiz lead conversion
+  app.post("/api/quiz/lead-conversion", async (req, res) => {
+    try {
+      const { quizResponseId, email, firstName, lastName } = req.body;
+      
+      if (!quizResponseId || !email) {
+        return res.status(400).json({
+          success: false,
+          error: "Quiz response ID and email are required"
+        });
+      }
+      
+      console.log(`Processing quiz lead conversion for quiz ID ${quizResponseId} and email ${email}`);
+      
+      // Update the quiz response with the email (if it exists)
+      const quizResponse = await storage.getQuizResponse(quizResponseId);
+      
+      if (!quizResponse) {
+        return res.status(404).json({
+          success: false,
+          error: `Quiz response with ID ${quizResponseId} not found`
+        });
+      }
+      
+      // Update the quiz response with the lead information
+      const updatedQuizResponse = await storage.updateQuizResponseWithLead(
+        quizResponseId, 
+        email,
+        firstName || quizResponse.firstName,
+        lastName
+      );
+      
+      // Also add the user to the quiz email list
+      try {
+        // Import dynamically to avoid circular dependencies
+        const { sendSubscriberToEmailService } = await import('./services/emailDispatcher');
+        
+        // Get the quiz list ID from settings
+        const listIdSetting = await storage.getSettingByKey('QUIZ_LIST_ID');
+        const listId = listIdSetting?.settingValue || '';
+        
+        if (listId) {
+          const subscribeResult = await sendSubscriberToEmailService({
+            name: firstName || quizResponse.firstName || 'Subscriber',
+            email: email,
+            source: 'quiz-result',
+            listId
+          });
+          
+          if (subscribeResult.success) {
+            console.log(`Successfully added quiz lead to email list: ${email}`);
+          } else {
+            console.error(`Failed to add quiz lead to email list: ${subscribeResult.error}`);
+          }
+        } else {
+          console.warn('No QUIZ_LIST_ID setting found for email subscription');
+        }
+      } catch (subscribeErr) {
+        console.error(`Error subscribing quiz lead to email list: ${subscribeErr.message}`);
+        // Continue processing even if subscription fails
+      }
+      
+      res.status(200).json({
+        success: true,
+        message: "Quiz lead conversion tracked successfully"
+      });
+    } catch (err: any) {
+      console.error(`Error tracking quiz lead conversion: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
   // Lead capture endpoints
   app.post("/api/leads", async (req, res) => {
     try {

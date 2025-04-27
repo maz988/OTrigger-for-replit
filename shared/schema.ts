@@ -227,6 +227,7 @@ export const quizFormSchema = z.object({
 
 export const emailFormSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
+  lastName: z.string().optional(),
   email: z.string().email({ message: "Please enter a valid email" }),
 });
 
