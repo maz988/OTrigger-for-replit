@@ -1171,7 +1171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin blog management routes
   app.post("/api/admin/blog/posts", authenticateAdmin, async (req, res) => {
     try {
-      const postData = req.body;
+      let postData = req.body;
       
       if (!postData.title || !postData.content || !postData.keyword) {
         return res.status(400).json({
@@ -1186,6 +1186,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .toLowerCase()
           .replace(/[^\w\s]/g, '') // Remove special chars
           .replace(/\s+/g, '-');   // Replace spaces with hyphens
+      }
+      
+      // Process images if they exist in the imageUrls array but aren't in the content yet
+      if (postData.imageUrls && postData.imageUrls.length > 0) {
+        // Only process if the content doesn't already contain the image URLs
+        const contentHasImages = postData.imageUrls.some(url => postData.content.includes(url));
+        
+        if (!contentHasImages) {
+          // Process images with SEO optimization
+          const enhancedImages = postData.imageUrls.map((url: string) => {
+            return processImageForSEO(
+              url,
+              postData.keyword,
+              postData.title,
+              ''  // No photographer info for uploaded images
+            );
+          });
+          
+          // Find H2 headings to place images after them
+          const h2Sections = postData.content.match(/<h2[^>]*>.*?<\/h2>/gi) || [];
+          
+          // Insert feature image at the beginning of the content
+          if (enhancedImages.length > 0) {
+            const featuredImage = enhancedImages[0];
+            
+            const featuredImageHTML = `
+              <figure class="featured-image">
+                <img 
+                  src="${featuredImage.url}" 
+                  alt="${featuredImage.alt}"
+                  loading="eager"
+                  class="rounded-lg shadow-md w-full h-auto object-cover mb-4"
+                />
+              </figure>
+            `;
+            
+            // Add featured image after the first paragraph or at the beginning
+            const firstPEnd = postData.content.indexOf('</p>');
+            if (firstPEnd !== -1) {
+              postData.content = postData.content.slice(0, firstPEnd + 4) + featuredImageHTML + postData.content.slice(firstPEnd + 4);
+            } else {
+              postData.content = featuredImageHTML + postData.content;
+            }
+            
+            // Add additional images throughout the content if there are H2 headings
+            if (h2Sections.length > 0 && enhancedImages.length > 1) {
+              // Start from the second image (index 1) since we already used the first one
+              for (let i = 0; i < Math.min(h2Sections.length, enhancedImages.length - 1); i++) {
+                const img = enhancedImages[i + 1];
+                const imgHTML = `
+                  <figure class="content-image">
+                    <img 
+                      src="${img.url}" 
+                      alt="${img.alt}"
+                      loading="lazy"
+                      class="rounded-lg shadow-md w-full h-auto object-cover my-4"
+                    />
+                  </figure>
+                `;
+                
+                postData.content = postData.content.replace(
+                  h2Sections[i], 
+                  h2Sections[i] + imgHTML
+                );
+              }
+            }
+          }
+          
+          console.log(`Successfully embedded ${enhancedImages.length} images into the blog post content`);
+        }
       }
       
       // Create the blog post
@@ -1273,13 +1343,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const updates = req.body;
+      let updates = req.body;
+      
+      // Get the current post to determine if we need to update image embedding
+      const currentPost = await storage.getBlogPostById(id);
+      if (!currentPost) {
+        return res.status(404).json({
+          success: false,
+          error: "Blog post not found"
+        });
+      }
+      
+      // Check if imageUrls were updated and need to be embedded
+      if (updates.imageUrls && updates.imageUrls.length > 0 && updates.content) {
+        // Detect if images changed or content doesn't contain the images
+        const newImagesAdded = updates.imageUrls.some(url => 
+          !currentPost.imageUrls.includes(url) || !updates.content.includes(url)
+        );
+        
+        if (newImagesAdded) {
+          // Process images with SEO optimization
+          const enhancedImages = updates.imageUrls.map((url: string) => {
+            return processImageForSEO(
+              url,
+              updates.keyword || currentPost.keyword,
+              updates.title || currentPost.title,
+              ''  // No photographer info for uploaded images
+            );
+          });
+          
+          // Find H2 headings to place images after them
+          const h2Sections = updates.content.match(/<h2[^>]*>.*?<\/h2>/gi) || [];
+          
+          // Insert feature image at the beginning of the content if it doesn't exist already
+          if (enhancedImages.length > 0) {
+            const featuredImage = enhancedImages[0];
+            const featuredImageUrl = featuredImage.url;
+            
+            // Only add the featured image if it's not already in the content
+            if (!updates.content.includes(featuredImageUrl)) {
+              const featuredImageHTML = `
+                <figure class="featured-image">
+                  <img 
+                    src="${featuredImageUrl}" 
+                    alt="${featuredImage.alt}"
+                    loading="eager"
+                    class="rounded-lg shadow-md w-full h-auto object-cover mb-4"
+                  />
+                </figure>
+              `;
+              
+              // Add featured image after the first paragraph or at the beginning
+              const firstPEnd = updates.content.indexOf('</p>');
+              if (firstPEnd !== -1) {
+                updates.content = updates.content.slice(0, firstPEnd + 4) + featuredImageHTML + updates.content.slice(firstPEnd + 4);
+              } else {
+                updates.content = featuredImageHTML + updates.content;
+              }
+              
+              // Add additional images throughout the content if there are H2 headings
+              if (h2Sections.length > 0 && enhancedImages.length > 1) {
+                // Start from the second image (index 1) since we already used the first one
+                for (let i = 0; i < Math.min(h2Sections.length, enhancedImages.length - 1); i++) {
+                  const img = enhancedImages[i + 1];
+                  const imgUrl = img.url;
+                  
+                  // Only add if this image isn't already in the content
+                  if (!updates.content.includes(imgUrl)) {
+                    const imgHTML = `
+                      <figure class="content-image">
+                        <img 
+                          src="${imgUrl}" 
+                          alt="${img.alt}"
+                          loading="lazy"
+                          class="rounded-lg shadow-md w-full h-auto object-cover my-4"
+                        />
+                      </figure>
+                    `;
+                    
+                    updates.content = updates.content.replace(
+                      h2Sections[i], 
+                      h2Sections[i] + imgHTML
+                    );
+                  }
+                }
+              }
+            }
+            
+            console.log(`Successfully embedded ${enhancedImages.length} images into the updated blog post content`);
+          }
+        }
+      }
+      
       const updatedPost = await storage.updateBlogPost(id, updates);
       
       if (!updatedPost) {
         return res.status(404).json({
           success: false,
-          error: "Blog post not found"
+          error: "Failed to update blog post"
         });
       }
       
