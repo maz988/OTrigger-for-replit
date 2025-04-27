@@ -88,7 +88,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                 onDropElement={onDropElement}
               />
             ))}
-            {isEditMode && element.children?.length === 0 && (
+            {isEditMode && (element.children || []).length === 0 && (
               <div className="py-8 text-center text-gray-400 border-2 border-dashed border-gray-300 rounded my-2">
                 Drop elements here
               </div>
@@ -131,7 +131,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                 onDropElement={onDropElement}
               />
             ))}
-            {isEditMode && element.children?.length === 0 && (
+            {isEditMode && (element.children || []).length === 0 && (
               <div className="py-8 text-center text-gray-400 border-2 border-dashed border-gray-300 rounded my-2">
                 Drop elements here
               </div>
@@ -174,7 +174,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                 onDropElement={onDropElement}
               />
             ))}
-            {isEditMode && element.children?.length === 0 && (
+            {isEditMode && (element.children || []).length === 0 && (
               <div className="py-8 text-center text-gray-400 border-2 border-dashed border-gray-300 rounded my-2">
                 Drop columns here
               </div>
@@ -216,7 +216,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                 onDropElement={onDropElement}
               />
             ))}
-            {isEditMode && element.children?.length === 0 && (
+            {isEditMode && (element.children || []).length === 0 && (
               <div className="py-8 text-center text-gray-400 border-2 border-dashed border-gray-300 rounded my-2">
                 Drop elements here
               </div>
