@@ -2354,10 +2354,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If we got here, both APIs failed or weren't available
       console.warn("Using fallback content due to AI unavailability or errors");
+      
+      // But we still need to add images to fallback content
+      if (process.env.PEXELS_API_KEY) {
+        try {
+          console.log("Searching for SEO-optimized images for fallback content related to:", keyword);
+          
+          const pexelsResponse = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=3&orientation=landscape`, {
+            headers: {
+              'Authorization': process.env.PEXELS_API_KEY
+            }
+          });
+          
+          if (pexelsResponse.ok) {
+            const pexelsData = await pexelsResponse.json();
+            
+            if (pexelsData.photos && pexelsData.photos.length > 0) {
+              // Process images with SEO enhancements
+              const enhancedImages = pexelsData.photos.map((photo: any) => {
+                return processImageForSEO(
+                  photo.src.large, 
+                  keyword, 
+                  fallbackPost.title, 
+                  photo.photographer
+                );
+              });
+              
+              // Store the image URLs
+              fallbackPost.imageUrls = pexelsData.photos.map((photo: any) => photo.src.large);
+              
+              // Embed images in the content
+              let contentWithImages = fallbackPost.content;
+              
+              // Add feature image at the top
+              if (enhancedImages.length > 0) {
+                const featuredImg = enhancedImages[0];
+                const featuredImgHTML = `
+                  <figure class="featured-image">
+                    <img 
+                      src="${featuredImg.url}" 
+                      alt="${featuredImg.alt}"
+                      loading="eager"
+                      class="rounded-lg shadow-md w-full h-auto object-cover mb-4"
+                    />
+                    <figcaption class="text-sm text-gray-500 text-center">
+                      Photo by ${featuredImg.photographer || 'Pexels'}
+                    </figcaption>
+                  </figure>
+                `;
+                
+                // Add after first paragraph
+                const firstPEnd = contentWithImages.indexOf('</p>');
+                if (firstPEnd !== -1) {
+                  contentWithImages = contentWithImages.slice(0, firstPEnd + 4) + featuredImgHTML + contentWithImages.slice(firstPEnd + 4);
+                }
+              }
+              
+              // Add other images after h2 headings
+              const h2Regex = /<h2[^>]*>.*?<\/h2>/gi;
+              const h2Matches = [...contentWithImages.matchAll(h2Regex)];
+              
+              for (let i = 0; i < Math.min(h2Matches.length, enhancedImages.length - 1); i++) {
+                const img = enhancedImages[i + 1];
+                const imgHTML = `
+                  <figure class="content-image">
+                    <img 
+                      src="${img.url}" 
+                      alt="${img.alt}"
+                      loading="lazy"
+                      class="rounded-lg shadow-md w-full h-auto object-cover my-4"
+                    />
+                    <figcaption class="text-sm text-gray-500 text-center">
+                      Photo by ${img.photographer || 'Pexels'}
+                    </figcaption>
+                  </figure>
+                `;
+                
+                const h2Match = h2Matches[i];
+                const h2MatchText = h2Match[0];
+                const h2MatchIndex = h2Match.index || 0;
+                const insertPosition = h2MatchIndex + h2MatchText.length;
+                
+                contentWithImages = contentWithImages.slice(0, insertPosition) + imgHTML + contentWithImages.slice(insertPosition);
+              }
+              
+              // Update content with images
+              fallbackPost.content = contentWithImages;
+              console.log("Successfully embedded images into fallback content");
+            }
+          }
+        } catch (imageError) {
+          console.error("Error fetching and processing images for fallback content:", imageError);
+          // Continue without images
+        }
+      }
+      
       return res.status(200).json({
         success: true,
         data: fallbackPost,
-        note: "Using fallback content due to AI generation limitations"
+        note: "Using fallback content with images due to AI generation limitations"
       });
       
     } catch (err: any) {
