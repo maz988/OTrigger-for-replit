@@ -494,6 +494,32 @@ export class MemStorage implements IStorage {
       .filter(response => response.email === email);
   }
   
+  async getQuizResponse(id: number): Promise<QuizResponse | undefined> {
+    return this.quizResponses.get(id);
+  }
+  
+  async updateQuizResponseWithLead(id: number, email: string, firstName?: string, lastName?: string): Promise<QuizResponse> {
+    const quizResponse = this.quizResponses.get(id);
+    
+    if (!quizResponse) {
+      throw new Error(`Quiz response with ID ${id} not found`);
+    }
+    
+    // Update the quiz response with lead information
+    const updatedResponse: QuizResponse = {
+      ...quizResponse,
+      email: email,
+      firstName: firstName || quizResponse.firstName || 'Unknown'
+      // lastName is not part of the QuizResponse schema, so we don't add it
+    };
+    
+    this.quizResponses.set(id, updatedResponse);
+    
+    console.log(`Updated quiz response ${id} with lead information (email: ${email})`);
+    
+    return updatedResponse;
+  }
+  
   // Blog post methods
   async saveBlogPost(insertPost: InsertBlogPost): Promise<BlogPost> {
     const id = this.blogPostCurrentId++;
