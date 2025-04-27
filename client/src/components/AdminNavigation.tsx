@@ -7,7 +7,8 @@ import {
   Users,
   Settings,
   Home,
-  LayoutDashboard
+  LayoutDashboard,
+  Globe
 } from 'lucide-react';
 
 const AdminNavigation: React.FC = () => {
