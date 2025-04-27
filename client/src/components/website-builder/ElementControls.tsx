@@ -36,7 +36,11 @@ export type ElementType =
   | 'pricing'
   | 'callToAction'
   | 'gallery'
-  | 'contactForm';
+  | 'contactForm'
+  | 'sidebar'
+  | 'sidebarMenu'
+  | 'sidebarWidget'
+  | 'sidebarCta';
 
 export interface ElementTemplate {
   type: ElementType;
@@ -44,6 +48,66 @@ export interface ElementTemplate {
   icon?: React.ReactNode;
   defaultProps?: Record<string, any>;
 }
+
+const SIDEBAR_ELEMENTS: ElementTemplate[] = [
+  {
+    type: 'sidebar',
+    name: 'Sidebar',
+    icon: <LayoutDashboard className="h-5 w-5" />,
+    defaultProps: {
+      width: '300px',
+      backgroundColor: '#f8f9fa',
+      padding: '20px',
+      borderRight: '1px solid #e9ecef'
+    }
+  },
+  {
+    type: 'sidebarMenu',
+    name: 'Sidebar Menu',
+    icon: <ListTodo className="h-5 w-5" />,
+    defaultProps: {
+      items: [
+        { text: 'Home', url: '/', icon: 'home' },
+        { text: 'About', url: '/about', icon: 'info' },
+        { text: 'Services', url: '/services', icon: 'briefcase' },
+        { text: 'Contact', url: '/contact', icon: 'mail' }
+      ],
+      textColor: '#333333',
+      activeColor: '#0070f3',
+      fontSize: '16px',
+      spacing: '15px'
+    }
+  },
+  {
+    type: 'sidebarWidget',
+    name: 'Sidebar Widget',
+    icon: <LayoutDashboard className="h-5 w-5" />,
+    defaultProps: {
+      title: 'Widget Title',
+      backgroundColor: '#ffffff',
+      padding: '15px',
+      borderRadius: '4px',
+      margin: '0 0 20px 0',
+      border: '1px solid #e0e0e0'
+    }
+  },
+  {
+    type: 'sidebarCta',
+    name: 'Sidebar CTA',
+    icon: <CreditCard className="h-5 w-5" />,
+    defaultProps: {
+      title: 'Ready to Start?',
+      text: 'Sign up now and get 20% off your first order',
+      buttonText: 'Sign Up',
+      buttonUrl: '#',
+      backgroundColor: '#0070f3',
+      textColor: '#ffffff',
+      padding: '20px',
+      borderRadius: '4px',
+      alignment: 'center'
+    }
+  },
+];
 
 const BASIC_ELEMENTS: ElementTemplate[] = [
   { 
@@ -342,6 +406,7 @@ const ElementControls: React.FC<ElementControlsProps> = ({
           <TabsList className="w-full">
             <TabsTrigger value="basic" className="flex-1">Basic</TabsTrigger>
             <TabsTrigger value="sections" className="flex-1">Sections</TabsTrigger>
+            <TabsTrigger value="sidebar" className="flex-1">Sidebar</TabsTrigger>
           </TabsList>
           
           <ScrollArea className="h-[calc(100vh-300px)]">
@@ -364,6 +429,22 @@ const ElementControls: React.FC<ElementControlsProps> = ({
             <TabsContent value="sections" className="m-0 p-4 pt-2">
               <div className="grid grid-cols-1 gap-2">
                 {SECTION_TEMPLATES.map((element) => (
+                  <Button
+                    key={element.type}
+                    variant="outline"
+                    className="h-auto py-4 px-3 flex items-center justify-start gap-3 text-left"
+                    onClick={() => onAddElement(element)}
+                  >
+                    {element.icon}
+                    <span>{element.name}</span>
+                  </Button>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="sidebar" className="m-0 p-4 pt-2">
+              <div className="grid grid-cols-1 gap-2">
+                {SIDEBAR_ELEMENTS.map((element) => (
                   <Button
                     key={element.type}
                     variant="outline"
@@ -415,4 +496,4 @@ const ElementControls: React.FC<ElementControlsProps> = ({
 };
 
 export default ElementControls;
-export { BASIC_ELEMENTS, SECTION_TEMPLATES };
+export { BASIC_ELEMENTS, SECTION_TEMPLATES, SIDEBAR_ELEMENTS };

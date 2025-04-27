@@ -503,7 +503,14 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
           <ResizablePanelGroup direction="horizontal">
             {/* Left panel - Element Library */}
             <ResizablePanel defaultSize={20} minSize={15}>
-              <ElementControls onAddElement={handleAddElement} />
+              <ElementControls 
+                onAddElement={handleAddElement}
+                onMoveElement={handleMoveElement}
+                onDeleteElement={handleDeleteElement}
+                canMoveUp={canMoveUp()}
+                canMoveDown={canMoveDown()}
+                isElementSelected={!!selectedElementId}
+              />
             </ResizablePanel>
             
             {/* Center panel - Preview */}
