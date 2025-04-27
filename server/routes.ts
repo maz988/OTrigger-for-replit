@@ -369,7 +369,7 @@ Remember: You deserve someone who recognizes your worth consistently, not just w
         } else {
           console.warn('No QUIZ_LIST_ID setting found for email subscription');
         }
-      } catch (subscribeErr) {
+      } catch (subscribeErr: any) {
         console.error(`Error subscribing quiz lead to email list: ${subscribeErr.message}`);
         // Continue processing even if subscription fails
       }
