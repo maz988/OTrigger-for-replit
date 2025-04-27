@@ -719,6 +719,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Admin routes for website builder
+  app.get("/api/admin/website/sections", authenticateAdmin, async (req, res) => {
+    try {
+      const sections = await storage.getAllWebsiteSections();
+      res.json({ success: true, data: sections });
+    } catch (error) {
+      console.error('Error getting admin website sections:', error);
+      res.status(500).json({ success: false, error: 'Failed to get website sections' });
+    }
+  });
+  
   app.get("/api/website/sections/:id", async (req, res) => {
     try {
       const section = await storage.getWebsiteSectionById(req.params.id);
@@ -814,6 +825,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error restoring section version:', error);
       res.status(500).json({ success: false, error: 'Failed to restore section version' });
+    }
+  });
+  
+  // Website Pages API
+  app.get("/api/admin/website/pages", authenticateAdmin, async (req, res) => {
+    try {
+      // If we don't have a pages implementation yet, return an empty array for now
+      // This allows the front-end to start working properly
+      const pages = [];
+      res.json({ success: true, data: pages });
+    } catch (error) {
+      console.error('Error getting website pages:', error);
+      res.status(500).json({ success: false, error: 'Failed to get website pages' });
+    }
+  });
+  
+  app.post("/api/admin/website/pages", authenticateAdmin, async (req, res) => {
+    try {
+      // A stub implementation for now
+      // Create a temporary page with minimal data
+      const newPage = {
+        id: Math.random().toString(36).substring(2, 15),
+        title: req.body.title || "New Page",
+        slug: req.body.slug || "new-page",
+        isHomePage: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: null
+      };
+      
+      res.status(201).json({ success: true, data: newPage });
+    } catch (error) {
+      console.error('Error creating website page:', error);
+      res.status(500).json({ success: false, error: 'Failed to create website page' });
     }
   });
   
