@@ -5,7 +5,8 @@ import fetch from 'node-fetch';
 
 async function testQuizLeadTracking() {
   try {
-    console.log('Testing quiz lead tracking API...');
+    console.log('======== TESTING QUIZ LEAD TRACKING API ========');
+    console.log('\nTEST 1: Happy Path - Successfully track a lead\n');
     
     // First create a quiz response
     console.log('1. Creating quiz response...');
@@ -55,11 +56,60 @@ async function testQuizLeadTracking() {
     }
     
     console.log('Lead conversion tracked successfully:', trackingData.message);
+    console.log('Test 1 completed successfully!');
     
-    // Verify the quiz response was updated
-    console.log('3. Verifying quiz response update...');
+    // Test invalid quiz response ID
+    console.log('\nTEST 2: Edge Case - Non-existent quiz response ID\n');
+    const nonExistentId = 99999;
+    console.log(`Testing with non-existent quiz ID: ${nonExistentId}`);
     
-    console.log('Test completed successfully!');
+    const invalidTracking = await fetch('http://localhost:5000/api/quiz/lead-conversion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        quizResponseId: nonExistentId,
+        email: 'test@example.com',
+        firstName: 'Test'
+      }),
+    });
+    
+    const invalidTrackingData = await invalidTracking.json();
+    
+    // This should fail with a 404
+    if (invalidTracking.status === 404 && !invalidTrackingData.success) {
+      console.log('Correctly rejected non-existent quiz ID:', invalidTrackingData.error);
+    } else {
+      console.error('ERROR: Accepted invalid quiz ID when it should be rejected');
+    }
+    
+    // Test missing required fields
+    console.log('\nTEST 3: Edge Case - Missing required fields\n');
+    console.log('Testing with missing email field');
+    
+    const missingFieldsTracking = await fetch('http://localhost:5000/api/quiz/lead-conversion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        quizResponseId: quizResponseId,
+        // Missing email field
+        firstName: 'Test'
+      }),
+    });
+    
+    const missingFieldsData = await missingFieldsTracking.json();
+    
+    // This should fail with a 400
+    if (missingFieldsTracking.status === 400 && !missingFieldsData.success) {
+      console.log('Correctly rejected missing required fields:', missingFieldsData.error);
+    } else {
+      console.error('ERROR: Accepted missing required fields when they should be rejected');
+    }
+    
+    console.log('\nAll tests completed!\n');
     
   } catch (error) {
     console.error('Test failed:', error);
