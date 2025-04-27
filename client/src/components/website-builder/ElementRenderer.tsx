@@ -77,7 +77,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                 Section
               </div>
             )}
-            {element.children?.map(child => (
+            {(element.children || []).map(child => (
               <ElementRenderer 
                 key={child.id} 
                 element={child} 

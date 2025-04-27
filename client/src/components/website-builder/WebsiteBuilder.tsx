@@ -325,7 +325,7 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
           if (position === 'inside' && elements[i].children) {
             newElements[i] = {
               ...elements[i],
-              children: [...elements[i].children, draggedElement!]
+              children: [...(elements[i].children || []), draggedElement!]
             };
             return [newElements, true];
           } else if (position === 'before') {
