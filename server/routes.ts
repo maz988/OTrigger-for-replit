@@ -107,7 +107,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Error initializing email provider system:', error);
   }
   
-  // Route to generate AI advice
+  // Initial stub for API route organization
+  app.post("/api/stub-route", async (req, res) => {
+    try {
+      res.status(200).json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false });
+    }
+  });
+  
+  // Main quiz endpoint that combines both generate-advice and saving response
+  app.post("/api/quiz", async (req, res) => {
+    try {
+      const quizData = req.body;
+      
+      // Validate that all required fields are present
+      const requiredFields = [
+        "relationshipStatus",
+        "concernType",
+        "confusingBehavior",
+        "communicationStyle",
+        "desiredOutcome",
+      ];
+      
+      const missingFields = requiredFields.filter(field => !quizData[field]);
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: `Missing required fields: ${missingFields.join(", ")}`
+        });
+      }
+      
+      // Get affiliate link from settings
+      const affiliateLinkSetting = await storage.getSettingByKey('AFFILIATE_LINK');
+      const affiliateLink = affiliateLinkSetting?.settingValue || 'https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=quiz';
+      
+      // Save the quiz response
+      const quizResponse = await storage.saveQuizResponse({
+        ...quizData,
+        referralSource: 'direct',
+        referralCampaign: 'none'
+      });
+      
+      // Generate personalized advice (normally this would call OpenAI)
+      const heroInstinctText = "His Secret Obsession specializes in activating a man's 'Hero Instinct' - the psychological trigger that makes a man feel a deep biological drive to protect, provide for, and commit to the woman he loves. Learn more about this powerful relationship technique: " + 
+        `<a href="${affiliateLink}" target="_blank" class="text-primary-600 hover:underline">His Secret Obsession</a>`;
+      
+      // Create the advice with affiliate promotion
+      const advice = `
+## Your Personalized Obsession Trigger Plan
+
+Based on your answers, here's your personalized relationship advice:
+
+### Understanding His Behavior in Your ${quizData.relationshipStatus} Relationship
+
+The ${quizData.concernType} issues you're experiencing with behavior like "${quizData.confusingBehavior}" are actually quite common. This pattern often indicates he's experiencing internal conflict - he's interested, but something is holding him back.
+
+### How to Respond Effectively
+
+Since you tend to communicate ${quizData.communicationStyle.toLowerCase()}, try these strategies for your goal of ${quizData.desiredOutcome.toLowerCase()}:
+
+1. **Create Space**: When he pulls away, resist the urge to chase him. This often creates the "rubber band effect" where he'll naturally come back stronger.
+
+2. **Focus on Your Value**: Continue developing your own interests and social life. Men are naturally attracted to women who have their own fulfilling lives.
+
+3. **Use the Hero Instinct**: Activate his natural desire to feel needed and appreciated. When you make him feel like a hero (without being needy), he'll work harder to maintain your connection.
+
+4. **Communicate Clearly**: Express your needs calmly without accusation. For example: "I enjoy our time together and would like more consistency. What are your thoughts?"
+
+<div class="affiliate-callout p-4 my-6 border rounded-lg border-primary-200 bg-primary-50">
+  <h4 class="font-medium text-primary-800 mb-2">Expert Recommendation</h4>
+  <p class="text-sm">
+    ${heroInstinctText}
+  </p>
+</div>
+
+### Next Steps
+
+Apply these techniques for the next 2-3 weeks, and you'll likely notice a shift in his behavior pattern. Remember that a man who truly values you will work to keep you in his life.
+
+Remember: You deserve someone who recognizes your worth consistently, not just when it's convenient for them.
+      `;
+      
+      // Return the generated advice and quiz response ID
+      res.status(200).json({
+        success: true,
+        data: {
+          advice,
+          quizResponseId: quizResponse.id
+        }
+      });
+      
+    } catch (err: any) {
+      console.error(`Error processing quiz: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  // Legacy route to generate AI advice
   app.post("/api/generate-advice", async (req, res) => {
     try {
       const quizData = req.body;

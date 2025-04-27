@@ -14,6 +14,8 @@ import {
   FormMessage 
 } from '@/components/ui/form';
 import { CheckIcon, MailIcon, FileTextIcon, Sparkles } from 'lucide-react';
+import { trackQuizLeadConversion } from '@/services/emailSignup';
+import { getLastQuizResponseId } from '@/lib/openai';
 
 interface EmailCollectionStepProps {
   onSubmit: (data: EmailFormData) => void;
@@ -23,13 +25,29 @@ const EmailCollectionStep: React.FC<EmailCollectionStepProps> = ({ onSubmit }) =
   const form = useForm<EmailFormData>({
     resolver: zodResolver(emailFormSchema),
     defaultValues: {
-      firstName: 'Jessica',
-      email: 'jessica@example.com',
+      firstName: '', // Remove default values for production
+      email: '',
     },
   });
 
   const handleSubmit = (data: EmailFormData) => {
-    // For demo purposes, just submit with current form data
+    // Get the stored quiz response ID for tracking
+    const quizResponseId = getLastQuizResponseId();
+    
+    // If we have a quiz response ID, track the lead conversion
+    if (quizResponseId) {
+      console.log(`Tracking quiz lead conversion for quiz ID: ${quizResponseId}`);
+      trackQuizLeadConversion(
+        quizResponseId,
+        data.email,
+        data.firstName,
+        data.lastName
+      );
+    } else {
+      console.log('No quiz response ID available for tracking');
+    }
+    
+    // Continue with the normal flow
     onSubmit(data);
   };
 
