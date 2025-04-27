@@ -164,7 +164,7 @@ const WebsiteBuilder: React.FC<WebsiteBuilderProps> = ({ pageId, onBack }) => {
             if (element.children && (element.type === 'section' || element.type === 'container' || element.type === 'row' || element.type === 'column')) {
               return {
                 ...element,
-                children: [...element.children, newElement],
+                children: [...(element.children || []), newElement],
               };
             } 
             // Otherwise add it after the selected element at the same level

@@ -120,7 +120,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                 Container
               </div>
             )}
-            {element.children?.map(child => (
+            {(element.children || []).map(child => (
               <ElementRenderer 
                 key={child.id} 
                 element={child} 
@@ -163,7 +163,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                 Row
               </div>
             )}
-            {element.children?.map(child => (
+            {(element.children || []).map(child => (
               <ElementRenderer 
                 key={child.id} 
                 element={child} 
@@ -205,7 +205,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
                 Column
               </div>
             )}
-            {element.children?.map(child => (
+            {(element.children || []).map(child => (
               <ElementRenderer 
                 key={child.id} 
                 element={child} 
@@ -541,7 +541,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({
               </div>
             )}
             {isEditMode && `Unknown element type: ${element.type}`}
-            {element.children?.map(child => (
+            {(element.children || []).map(child => (
               <ElementRenderer 
                 key={child.id} 
                 element={child} 
