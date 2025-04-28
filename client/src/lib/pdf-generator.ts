@@ -237,9 +237,9 @@ export const generatePDF = ({
   drawDecoHeart(pageWidth/2 - 70, margin - 8, 4);
   drawDecoHeart(pageWidth/2 + 70, margin - 8, 4);
   
-  // Add main title with elegant styling
+  // Add main title with elegant styling - reduced font size for better fit
   doc.setTextColor(242, 59, 108); // #F23B6C
-  doc.setFontSize(24);
+  doc.setFontSize(20); // Reduced from 24 to 20
   doc.setFont("helvetica", "bold");
   const title = "Your Personalized Plan";
   doc.text(title, pageWidth/2, margin + 2, { align: "center" });
@@ -335,9 +335,9 @@ export const generatePDF = ({
   // Start content after the introduction box
   let yPosition = introY + 25;
   
-  // Add content
+  // Add content - slightly smaller font for better page fit
   doc.setTextColor(31, 41, 55); // gray-800
-  doc.setFontSize(11);
+  doc.setFontSize(10); // Reduced from 11 to 10
   doc.setFont("helvetica", "normal");
   
   // Clean HTML tags from advice and then process markdown-like advice text
@@ -487,7 +487,8 @@ export const generatePDF = ({
         doc.rect(margin - 5, yPosition - 7, 3, 15, 'F');
       }
       
-      doc.setFontSize(section.startsWith('# ') ? 18 : section.startsWith('## ') ? 16 : 14);
+      // Reduced font sizes for better fit
+      doc.setFontSize(section.startsWith('# ') ? 16 : section.startsWith('## ') ? 14 : 12);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(242, 75, 124); // #f24b7c
       
@@ -498,7 +499,7 @@ export const generatePDF = ({
       
       const lines = doc.splitTextToSize(headerText, contentWidth);
       doc.text(lines, margin, yPosition);
-      yPosition += lines.length * 7 + 5; // Add more spacing after headers
+      yPosition += lines.length * 6 + 3; // Reduced spacing after headers for better fit
       
       // Reset for normal text
       doc.setTextColor(31, 41, 55);
@@ -526,7 +527,7 @@ export const generatePDF = ({
       
       const lines = doc.splitTextToSize(listText, contentWidth - 15);
       doc.text(lines, margin + 10, yPosition); // Increase indent for better readability
-      yPosition += lines.length * 6 + 4; // Add more spacing after list items
+      yPosition += lines.length * 5 + 2; // Reduced spacing after list items for better fit
     }
     // Regular paragraph
     else {
@@ -548,7 +549,7 @@ export const generatePDF = ({
       }
       
       doc.text(lines, margin, yPosition);
-      yPosition += lines.length * 6 + 5; // Add more spacing after paragraphs
+      yPosition += lines.length * 5 + 3; // Reduced spacing after paragraphs for better fit
     }
   }
   
@@ -567,9 +568,9 @@ export const generatePDF = ({
   doc.text("Next Steps", margin, yPosition);
   yPosition += 8;
   
-  // Next steps advice
+  // Next steps advice - smaller font for better fit
   doc.setTextColor(31, 41, 55); // gray-800
-  doc.setFontSize(11);
+  doc.setFontSize(10); // Reduced from 11 to 10
   doc.setFont("helvetica", "normal");
   
   const nextStepsText = [
