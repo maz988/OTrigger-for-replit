@@ -201,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             scheduledFor: new Date(),
             data: {
               firstName,
-              downloadLink: '/downloads/hero-instinct-phrases.pdf'
+              downloadLink: `${req.protocol}://${req.get('host')}/downloads/hero-instinct-phrases.pdf`
             }
           });
           
@@ -242,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             scheduledFor: new Date(),
             data: {
               firstName,
-              downloadLink: '/downloads/hero-instinct-phrases.pdf'
+              downloadLink: `${req.protocol}://${req.get('host')}/downloads/hero-instinct-phrases.pdf`
             }
           });
           
@@ -546,6 +546,118 @@ Remember: You deserve someone who recognizes your worth consistently, not just w
   });
   
   // Lead capture endpoints
+  app.post("/api/leads/subscribe", async (req, res) => {
+    try {
+      const { email, firstName, source, leadMagnet } = req.body;
+      
+      if (!email || !firstName) {
+        return res.status(400).json({
+          success: false,
+          error: "Email and first name are required"
+        });
+      }
+      
+      console.log(`Processing lead magnet subscription for: ${firstName} (${email}) - Magnet: ${leadMagnet}`);
+      
+      // Import dynamically to avoid circular dependencies
+      const { sendSubscriberToEmailService } = await import('./services/emailDispatcher');
+      
+      // Get the lead magnet list ID from settings
+      const listIdSetting = await storage.getSettingByKey('LEAD_MAGNET_LIST_ID');
+      let listId = listIdSetting?.settingValue || '';
+      
+      // If list ID is not set, try to use default list ID as a fallback
+      if (!listId) {
+        const defaultListSetting = await storage.getSettingByKey('DEFAULT_LIST_ID');
+        listId = defaultListSetting?.settingValue || '2'; // Fallback to ID 2 if all else fails
+      }
+      
+      // Send the subscriber to the email service
+      const subscriberResult = await sendSubscriberToEmailService({
+        name: firstName,
+        email: email,
+        source: source || 'lead-magnet',
+        listId
+      });
+      
+      if (!subscriberResult.success) {
+        console.error(`Error sending subscriber to email service: ${subscriberResult.error}`);
+      }
+      
+      // Get the subscriber record (or create it if it doesn't exist)
+      let subscriber = await storage.getSubscriberByEmail(email);
+      
+      if (!subscriber) {
+        subscriber = await storage.saveSubscriber({
+          email,
+          firstName,
+          lastName: '',
+          source: source || 'lead-magnet',
+          isActive: true,
+          unsubscribeToken: generateUnsubscribeToken()
+        });
+      }
+      
+      // Find the lead magnet in the database
+      let leadMagnetId;
+      if (leadMagnet === 'hero-instinct-phrases') {
+        // Get all lead magnets
+        const leadMagnets = await storage.getAllLeadMagnets();
+        // Find the matching one
+        const matchingMagnet = leadMagnets.find(lm => 
+          lm.name.toLowerCase().includes('hero instinct') || 
+          lm.filePath.includes('hero-instinct-phrases.pdf')
+        );
+        if (matchingMagnet) {
+          leadMagnetId = matchingMagnet.id;
+        }
+      }
+      
+      // Try to find a welcome sequence
+      try {
+        // Get all sequences and find the welcome one
+        const sequences = await storage.getAllEmailSequences();
+        const welcomeSequence = sequences.find(seq => 
+          seq.name.toLowerCase().includes('welcome') || 
+          seq.name.toLowerCase().includes('hero')
+        );
+        
+        if (welcomeSequence) {
+          console.log(`Found welcome sequence: ${welcomeSequence.name}`);
+          // Queue a welcome email in the system (will be sent automatically by the queue processor)
+          await storage.queueEmail({
+            subscriberId: subscriber.id,
+            sequenceId: welcomeSequence.id,
+            status: 'pending',
+            scheduledFor: new Date(),
+            data: {
+              firstName,
+              downloadLink: `${req.protocol}://${req.get('host')}/downloads/hero-instinct-phrases.pdf`
+            }
+          });
+          
+          console.log('Welcome email queued for sending');
+        } else {
+          console.log('No welcome sequence found, using direct download link');
+        }
+      } catch (emailError) {
+        console.error('Failed to set up welcome email:', emailError);
+        // Continue processing even if email fails
+      }
+      
+      res.status(201).json({
+        success: true,
+        message: 'Successfully subscribed'
+      });
+    } catch (error) {
+      console.error('Error in lead subscription:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process subscription'
+      });
+    }
+  });
+  
   app.post("/api/leads", async (req, res) => {
     try {
       const { email, firstName, source, leadMagnetName } = req.body;
