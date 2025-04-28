@@ -5052,6 +5052,52 @@ Remember: You deserve someone who recognizes your worth consistently, not just w
     }
   });
   
+  // Admin tracking settings endpoints
+  app.get("/api/admin/tracking-settings", authenticateAdmin, async (req, res) => {
+    try {
+      // Get all settings that have a settingKey starting with 'tracking_'
+      const allSettings = await storage.getAllSettings();
+      const trackingSettings = allSettings.filter((setting: any) => 
+        setting.settingKey.startsWith('tracking_')
+      );
+      return res.json({ success: true, data: trackingSettings });
+    } catch (error) {
+      console.error('Error fetching tracking settings:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch tracking settings' });
+    }
+  });
+  
+  app.post("/api/admin/tracking-settings", authenticateAdmin, async (req, res) => {
+    try {
+      const settings = req.body;
+      if (!Array.isArray(settings)) {
+        return res.status(400).json({ success: false, error: 'Settings must be an array' });
+      }
+      
+      // Save each setting
+      for (const setting of settings) {
+        if (!setting.settingKey || typeof setting.settingValue === 'undefined') {
+          continue; // Skip invalid settings
+        }
+        
+        // Check if setting exists
+        const existingSetting = await storage.getSettingByKey(setting.settingKey);
+        if (existingSetting) {
+          // Update existing setting
+          await storage.updateSetting(setting.settingKey, setting.settingValue, setting.settingType || 'tracking');
+        } else {
+          // Create new setting
+          await storage.createSetting(setting.settingKey, setting.settingValue, setting.settingType || 'tracking');
+        }
+      }
+      
+      return res.json({ success: true, message: 'Tracking settings saved successfully' });
+    } catch (error) {
+      console.error('Error saving tracking settings:', error);
+      return res.status(500).json({ success: false, error: 'Failed to save tracking settings' });
+    }
+  });
+  
   // Keywords
   app.get("/api/admin/keywords", authenticateAdmin, async (req, res) => {
     try {
