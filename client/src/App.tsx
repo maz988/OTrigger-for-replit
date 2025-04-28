@@ -16,6 +16,7 @@ import TrackingManager from "@/pages/TrackingManager";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import ContactUs from "@/pages/ContactUs";
+import LeadMagnetPage from "@/pages/LeadMagnetPage";
 
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 import Header from "@/components/Header";
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/blog/category/:categorySlug" component={BlogCategory} />
       <Route path="/blog/:slug" component={BlogPost} />
+      <Route path="/how-to-make-a-man-obsessed-with-you" component={LeadMagnetPage} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/contact-us" component={ContactUs} />

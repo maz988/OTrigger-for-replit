@@ -1,0 +1,109 @@
+Create a fully SEO-optimized Lead Magnet Landing Page for the project.
+
+📍 Page Route: `/how-to-make-a-man-obsessed-with-you`
+
+🎯 PURPOSE:
+Capture leads through organic SEO traffic using the keyword **"how to make a man obsessed with you"** while promoting a free lead magnet guide.
+
+🧩 FEATURES TO IMPLEMENT:
+
+---
+
+# 1. SEO META TAGS (editable from Admin Settings)
+
+- Meta Title: **How to Make a Man Obsessed With You — Free Step-by-Step Guide**
+- Meta Description: **Discover simple psychological secrets to make him crave you emotionally and stay deeply connected — Download your free guide today!**
+- OG Title, OG Description, OG Image for sharing previews
+- Canonical URL: `https://yourwebsite.com/how-to-make-a-man-obsessed-with-you`
+
+---
+
+# 2. PAGE CONTENT STRUCTURE (Insert This Content)
+
+## ✅ H1 Title:
+**How to Make a Man Obsessed With You (The Hidden Secrets Revealed)**
+
+---
+
+## ✅ Intro Paragraph:
+Have you ever wished he would chase you, think about you nonstop, and see you as “the one he can’t live without”?  
+You’re not alone.  
+The truth is, obsession isn’t about playing games — it’s about triggering natural emotional responses inside his mind.  
+Today, I’m going to show you exactly how to make a man obsessed with you — using simple, proven psychological principles.
+
+👉 Plus, you’ll get instant access to my free guide: **"7 Secret Phrases That Trigger His Hero Instinct"** — the fastest way to connect deeply with his heart.
+
+---
+
+## ✅ H2: Why Men Become Emotionally Obsessed (Science Explains)
+
+Many women mistakenly believe looks or "chasing" will make a man obsessed.  
+In reality, studies show emotional triggers — not appearance — cause lasting attraction.  
+When you activate his **hero instinct**, he feels needed, respected, and deeply connected.
+
+✅ It's not manipulation.  
+✅ It’s about speaking to his natural masculine wiring.
+
+---
+
+## ✅ H2: What You’ll Discover Inside the Free Guide
+
+Inside this free guide, you’ll learn:
+- ✨ The **one sentence** that instantly grabs his deep attention
+- ✨ How to make him **chase you without playing hard to get**
+- ✨ The real reason **men pull away** — and how to reverse it
+- ✨ How to **spark emotional desire** that lasts
+
+---
+
+## ✅ H2: How to Get Your Free Guide
+
+Getting access is simple — and 100% free.  
+Just enter your name and best email below, and I’ll send you the guide instantly.
+
+(And yes, it’s packed with tips you can start using **tonight**.)
+
+---
+
+# 3. LEAD MAGNET FORM
+- First Name (input field)
+- Email (input field)
+- Submit Button: **"Send Me The Free Guide"**
+- After Submit:
+  - Save lead to Firestore or Email Service (MailerLite, Brevo, SendGrid)
+  - Show Success Message: "Check your inbox! Your guide is on the way."
+
+---
+
+# 4. IMAGE
+- Feature Image showing a romantic or emotional relationship scene
+- Image alt text: "Emotional guide to make a man obsessed with you"
+- Match image and button colors to Soul Bond website (soft pastel, gentle glow)
+
+---
+
+# 5. INTERNAL LINKS
+- Link back to Homepage ("Discover More Relationship Secrets")
+- Link to Blog ("Read Our Latest Love Advice Articles")
+
+# 6. EXTERNAL AUTHORITY LINK
+- Link naturally to PsychologyToday.com article about emotional triggers (in a supporting paragraph)
+
+---
+
+# 7. SCHEMA MARKUP
+- JSON-LD WebPage schema:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "headline": "How to Make a Man Obsessed With You",
+  "description": "Learn simple psychological secrets to emotionally connect with him deeply. Free download available now.",
+  "image": "https://yourwebsite.com/path-to-feature-image.jpg",
+  "url": "https://yourwebsite.com/how-to-make-a-man-obsessed-with-you",
+  "author": {
+    "@type": "Organization",
+    "name": "Soul Bond"
+  },
+  "datePublished": "2025-04-29"
+}
