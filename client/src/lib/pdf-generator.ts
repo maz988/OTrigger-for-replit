@@ -178,7 +178,10 @@ export const generatePDF = ({
   
   doc.setTextColor(242, 75, 124); // #f24b7c
   doc.setFontSize(11);
-  doc.text(`Click here → ${affiliateLink}`, margin + 5, ctaY + 22);
+  doc.text("Click here!", margin + 5, ctaY + 22);
+  
+  // Add hidden link annotation (not visible in the text but clickable)
+  doc.link(margin + 5, ctaY + 16, 80, 10, { url: affiliateLink });
   
   // Add footer
   doc.setTextColor(107, 114, 128); // gray-500
