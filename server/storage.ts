@@ -198,7 +198,8 @@ export interface IStorage {
   getAllSettings(): Promise<SystemSetting[]>;
   getSettingByKey(key: string): Promise<SystemSetting | undefined>;
   saveSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
-  updateSetting(key: string, value: string): Promise<SystemSetting | undefined>;
+  createSetting(key: string, value: string, type?: string): Promise<SystemSetting>;
+  updateSetting(key: string, value: string, type?: string): Promise<SystemSetting | undefined>;
   deleteSetting(key: string): Promise<boolean>;
   
   // Analytics summary methods
@@ -1458,7 +1459,27 @@ If you'd like a personalized assessment of your unique relationship situation, t
     return setting;
   }
   
-  async updateSetting(key: string, value: string): Promise<SystemSetting | undefined> {
+  async createSetting(key: string, value: string, type: string = 'system'): Promise<SystemSetting> {
+    const id = this.systemSettingCurrentId++;
+    
+    const setting: SystemSetting = {
+      id,
+      settingKey: key,
+      settingValue: value,
+      settingType: type,
+      description: null,
+      lastUpdated: new Date()
+    };
+    
+    this.systemSettings.set(key, setting);
+    
+    // Persist the new setting to file
+    persistSetting(key, setting);
+    
+    return setting;
+  }
+  
+  async updateSetting(key: string, value: string, type?: string): Promise<SystemSetting | undefined> {
     const setting = this.systemSettings.get(key);
     
     if (!setting) {
@@ -1468,6 +1489,7 @@ If you'd like a personalized assessment of your unique relationship situation, t
     const updatedSetting: SystemSetting = {
       ...setting,
       settingValue: value,
+      settingType: type || setting.settingType, // Use provided type or keep existing
       lastUpdated: new Date()
     };
     
