@@ -55,7 +55,7 @@ export function loadBlogPosts(): { blogPosts: Map<number, BlogPost>, currentId: 
     console.error('Error loading blog posts from persistence file:', error);
   }
 
-  return { blogPostsMap, currentId };
+  return { blogPosts: blogPostsMap, currentId };
 }
 
 /**

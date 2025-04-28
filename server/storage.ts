@@ -403,8 +403,8 @@ export class MemStorage implements IStorage {
     this.blogAnalyticsCurrentId = 1;
     
     // Load blog posts from persistence
-    const { blogPostsMap, currentId } = loadBlogPosts();
-    this.blogPosts = blogPostsMap;
+    const { blogPosts, currentId } = loadBlogPosts();
+    this.blogPosts = blogPosts;
     this.blogPostCurrentId = currentId;
     
     // Create a default admin user with password "admin123"
@@ -761,6 +761,10 @@ export class MemStorage implements IStorage {
     };
     
     this.blogPosts.set(id, updatedPost);
+    
+    // Persist all blog posts to file
+    saveBlogPosts(this.blogPosts, this.blogPostCurrentId);
+    
     return updatedPost;
   }
   
@@ -778,6 +782,9 @@ export class MemStorage implements IStorage {
     for (const [analyticsId, _] of analyticsToDelete) {
       this.blogAnalytics.delete(analyticsId);
     }
+    
+    // Persist changes to file
+    saveBlogPosts(this.blogPosts, this.blogPostCurrentId);
     
     return true;
   }
