@@ -3,6 +3,72 @@ import { QuizFormData, EmailFormData } from "@shared/schema";
 // Import autotable plugin for better formatting
 import 'jspdf-autotable';
 
+// Strip HTML tags from text for PDF generation
+function stripHtmlTags(html: string): string {
+  if (!html) return '';
+  
+  // First remove entire affiliate-callout divs
+  // Using a multi-step approach to avoid regex compatibility issues
+  let startIndex = html.indexOf('<div class="affiliate-callout');
+  let text = html;
+  
+  while (startIndex !== -1) {
+    const endIndex = html.indexOf('</div>', startIndex);
+    if (endIndex === -1) break;
+    
+    text = text.substring(0, startIndex) + text.substring(endIndex + 6);
+    startIndex = text.indexOf('<div class="affiliate-callout');
+  }
+  
+  // Helper function to replace HTML tags with their content
+  const replaceTag = (input: string, tagStart: string, tagEnd: string, replacement: string = '$1'): string => {
+    let result = input;
+    let startPos = result.indexOf(tagStart);
+    
+    while (startPos !== -1) {
+      const contentStart = startPos + tagStart.length;
+      const endPos = result.indexOf(tagEnd, contentStart);
+      
+      if (endPos === -1) break;
+      
+      const tagContent = result.substring(contentStart, endPos);
+      const replaceContent = replacement.replace('$1', tagContent);
+      
+      result = result.substring(0, startPos) + replaceContent + result.substring(endPos + tagEnd.length);
+      startPos = result.indexOf(tagStart);
+    }
+    
+    return result;
+  };
+  
+  // Replace common HTML tags
+  text = replaceTag(text, '<h1', '</h1>');
+  text = replaceTag(text, '<h2', '</h2>');
+  text = replaceTag(text, '<h3', '</h3>');
+  text = replaceTag(text, '<h4', '</h4>');
+  text = replaceTag(text, '<h5', '</h5>');
+  text = replaceTag(text, '<h6', '</h6>');
+  text = replaceTag(text, '<p', '</p>');
+  text = replaceTag(text, '<a', '</a>');
+  text = replaceTag(text, '<li', '</li>', '• $1');
+  
+  // Replace <br> tags with newlines
+  text = text.replace(/<br\s*\/?>/g, '\n');
+  
+  // Remove list containers
+  text = text.replace(/<ul[^>]*>/g, '').replace(/<\/ul>/g, '');
+  text = text.replace(/<ol[^>]*>/g, '').replace(/<\/ol>/g, '');
+  
+  // Remove all remaining HTML tags
+  text = text.replace(/<[^>]*>/g, '');
+  
+  // Clean up whitespace
+  return text
+    .replace(/\s+/g, ' ')
+    .replace(/\n\s*\n/g, '\n\n')
+    .trim();
+}
+
 interface GeneratePDFParams {
   quizData: QuizFormData;
   userData: EmailFormData;
@@ -122,8 +188,9 @@ export const generatePDF = ({
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   
-  // Process markdown-like advice text
-  const sections = advice.split('\n\n');
+  // Clean HTML tags from advice and then process markdown-like advice text
+  const cleanAdvice = stripHtmlTags(advice);
+  const sections = cleanAdvice.split('\n\n');
   
   // Helper function to draw a sparkle
   const drawSparkle = (x: number, y: number, size: number = 5) => {
