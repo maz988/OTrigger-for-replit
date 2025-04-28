@@ -50,22 +50,26 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ firstName, advice }) => {
         )}
       </div>
       
-      {/* Call to Action - Visual version matching the screenshot */}
-      <div className="affiliate-callout p-4 my-6 border rounded-lg border-primary-200 bg-primary-50">
-        <h4 className="font-medium text-primary-800 mb-2 text-sm">Expert Recommendation</h4>
-        <p className="text-sm">
-          His Secret Obsession specializes in activating a man's 'Hero Instinct' - the psychological trigger 
-          that makes a man feel a deep biological drive to protect, provide for, and commit to the woman he 
-          loves. Learn more about this powerful relationship technique: {' '}
-          <a 
-            href={affiliateLink}
-            target="_blank"
-            rel="noopener noreferrer" 
-            className="text-primary-600 hover:underline font-medium"
-          >
-            His Secret Obsession
-          </a>
+      {/* Call to Action - Purely visual version for PDF preview */}
+      <div className="bg-[#fde8ef] border border-primary-100 rounded-lg p-4 mb-4 text-center relative overflow-hidden">
+        <div className="border-b border-primary-200 mb-3 pb-2">
+          <h4 className="font-medium text-[#f24b7c] mb-1 text-sm">Complete Your Journey</h4>
+        </div>
+        
+        <p className="text-xs text-gray-700 mb-3">
+          To learn the full system that activates his Hero Instinct
         </p>
+        
+        <a 
+          href={affiliateLink}
+          target="_blank"
+          rel="noopener noreferrer" 
+          className="inline-block text-[#f24b7c] font-bold text-base hover:underline"
+        >
+          His Secret Obsession
+        </a>
+        
+        <p className="text-[10px] text-gray-500 italic mt-1">(Click to download)</p>
       </div>
       
       <div className="text-xs text-gray-500 text-center">
