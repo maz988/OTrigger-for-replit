@@ -8,7 +8,9 @@ import {
   Settings,
   Home,
   LayoutDashboard,
-  Globe
+  Globe,
+  LineChart,
+  Activity
 } from 'lucide-react';
 
 const AdminNavigation: React.FC = () => {
@@ -32,6 +34,12 @@ const AdminNavigation: React.FC = () => {
       href: '/admin/blog-management',
       icon: <FileText className="h-5 w-5 mr-2" />,
       active: location === '/admin/blog-management'
+    },
+    {
+      label: 'Tracking',
+      href: '/admin/tracking-manager',
+      icon: <Activity className="h-5 w-5 mr-2" />,
+      active: location === '/admin/tracking-manager'
     },
     {
       label: 'Settings',

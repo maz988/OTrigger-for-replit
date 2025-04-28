@@ -12,6 +12,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import QuizAnalytics from "@/pages/QuizAnalytics";
 import BlogManagement from "@/pages/BlogManagement";
 import SettingsPage from "@/pages/SettingsPage";
+import TrackingManager from "@/pages/TrackingManager";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import ContactUs from "@/pages/ContactUs";
@@ -50,6 +51,14 @@ function Router() {
         {() => (
           <AdminAuthGuard>
             <SettingsPage />
+          </AdminAuthGuard>
+        )}
+      </Route>
+      
+      <Route path="/admin/tracking-manager">
+        {() => (
+          <AdminAuthGuard>
+            <TrackingManager />
           </AdminAuthGuard>
         )}
       </Route>
