@@ -150,11 +150,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Generate personalized advice (normally this would call OpenAI)
-      const heroInstinctText = "His Secret Obsession specializes in activating a man's 'Hero Instinct' - the psychological trigger that makes a man feel a deep biological drive to protect, provide for, and commit to the woman he loves. Learn more about this powerful relationship technique: " + 
-        `<a href="${affiliateLink}" target="_blank" class="text-primary-600 hover:underline">His Secret Obsession</a>`;
+      // Create separate web and PDF versions of the advice
       
-      // Create the advice with affiliate promotion
-      const advice = `
+      // Common core advice content without HTML tags
+      const coreAdvice = `
 ## Your Personalized Obsession Trigger Plan
 
 Based on your answers, here's your personalized relationship advice:
@@ -175,19 +174,28 @@ Since you tend to communicate ${quizData.communicationStyle.toLowerCase()}, try 
 
 4. **Communicate Clearly**: Express your needs calmly without accusation. For example: "I enjoy our time together and would like more consistency. What are your thoughts?"
 
-<div class="affiliate-callout p-4 my-6 border rounded-lg border-primary-200 bg-primary-50">
-  <h4 class="font-medium text-primary-800 mb-2">Expert Recommendation</h4>
-  <p class="text-sm">
-    ${heroInstinctText}
-  </p>
-</div>
-
 ### Next Steps
 
 Apply these techniques for the next 2-3 weeks, and you'll likely notice a shift in his behavior pattern. Remember that a man who truly values you will work to keep you in his life.
 
 Remember: You deserve someone who recognizes your worth consistently, not just when it's convenient for them.
       `;
+      
+      // Web version with HTML for displaying on the website
+      const webAdvice = coreAdvice.replace(
+        "Remember: You deserve someone who recognizes your worth consistently, not just when it's convenient for them.",
+        `Remember: You deserve someone who recognizes your worth consistently, not just when it's convenient for them.
+        
+<div class="affiliate-callout p-4 my-6 border rounded-lg border-primary-200 bg-primary-50">
+  <h4 class="font-medium text-primary-800 mb-2">Expert Recommendation</h4>
+  <p class="text-sm">
+    His Secret Obsession specializes in activating a man's 'Hero Instinct' - the psychological trigger that makes a man feel a deep biological drive to protect, provide for, and commit to the woman he loves. Learn more about this powerful relationship technique: <a href="${affiliateLink}" target="_blank" class="text-primary-600 hover:underline">His Secret Obsession</a>
+  </p>
+</div>`
+      );
+      
+      // Use the web version for the response
+      const advice = webAdvice;
       
       // Return the generated advice and quiz response ID
       res.status(200).json({
