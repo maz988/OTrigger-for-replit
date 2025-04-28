@@ -10,6 +10,11 @@ import fetch from 'node-fetch';
 import { InsertSystemSetting, type InsertBlogPost } from '@shared/schema';
 import { initializeEmailProviders } from './services/newEmailDispatcher';
 
+// Function to generate a secure unsubscribe token
+function generateUnsubscribeToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
 // Initialize OpenAI
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || "default_key" 
@@ -139,7 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName,
           email,
           source: source || 'lead-magnet',
-          unsubscribeToken: crypto.randomUUID(),
+          unsubscribeToken: randomBytes(32).toString('hex'),
           isSubscribed: true
         });
         console.log(`Created new subscriber with ID: ${subscriber.id}`);
@@ -194,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (welcomeSequence) {
           console.log(`Found welcome sequence: ${welcomeSequence.name}`);
           // Queue a welcome email in the system (will be sent automatically by the queue processor)
-          await storage.saveQueuedEmail({
+          await storage.queueEmail({
             subscriberId: subscriber.id,
             sequenceId: welcomeSequence.id,
             status: 'pending',
@@ -234,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           // Queue the email
-          await storage.saveQueuedEmail({
+          await storage.queueEmail({
             subscriberId: subscriber.id,
             sequenceId: newSequence.id,
             templateId: welcomeTemplate.id,
