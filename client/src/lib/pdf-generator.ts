@@ -95,17 +95,79 @@ export const generatePDF = ({
   const margin = 20;
   const contentWidth = pageWidth - (margin * 2);
   
-  // Function to add stylish page decoration
+  // Function to add stylish page decoration with elegant borders and accents
   const addPageDecoration = () => {
-    // Add decorative header and footer borders
-    doc.setFillColor(252, 231, 243); // light pink #fce7f3
-    doc.rect(0, 0, pageWidth, 30, 'F'); // Top header background
-    doc.rect(0, pageHeight - 15, pageWidth, 15, 'F'); // Bottom footer background
+    // Add decorative header and footer background
+    const gradientColors = [
+      [252, 231, 243], // light pink #fce7f3
+      [253, 237, 246], // lighter pink
+      [254, 242, 250]  // very light pink
+    ];
     
-    // Add a subtle side border
+    // Top gradient header
+    const headerHeight = 30;
+    const headerColor = gradientColors[0];
+    doc.setFillColor(headerColor[0], headerColor[1], headerColor[2]);
+    doc.rect(0, 0, pageWidth, headerHeight, 'F');
+    
+    // Bottom gradient footer
+    const footerHeight = 20;
+    const footerColor = gradientColors[0];
+    doc.setFillColor(footerColor[0], footerColor[1], footerColor[2]);
+    doc.rect(0, pageHeight - footerHeight, pageWidth, footerHeight, 'F');
+    
+    // Add decorative curve at the bottom of the header
+    doc.setFillColor(255, 255, 255);
+    for (let i = 0; i < pageWidth; i += 20) {
+      const arcWidth = 20;
+      const arcHeight = 5;
+      doc.ellipse(i + (arcWidth/2), headerHeight, arcWidth/2, arcHeight, 'F');
+    }
+    
+    // Add decorative horizontal line at bottom of header
+    doc.setDrawColor(242, 180, 210);
+    doc.setLineWidth(0.5);
+    doc.line(0, headerHeight + 1, pageWidth, headerHeight + 1);
+    
+    // Add decorative border pattern on sides
+    const patternHeight = 5;
+    const sideBarWidth = 6;
+    
+    // Left border decoration
     doc.setFillColor(254, 242, 250); // Very light pink
-    doc.rect(0, 30, 8, pageHeight - 45, 'F'); // Left border
-    doc.rect(pageWidth - 8, 30, 8, pageHeight - 45, 'F'); // Right border
+    doc.rect(0, headerHeight, sideBarWidth, pageHeight - headerHeight - footerHeight, 'F');
+    
+    // Right border decoration
+    doc.rect(pageWidth - sideBarWidth, headerHeight, sideBarWidth, pageHeight - headerHeight - footerHeight, 'F');
+    
+    // Add decorative dots in the side borders
+    doc.setFillColor(242, 180, 210, 0.5);
+    for (let y = headerHeight + 20; y < pageHeight - footerHeight; y += 40) {
+      // Left side dot
+      doc.circle(sideBarWidth/2, y, 1.5, 'F');
+      // Right side dot
+      doc.circle(pageWidth - sideBarWidth/2, y, 1.5, 'F');
+    }
+    
+    // Add small decorative hearts in footer
+    const drawSmallFooterHeart = (x: number, y: number, size: number = 2) => {
+      doc.setFillColor(242, 180, 210, 0.6);
+      // Left half of heart
+      doc.circle(x - size/4, y, size/4, 'F');
+      // Right half of heart
+      doc.circle(x + size/4, y, size/4, 'F');
+      // Bottom triangle
+      doc.triangle(
+        x - size/3, y, 
+        x + size/3, y, 
+        x, y + size/3, 
+        'F'
+      );
+    };
+    
+    // Add decorative hearts in footer
+    drawSmallFooterHeart(pageWidth/4, pageHeight - footerHeight/2, 3);
+    drawSmallFooterHeart(pageWidth*3/4, pageHeight - footerHeight/2, 3);
   };
   
   // Add the decorative elements
@@ -149,29 +211,71 @@ export const generatePDF = ({
     'F'
   );
   
-  // Add title with elegant styling
+  // Create a more elegant header design
+  
+  // Add curved decorative accent at the top
+  doc.setFillColor(242, 75, 124, 0.7); // Light pink with transparency
+  doc.roundedRect(pageWidth/2 - 65, margin - 10, 130, 3, 1, 1, 'F');
+  
+  // Add small hearts flanking the title
+  const drawDecoHeart = (x: number, y: number, size: number = 3) => {
+    doc.setFillColor(242, 75, 124, 0.8);
+    // Left half of heart
+    doc.circle(x - size/4, y, size/4, 'F');
+    // Right half of heart
+    doc.circle(x + size/4, y, size/4, 'F');
+    // Bottom triangle
+    doc.triangle(
+      x - size/3, y, 
+      x + size/3, y, 
+      x, y + size/3, 
+      'F'
+    );
+  };
+  
+  // Add decorative hearts
+  drawDecoHeart(pageWidth/2 - 70, margin - 8, 4);
+  drawDecoHeart(pageWidth/2 + 70, margin - 8, 4);
+  
+  // Add main title with elegant styling
   doc.setTextColor(242, 59, 108); // #F23B6C
-  doc.setFontSize(22);
+  doc.setFontSize(24);
   doc.setFont("helvetica", "bold");
-  const title = "Personalized Obsession Trigger Plan";
+  const title = "Your Personalized Plan";
   doc.text(title, pageWidth/2, margin + 2, { align: "center" });
   
-  // Add decorative underline
+  // Add subtitle (Obsession Trigger)
+  doc.setTextColor(242, 100, 140);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "italic");
+  doc.text("OBSESSION TRIGGER", pageWidth/2, margin - 6, { align: "center" });
+  
+  // Add decorative underline with gradient effect
   const titleWidth = doc.getTextWidth(title);
+  const underlineY = margin + 4;
+  
+  // Draw main underline
   doc.setDrawColor(242, 75, 124);
   doc.setLineWidth(0.75);
-  doc.line(pageWidth/2 - titleWidth/2, margin + 4, pageWidth/2 + titleWidth/2, margin + 4);
+  doc.line(pageWidth/2 - titleWidth/2, underlineY, pageWidth/2 + titleWidth/2, underlineY);
   
-  // Add subtitle with name
+  // Draw small accent lines for decorative effect
+  doc.setLineWidth(0.5);
+  doc.setDrawColor(242, 75, 124, 0.7);
+  doc.line(pageWidth/2 - titleWidth/2 - 10, underlineY + 1.5, pageWidth/2 + titleWidth/2 + 10, underlineY + 1.5);
+  doc.setDrawColor(242, 75, 124, 0.4);
+  doc.line(pageWidth/2 - titleWidth/2 - 15, underlineY + 3, pageWidth/2 + titleWidth/2 + 15, underlineY + 3);
+  
+  // Add personalized subtitle with name
   doc.setTextColor(107, 114, 128); // gray-500
-  doc.setFontSize(12);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "normal");
   doc.text(`Created exclusively for ${userData.firstName}`, pageWidth/2, margin + 10, { align: "center" });
   
   // Add a small decorative divider
   doc.setDrawColor(242, 205, 220);
   doc.setLineWidth(0.5);
-  const dividerWidth = 40;
+  const dividerWidth = 50;
   doc.line(pageWidth/2 - dividerWidth/2, margin + 14, pageWidth/2 + dividerWidth/2, margin + 14);
   
   // Add the current date
@@ -184,23 +288,46 @@ export const generatePDF = ({
   doc.setTextColor(150, 150, 150);
   doc.text(formattedDate, pageWidth/2, margin + 19, { align: "center" });
   
-  // Add professional introduction box
+  // Add professional introduction box with enhanced design
   const introY = margin + 30;
   
-  // Add subtle background for introduction
+  // Create a more elegant introduction box
+  // Main background
   doc.setFillColor(252, 246, 249); // Very light pink
-  doc.roundedRect(margin - 2, introY - 3, contentWidth + 4, 20, 2, 2, 'F');
+  doc.roundedRect(margin - 3, introY - 4, contentWidth + 6, 24, 3, 3, 'F');
   
-  // Add introduction text
-  doc.setTextColor(31, 41, 55); // gray-800
+  // Add subtle border
+  doc.setDrawColor(242, 180, 210, 0.6);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin - 3, introY - 4, contentWidth + 6, 24, 3, 3, 'S');
+  
+  // Add decorative accent
+  doc.setFillColor(242, 180, 210, 0.3);
+  doc.rect(margin - 3, introY - 4, contentWidth + 6, 2, 'F');
+  
+  // Add small quote marks to give it a testimonial feeling
+  doc.setFillColor(242, 180, 210, 0.5);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  
+  // Quote marks - using proper function signature with strings first, coordinates second
+  doc.text("\"", margin, introY + 2); 
+  doc.text("\"", margin + contentWidth - 4, introY + 2);
+  
+  // Add introduction text with better typography
+  doc.setTextColor(80, 80, 95); // Slightly darker for better readability
   doc.setFontSize(11);
   doc.setFont("helvetica", "italic");
+  
+  const introText = "Based on your quiz answers, we've created this personalized relationship action plan designed to help you transform your connection with him. Follow these expert insights for best results.";
+  
+  // Position text with proper margins to account for quote marks
   doc.text(
-    "Based on your quiz answers, we've created this personalized relationship action plan designed to help you transform your connection with him. Follow these expert insights for best results.", 
-    margin, 
-    introY + 2,
+    introText, 
+    margin + 8, // Indented to make room for quote mark
+    introY + 4,  // Better vertical positioning
     { 
-      maxWidth: contentWidth,
+      maxWidth: contentWidth - 16, // Narrower to account for quote marks
       align: "left" 
     }
   );
@@ -216,13 +343,54 @@ export const generatePDF = ({
   // Clean HTML tags from advice and then process markdown-like advice text
   const cleanAdvice = stripHtmlTags(advice);
   
-  // Process markdown to ensure proper formatting
-  const formattedAdvice = cleanAdvice
-    .replace(/#{2,3}\s+([^\n]+)/g, (_, header) => `\n\n## ${header}\n`) // Format headers
-    .replace(/\*\*([^*]+)\*\*/g, (_, text) => text) // Clean bold markers but preserve text
-    .replace(/^\d+\.\s+/gm, (match) => `\n${match}`) // Add newlines before numbered items
-    .replace(/^\s*-\s+/gm, (match) => `\n• ${match.substring(2)}`) // Convert dashes to bullets
+  // Process markdown to ensure proper formatting and better section structure
+  let formattedAdvice = cleanAdvice
+    // Remove ### markers that appear in bad spots
+    .replace(/#{3,}/g, '')
+    // Better formatting for actual headers
+    .replace(/#{1,2}\s+([^\n]+)/g, (_, header) => `\n\n## ${header}\n`)
+    // Clean bold markers but preserve text
+    .replace(/\*\*([^*]+)\*\*/g, (_, text) => text)
+    // Add newlines and formatting before numbered items for better separation
+    .replace(/^\d+\.\s+/gm, (match) => `\n\n${match}`)
+    // Convert dashes to bullets with proper spacing
+    .replace(/^\s*-\s+/gm, (match) => `\n• ${match.substring(2)}`)
     .trim();
+  
+  // Clean up multiple consecutive newlines
+  formattedAdvice = formattedAdvice.replace(/\n{3,}/g, '\n\n');
+  
+  // Fix header formatting - ensure "Understanding His Behavior" is a proper header
+  if (formattedAdvice.includes("Understanding His Behavior")) {
+    formattedAdvice = formattedAdvice.replace(
+      /Understanding His Behavior/g, 
+      "\n## Understanding His Behavior"
+    );
+  }
+  
+  // Fix "How to Respond" formatting to ensure it's a proper header
+  if (formattedAdvice.includes("How to Respond")) {
+    formattedAdvice = formattedAdvice.replace(
+      /How to Respond/g, 
+      "\n## How to Respond"
+    );
+  }
+  
+  // Fix "Next Steps" formatting to ensure it's a proper header
+  if (formattedAdvice.includes("Next Steps")) {
+    formattedAdvice = formattedAdvice.replace(
+      /Next Steps/g, 
+      "\n## Next Steps"
+    );
+  }
+  
+  // Process numbered action items to ensure they stand out
+  for (let i = 1; i <= 5; i++) {
+    const regex = new RegExp(`${i}\\.\\s+([^\\n]+)`, 'g');
+    formattedAdvice = formattedAdvice.replace(regex, (match, content) => {
+      return `\n${i}. ${content}`;
+    });
+  }
   
   // Split into sections with better formatting
   const sections = formattedAdvice.split('\n\n');
@@ -464,12 +632,33 @@ export const generatePDF = ({
   // Make the entire box clickable with affiliate link
   doc.link(margin, ctaY, contentWidth, gradientHeight, { url: affiliateLink });
   
-  // Add footer
+  // Add professional footer with logo and copyright
+  const footerY = pageHeight - 12;
+  
+  // Add centered footer text
   doc.setTextColor(107, 114, 128); // gray-500
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   const footerText = `Generated by Obsession Trigger AI on ${formattedDate}`;
-  doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: "center" });
+  doc.text(footerText, pageWidth / 2, footerY, { align: "center" });
+  
+  // Add copyright notice
+  doc.setFontSize(8);
+  doc.setTextColor(130, 130, 140);
+  const copyright = "© " + new Date().getFullYear() + " Obsession Trigger | Your Relationship Success Guide";
+  doc.text(copyright, pageWidth / 2, footerY + 5, { align: "center" });
+  
+  // Add small logo in footer
+  const logoSize = 3;
+  doc.setFillColor(242, 75, 124, 0.7);
+  doc.circle(pageWidth / 2 - 55, footerY, logoSize, 'F');
+  doc.setFillColor(255, 255, 255, 0.9);
+  doc.circle(pageWidth / 2 - 55, footerY, logoSize - 1.2, 'F');
+  
+  // Draw small T beside the O
+  doc.setFillColor(242, 75, 124, 0.7);
+  doc.rect(pageWidth / 2 - 51, footerY - 2, 3, 1, 'F');
+  doc.rect(pageWidth / 2 - 50, footerY - 2, 1, 4, 'F');
   
   return doc;
 };
