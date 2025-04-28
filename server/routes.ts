@@ -116,6 +116,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Lead magnet subscription endpoint
+  app.post("/api/leads/subscribe", async (req, res) => {
+    try {
+      const { firstName, email, source, leadMagnet } = req.body;
+      
+      if (!email || !firstName) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email and firstName are required' 
+        });
+      }
+      
+      console.log(`Processing lead magnet subscription for ${firstName} (${email}) from ${source || 'direct'}, lead magnet: ${leadMagnet || 'none'}`);
+      
+      // Get or create subscriber
+      let subscriber = await storage.getSubscriberByEmail(email);
+      
+      if (!subscriber) {
+        // Create new subscriber
+        subscriber = await storage.saveSubscriber({
+          firstName,
+          email,
+          source: source || 'lead-magnet',
+          unsubscribeToken: crypto.randomUUID(),
+          isSubscribed: true
+        });
+        console.log(`Created new subscriber with ID: ${subscriber.id}`);
+      } else {
+        console.log(`Found existing subscriber with ID: ${subscriber.id}`);
+      }
+      
+      // Record the lead magnet download if specified
+      if (leadMagnet) {
+        const leadMagnets = await storage.getAllLeadMagnets();
+        // Find by name contains instead of slug since we don't have a slug field
+        const leadMagnetItem = leadMagnets.find(lm => 
+          lm.name.toLowerCase().includes(leadMagnet.toLowerCase())
+        );
+        
+        if (leadMagnetItem) {
+          // Record the download
+          await storage.recordLeadMagnetDownload(leadMagnetItem.id);
+          console.log(`Recorded download for lead magnet ID: ${leadMagnetItem.id}`);
+        } else {
+          console.log(`Lead magnet not found with name containing: ${leadMagnet}`);
+        }
+      }
+      
+      // Send welcome email with lead magnet
+      try {
+        // Import email service functions
+        const { sendEmailWithService } = await import('./services/newEmailDispatcher');
+        
+        // Try to find appropriate email template
+        const sequences = await storage.getAllEmailSequences();
+        const welcomeSequence = sequences.find(seq => seq.name.toLowerCase().includes('welcome') || seq.name.toLowerCase().includes('hero'));
+        
+        if (welcomeSequence) {
+          const templates = await storage.getEmailTemplatesBySequenceId(welcomeSequence.id);
+          const welcomeTemplate = templates.find(t => t.subject.toLowerCase().includes('welcome') || t.subject.toLowerCase().includes('hero'));
+          
+          if (welcomeTemplate) {
+            console.log(`Sending welcome email using template ID: ${welcomeTemplate.id}`);
+            
+            await sendEmailWithService({
+              to: email,
+              subject: welcomeTemplate.subject.replace('[FIRSTNAME]', firstName),
+              html: welcomeTemplate.content
+                .replace('[FIRSTNAME]', firstName)
+                .replace('[DOWNLOAD_LINK]', '/downloads/hero-instinct-phrases.pdf'),
+              from: 'support@obsessiontrigger.com',
+              subscriberId: subscriber.id
+            });
+          } else {
+            // Fallback to generic email
+            console.log('No specific welcome template found, sending generic email');
+            
+            await sendEmailWithService({
+              to: email,
+              subject: `Your hero instinct guide is here, ${firstName}!`,
+              html: `
+                <h1>Your Free Guide Is Ready!</h1>
+                <p>Hi ${firstName},</p>
+                <p>Thank you for requesting the "7 Secret Phrases That Trigger His Hero Instinct" guide! Click the link below to download your copy:</p>
+                <p><a href="/downloads/hero-instinct-phrases.pdf">Download Your Free Guide</a></p>
+                <p>These powerful phrases will help you connect with him on a deeper level than ever before.</p>
+                <p>Enjoy!</p>
+              `,
+              from: 'support@obsessiontrigger.com',
+              subscriberId: subscriber.id
+            });
+          }
+        } else {
+          // Fallback if no welcome sequence found
+          console.log('No welcome sequence found, sending generic email');
+          
+          await sendEmailWithService({
+            to: email,
+            subject: `Your hero instinct guide is here, ${firstName}!`,
+            html: `
+              <h1>Your Free Guide Is Ready!</h1>
+              <p>Hi ${firstName},</p>
+              <p>Thank you for requesting the "7 Secret Phrases That Trigger His Hero Instinct" guide! Click the link below to download your copy:</p>
+              <p><a href="/downloads/hero-instinct-phrases.pdf">Download Your Free Guide</a></p>
+              <p>These powerful phrases will help you connect with him on a deeper level than ever before.</p>
+              <p>Enjoy!</p>
+            `,
+            from: 'support@obsessiontrigger.com',
+            subscriberId: subscriber.id
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Continue processing even if email fails
+      }
+      
+      res.status(201).json({
+        success: true,
+        message: 'Successfully subscribed'
+      });
+    } catch (error) {
+      console.error('Error in lead subscription:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process subscription'
+      });
+    }
+  });
+  
   // Main quiz endpoint that combines both generate-advice and saving response
   app.post("/api/quiz", async (req, res) => {
     try {

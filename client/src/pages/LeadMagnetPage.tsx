@@ -34,14 +34,21 @@ const LeadMagnetPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await apiRequest('POST', '/api/leads/subscribe', {
-        firstName: formData.firstName,
-        email: formData.email,
-        source: 'obsession-lead-magnet',
-        leadMagnet: 'hero-instinct-phrases'
+      // Use fetch directly for more control over the response
+      const response = await fetch('/api/leads/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          email: formData.email,
+          source: 'obsession-lead-magnet',
+          leadMagnet: 'hero-instinct-phrases'
+        })
       });
 
-      if (response.status === 200 || response.status === 201) {
+      if (response.ok) {
         setSubmitted(true);
         toast({
           title: "Success!",
@@ -49,7 +56,8 @@ const LeadMagnetPage: React.FC = () => {
           variant: "default",
         });
       } else {
-        throw new Error('Subscription failed');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Subscription failed');
       }
     } catch (error) {
       console.error('Error submitting form:', error);
