@@ -95,93 +95,118 @@ export const generatePDF = ({
   const margin = 20;
   const contentWidth = pageWidth - (margin * 2);
   
-  // Add decorative header background
-  doc.setFillColor(252, 231, 243); // light pink #fce7f3
-  doc.rect(0, 0, pageWidth, 40, 'F');
+  // Function to add stylish page decoration
+  const addPageDecoration = () => {
+    // Add decorative header and footer borders
+    doc.setFillColor(252, 231, 243); // light pink #fce7f3
+    doc.rect(0, 0, pageWidth, 30, 'F'); // Top header background
+    doc.rect(0, pageHeight - 15, pageWidth, 15, 'F'); // Bottom footer background
+    
+    // Add a subtle side border
+    doc.setFillColor(254, 242, 250); // Very light pink
+    doc.rect(0, 30, 8, pageHeight - 45, 'F'); // Left border
+    doc.rect(pageWidth - 8, 30, 8, pageHeight - 45, 'F'); // Right border
+  };
   
-  // Draw a heart directly instead of using SVG image
-  const heartX = pageWidth - margin - 10;
-  const heartY = margin;
+  // Add the decorative elements
+  addPageDecoration();
   
-  // Draw heart shape
-  doc.setDrawColor(242, 75, 124); // #f24b7c
-  doc.setFillColor(242, 75, 124); // #f24b7c
+  // Draw logo elements
+  const logoX = margin + 6;
+  const logoY = margin - 5;
+  
+  // Draw stylized "OT" logo (Obsession Trigger)
+  doc.setFillColor(242, 75, 124); // Main pink
+  
+  // O shape (circle)
+  doc.circle(logoX, logoY, 5, 'F');
+  doc.setFillColor(255, 255, 255);
+  doc.circle(logoX, logoY, 3, 'F');
+  
+  // T shape
+  doc.setFillColor(242, 75, 124);
+  doc.rect(logoX + 6, logoY - 5, 8, 2.5, 'F');
+  doc.rect(logoX + 8.5, logoY - 5, 3, 10, 'F');
+  
+  // Draw heart icon on the right side
+  const heartX = pageWidth - margin - 8;
+  const heartY = margin - 2;
+  
+  // Heart shape
+  doc.setDrawColor(242, 75, 124);
+  doc.setFillColor(242, 75, 124);
   doc.setLineWidth(0.5);
   
   // Left half of heart
-  doc.circle(heartX, heartY, 3, 'F');
+  doc.circle(heartX - 1.5, heartY, 3, 'F');
   // Right half of heart
-  doc.circle(heartX + 6, heartY, 3, 'F');
+  doc.circle(heartX + 1.5, heartY, 3, 'F');
   // Bottom triangle of heart
   doc.triangle(
-    heartX - 3, heartY, 
-    heartX + 9, heartY, 
-    heartX + 3, heartY + 6, 
+    heartX - 4.5, heartY, 
+    heartX + 4.5, heartY, 
+    heartX, heartY + 5, 
     'F'
   );
   
-  // Add title with pink color
+  // Add title with elegant styling
   doc.setTextColor(242, 59, 108); // #F23B6C
-  doc.setFontSize(24);
+  doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
-  doc.text("Your Custom Obsession Trigger Plan", margin, margin + 5);
+  const title = "Personalized Obsession Trigger Plan";
+  doc.text(title, pageWidth/2, margin + 2, { align: "center" });
   
-  // Add subtitle
+  // Add decorative underline
+  const titleWidth = doc.getTextWidth(title);
+  doc.setDrawColor(242, 75, 124);
+  doc.setLineWidth(0.75);
+  doc.line(pageWidth/2 - titleWidth/2, margin + 4, pageWidth/2 + titleWidth/2, margin + 4);
+  
+  // Add subtitle with name
   doc.setTextColor(107, 114, 128); // gray-500
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
-  doc.text(`Prepared specially for ${userData.firstName}`, margin, margin + 12);
+  doc.text(`Created exclusively for ${userData.firstName}`, pageWidth/2, margin + 10, { align: "center" });
   
-  // Add divider
-  doc.setDrawColor(229, 231, 235); // gray-200
-  doc.line(margin, margin + 18, pageWidth - margin, margin + 18);
+  // Add a small decorative divider
+  doc.setDrawColor(242, 205, 220);
+  doc.setLineWidth(0.5);
+  const dividerWidth = 40;
+  doc.line(pageWidth/2 - dividerWidth/2, margin + 14, pageWidth/2 + dividerWidth/2, margin + 14);
   
-  // Draw relationship illustration box
-  const coupleX = pageWidth / 2;
-  const coupleY = margin + 30;
+  // Add the current date
+  const formattedDate = new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150);
+  doc.text(formattedDate, pageWidth/2, margin + 19, { align: "center" });
   
-  // Background box for illustration
-  doc.setFillColor(252, 231, 243); // Light pink #fce7f3
-  doc.roundedRect(coupleX - 20, coupleY - 10, 40, 25, 2, 2, 'F');
+  // Add professional introduction box
+  const introY = margin + 30;
   
-  // Hearts for the illustration
-  doc.setFillColor(242, 75, 124); // #f24b7c
+  // Add subtle background for introduction
+  doc.setFillColor(252, 246, 249); // Very light pink
+  doc.roundedRect(margin - 2, introY - 3, contentWidth + 4, 20, 2, 2, 'F');
   
-  // Left heart
-  doc.circle(coupleX - 10, coupleY, 3, 'F');
-  doc.circle(coupleX - 5, coupleY, 3, 'F');
-  doc.triangle(
-    coupleX - 13, coupleY, 
-    coupleX - 2, coupleY, 
-    coupleX - 7.5, coupleY + 5, 
-    'F'
-  );
-  
-  // Right heart
-  doc.circle(coupleX + 5, coupleY, 3, 'F');
-  doc.circle(coupleX + 10, coupleY, 3, 'F');
-  doc.triangle(
-    coupleX + 2, coupleY, 
-    coupleX + 13, coupleY, 
-    coupleX + 7.5, coupleY + 5, 
-    'F'
-  );
-  
-  // Text for illustration
-  doc.setTextColor(242, 75, 124); // #f24b7c
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.text("Understanding Relationships", coupleX, coupleY + 10, { align: "center" });
-  
-  // Start content after the image
-  let yPosition = margin + 55;
-  
-  // Add introduction
+  // Add introduction text
   doc.setTextColor(31, 41, 55); // gray-800
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "italic");
-  doc.text("Based on your quiz answers, we've created this personalized plan just for you.", margin, yPosition);
-  yPosition += 10;
+  doc.text(
+    "Based on your quiz answers, we've created this personalized relationship action plan designed to help you transform your connection with him. Follow these expert insights for best results.", 
+    margin, 
+    introY + 2,
+    { 
+      maxWidth: contentWidth,
+      align: "left" 
+    }
+  );
+  
+  // Start content after the introduction box
+  let yPosition = introY + 25;
   
   // Add content
   doc.setTextColor(31, 41, 55); // gray-800
@@ -190,7 +215,17 @@ export const generatePDF = ({
   
   // Clean HTML tags from advice and then process markdown-like advice text
   const cleanAdvice = stripHtmlTags(advice);
-  const sections = cleanAdvice.split('\n\n');
+  
+  // Process markdown to ensure proper formatting
+  const formattedAdvice = cleanAdvice
+    .replace(/#{2,3}\s+([^\n]+)/g, (_, header) => `\n\n## ${header}\n`) // Format headers
+    .replace(/\*\*([^*]+)\*\*/g, (_, text) => text) // Clean bold markers but preserve text
+    .replace(/^\d+\.\s+/gm, (match) => `\n${match}`) // Add newlines before numbered items
+    .replace(/^\s*-\s+/gm, (match) => `\n• ${match.substring(2)}`) // Convert dashes to bullets
+    .trim();
+  
+  // Split into sections with better formatting
+  const sections = formattedAdvice.split('\n\n');
   
   // Helper function to draw a sparkle
   const drawSparkle = (x: number, y: number, size: number = 5) => {
@@ -226,24 +261,38 @@ export const generatePDF = ({
     // Check if we need to add a page break
     if (yPosition > pageHeight - 50) {
       doc.addPage();
+      // Add page decoration to the new page
+      addPageDecoration();
       yPosition = margin;
     }
     
     // Check if it's a header (starts with # or ##)
     if (section.startsWith('# ') || section.startsWith('## ') || section.startsWith('### ')) {
       const headerText = section.replace(/^#+\s/, '');
+      
+      // Add background styling for major headers for better visual organization
+      if (section.startsWith('## ')) {
+        // Create a subtle background for section headers
+        doc.setFillColor(252, 240, 245); // Very light pink
+        doc.roundedRect(margin - 5, yPosition - 7, contentWidth + 10, 15, 2, 2, 'F');
+        
+        // Add a small accent bar to the left
+        doc.setFillColor(242, 75, 124); // #f24b7c
+        doc.rect(margin - 5, yPosition - 7, 3, 15, 'F');
+      }
+      
       doc.setFontSize(section.startsWith('# ') ? 18 : section.startsWith('## ') ? 16 : 14);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(242, 75, 124); // #f24b7c
       
-      // Add diamond icon before main headers
+      // Add diamond icon before some headers
       if (section.startsWith('## ') && !headerText.includes("How to Respond")) {
         drawDiamond(margin - 7, yPosition - 1);
       }
       
       const lines = doc.splitTextToSize(headerText, contentWidth);
       doc.text(lines, margin, yPosition);
-      yPosition += lines.length * 7 + 3;
+      yPosition += lines.length * 7 + 5; // Add more spacing after headers
       
       // Reset for normal text
       doc.setTextColor(31, 41, 55);
@@ -255,29 +304,53 @@ export const generatePDF = ({
       const listText = section;
       doc.setFont("helvetica", "normal");
       
-      // Add sparkle icon for numbered items
+      // Add a light background behind list items for better readability
       if (/^\d+\.\s/.test(section)) {
+        // Get approximate height
+        const lines = doc.splitTextToSize(listText, contentWidth - 10);
+        const itemHeight = lines.length * 6 + 2;
+        
+        // Add sparkle icon for numbered items
         drawSparkle(margin + 3, yPosition - 1, 4);
+        
+        // Add subtle highlight background
+        doc.setFillColor(252, 246, 249);
+        doc.roundedRect(margin, yPosition - 5, contentWidth - 5, itemHeight + 4, 1, 1, 'F');
       }
       
-      const lines = doc.splitTextToSize(listText, contentWidth - 10);
-      doc.text(lines, margin + 8, yPosition); // Indent list items
-      yPosition += lines.length * 6 + 3;
+      const lines = doc.splitTextToSize(listText, contentWidth - 15);
+      doc.text(lines, margin + 10, yPosition); // Increase indent for better readability
+      yPosition += lines.length * 6 + 4; // Add more spacing after list items
     }
     // Regular paragraph
     else {
       // Process bold text
       let paragraph = section.replace(/\*\*(.*?)\*\*/g, "$1"); // Remove ** but remember positions
       
+      // Create proper paragraph formatting
       const lines = doc.splitTextToSize(paragraph, contentWidth);
+      
+      // Add some visual enhancement to the first paragraph after a header
+      if (sections.indexOf(section) > 0 && 
+          (sections[sections.indexOf(section) - 1].startsWith('# ') || 
+           sections[sections.indexOf(section) - 1].startsWith('## '))) {
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(70, 70, 80); // Darker gray for first paragraph
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(60, 60, 70); // Standard text color
+      }
+      
       doc.text(lines, margin, yPosition);
-      yPosition += lines.length * 6 + 4; // Add spacing between paragraphs
+      yPosition += lines.length * 6 + 5; // Add more spacing after paragraphs
     }
   }
   
   // Check if we need a new page for the CTA box
   if (yPosition > pageHeight - 60) {
     doc.addPage();
+    // Add page decoration to the new page
+    addPageDecoration();
     yPosition = margin;
   }
   
@@ -310,54 +383,92 @@ export const generatePDF = ({
   // Draw a prominent visual call-to-action box
   const ctaY = yPosition;
   
-  // Create a pink box with border
-  doc.setFillColor(252, 231, 243); // Light pink #fce7f3
-  doc.setDrawColor(242, 75, 124); // #f24b7c
-  doc.roundedRect(margin, ctaY, contentWidth, 40, 3, 3, 'FD');
+  // Create a more professional gradient-like effect for the CTA box
+  // First draw gradient-like background (using multiple rectangles)
+  const gradientSteps = 6;
+  const gradientHeight = 50; // Make box taller for more impact
   
-  // Draw a decorative line at the top
-  doc.setDrawColor(242, 75, 124);
-  doc.setLineWidth(1);
-  doc.line(margin + 5, ctaY + 3, margin + contentWidth - 5, ctaY + 3);
+  // Create main box with border
+  doc.setFillColor(252, 231, 243); // Light pink base #fce7f3
+  doc.setDrawColor(242, 75, 124); // #f24b7c border color
+  doc.setLineWidth(0.75);
+  doc.roundedRect(margin, ctaY, contentWidth, gradientHeight, 4, 4, 'FD');
   
-  // Add heading in pink
+  // Add decorative elements
+  // Top accent bar
+  doc.setFillColor(242, 75, 124); // #f24b7c 
+  doc.rect(margin, ctaY, contentWidth, 2, 'F');
+  
+  // Add small decorative hearts in the corners
+  const drawSmallHeart = (x: number, y: number, size: number = 3) => {
+    // Left half of heart
+    doc.circle(x - size/3, y, size/3, 'F');
+    // Right half of heart
+    doc.circle(x + size/3, y, size/3, 'F');
+    // Bottom triangle of heart
+    doc.triangle(
+      x - size/2, y, 
+      x + size/2, y, 
+      x, y + size/2, 
+      'F'
+    );
+  };
+  
+  // Draw decorative hearts in the corners
+  doc.setFillColor(242, 75, 124); // #f24b7c
+  drawSmallHeart(margin + 8, ctaY + 8, 4);
+  drawSmallHeart(margin + contentWidth - 8, ctaY + 8, 4);
+  
+  // Add heading with better typography
   doc.setTextColor(242, 75, 124); // #f24b7c
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("To learn the full system that activates his Hero Instinct, download:", margin + 5, ctaY + 12);
+  doc.text("To learn the full system that activates his Hero Instinct:", margin + 12, ctaY + 14);
   
-  // Add program name in larger text
+  // Add program name in larger text with more prominence
   doc.setTextColor(242, 75, 124); // #f24b7c
-  doc.setFontSize(16);
+  doc.setFontSize(20); // Larger size for emphasis
   doc.setFont("helvetica", "bold");
   const programName = "His Secret Obsession";
-  doc.text(programName, margin + 5, ctaY + 22);
   
-  // Draw a decorative underline
+  // Center the program name
+  const programWidth = doc.getTextWidth(programName);
+  doc.text(programName, pageWidth/2, ctaY + 28, { align: "center" });
+  
+  // Draw decorative underline
   doc.setDrawColor(242, 75, 124);
-  doc.setLineWidth(0.5);
-  const textWidth = doc.getTextWidth(programName);
-  doc.line(margin + 5, ctaY + 24, margin + 5 + textWidth, ctaY + 24);
+  doc.setLineWidth(0.75);
+  doc.line(
+    pageWidth/2 - programWidth/2, 
+    ctaY + 30, 
+    pageWidth/2 + programWidth/2, 
+    ctaY + 30
+  );
   
-  // Add small label
-  doc.setTextColor(100, 100, 100);
-  doc.setFontSize(9);
+  // Add call-to-action text
+  doc.setTextColor(70, 70, 80);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "italic");
-  doc.text("(Click to download)", margin + 5, ctaY + 30);
+  doc.text("Click here to download now", pageWidth/2, ctaY + 38, { align: "center" });
+  
+  // Add a small arrow icon to suggest action
+  doc.setFillColor(242, 75, 124);
+  const arrowX = pageWidth/2 + doc.getTextWidth("Click here to download now")/2 + 10;
+  doc.triangle(
+    arrowX, ctaY + 38,
+    arrowX + 5, ctaY + 36,
+    arrowX, ctaY + 40,
+    'F'
+  );
   
   // Make the entire box clickable with affiliate link
-  doc.link(margin, ctaY, contentWidth, 40, { url: affiliateLink });
+  doc.link(margin, ctaY, contentWidth, gradientHeight, { url: affiliateLink });
   
   // Add footer
   doc.setTextColor(107, 114, 128); // gray-500
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  const currentDate = new Date().toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-  const footerText = `Generated by Obsession Trigger AI on ${currentDate}`;
+  const footerText = `Generated by Obsession Trigger AI on ${formattedDate}`;
   doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: "center" });
   
   return doc;
