@@ -112,19 +112,22 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ advice, userData, pdfDocument
           </Button>
         </div>
         
-        {/* Affiliate CTA box */}
-        <div className="mt-6 p-4 border border-primary-200 rounded-lg bg-primary-50">
-          <h4 className="font-medium text-primary-800 mb-2 flex items-center text-sm">
-            <Sparkles className="h-4 w-4 mr-1" /> To learn the full system that activates his Hero Instinct:
-          </h4>
-          <a 
-            href="https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=quiz" 
-            target="_blank"
-            rel="noopener noreferrer" 
-            className="text-center block w-full p-2 bg-primary-100 hover:bg-primary-200 rounded text-primary-600 font-medium transition-colors"
-          >
-            Download His Secret Obsession <ExternalLink className="inline h-3 w-3 ml-1" />
-          </a>
+        {/* Affiliate CTA box - Visual match with the screenshot */}
+        <div className="affiliate-callout p-4 my-6 border rounded-lg border-primary-200 bg-primary-50">
+          <h4 className="font-medium text-primary-800 mb-2 text-sm">Expert Recommendation</h4>
+          <p className="text-sm">
+            His Secret Obsession specializes in activating a man's 'Hero Instinct' - the psychological trigger 
+            that makes a man feel a deep biological drive to protect, provide for, and commit to the woman he 
+            loves. Learn more about this powerful relationship technique: {' '}
+            <a 
+              href="https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=quiz" 
+              target="_blank"
+              rel="noopener noreferrer" 
+              className="text-primary-600 hover:underline font-medium"
+            >
+              His Secret Obsession
+            </a>
+          </p>
         </div>
         
         {/* Bonus gift box */}

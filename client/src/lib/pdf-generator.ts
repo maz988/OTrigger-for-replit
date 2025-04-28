@@ -240,26 +240,38 @@ export const generatePDF = ({
   
   yPosition += 5;
   
-  // Add call to action box with pink background
+  // Add a visual call to action box similar to the website version
   const ctaY = yPosition;
-  doc.setFillColor(252, 231, 243); // Light pink #fce7f3
-  doc.setDrawColor(242, 75, 124); // #f24b7c
-  doc.roundedRect(margin, ctaY, contentWidth, 25, 3, 3, 'FD');
   
-  // Add CTA text
-  doc.setTextColor(31, 41, 55); // gray-800
+  // Create a light pink box with border
+  doc.setFillColor(252, 231, 243); // Light pink #fce7f3
+  doc.setDrawColor(242, 75, 124); // #f24b7c - primary-200
+  doc.roundedRect(margin, ctaY, contentWidth, 40, 3, 3, 'FD');
+  
+  // Add heading
+  doc.setTextColor(242, 75, 124); // #f24b7c
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("To learn the full system that activates his Hero Instinct, download:", margin + 5, ctaY + 8);
+  doc.text("Expert Recommendation", margin + 5, ctaY + 8);
   
-  // Product name with hidden link
+  // Add description text
+  doc.setTextColor(31, 41, 55); // gray-800
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  const descriptionText = "His Secret Obsession specializes in activating a man's 'Hero Instinct' - the psychological trigger that makes a man feel a deep biological drive to protect, provide for, and commit to the woman he loves. Learn more about this powerful relationship technique:";
+  
+  const descLines = doc.splitTextToSize(descriptionText, contentWidth - 10);
+  doc.text(descLines, margin + 5, ctaY + 15);
+  
+  // Add program name with hidden link
+  const linkY = ctaY + 15 + (descLines.length * 5) + 3;
   doc.setTextColor(242, 75, 124); // #f24b7c
-  doc.setFontSize(14);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("His Secret Obsession", margin + 5, ctaY + 16);
+  doc.text("His Secret Obsession", margin + 5, linkY);
   
-  // Make the product name clickable with affiliate link
-  doc.link(margin + 5, ctaY + 10, 60, 8, { url: affiliateLink });
+  // Make the program name clickable with affiliate link
+  doc.link(margin + 5, linkY - 5, 60, 8, { url: affiliateLink });
   
   // Add footer
   doc.setTextColor(107, 114, 128); // gray-500
