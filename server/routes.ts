@@ -166,66 +166,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send welcome email with lead magnet
       try {
-        // Import email service functions
-        const { sendEmailWithService } = await import('./services/newEmailDispatcher');
+        // Import sendSubscriberToEmailService from newEmailDispatcher
+        const { sendSubscriberToEmailService } = await import('./services/newEmailDispatcher');
         
-        // Try to find appropriate email template
+        // Add to email service first
+        console.log(`Adding subscriber to email service: ${firstName} (${email})`);
+        const subscriberResult = await sendSubscriberToEmailService({
+          email,
+          name: firstName,
+          source: 'lead-magnet-hero-instinct',
+          listId: '1' // Use default list
+        });
+        
+        if (subscriberResult.success) {
+          console.log('Successfully added subscriber to email service');
+        } else {
+          console.warn('Failed to add subscriber to email service:', subscriberResult.error);
+        }
+        
+        // Try to find welcome sequence and template
         const sequences = await storage.getAllEmailSequences();
-        const welcomeSequence = sequences.find(seq => seq.name.toLowerCase().includes('welcome') || seq.name.toLowerCase().includes('hero'));
+        const welcomeSequence = sequences.find(seq => 
+          seq.name.toLowerCase().includes('welcome') || 
+          seq.name.toLowerCase().includes('hero')
+        );
         
         if (welcomeSequence) {
-          const templates = await storage.getEmailTemplatesBySequenceId(welcomeSequence.id);
-          const welcomeTemplate = templates.find(t => t.subject.toLowerCase().includes('welcome') || t.subject.toLowerCase().includes('hero'));
+          console.log(`Found welcome sequence: ${welcomeSequence.name}`);
+          // Queue a welcome email in the system (will be sent automatically by the queue processor)
+          await storage.saveQueuedEmail({
+            subscriberId: subscriber.id,
+            sequenceId: welcomeSequence.id,
+            status: 'pending',
+            scheduledFor: new Date(),
+            data: {
+              firstName,
+              downloadLink: '/downloads/hero-instinct-phrases.pdf'
+            }
+          });
           
-          if (welcomeTemplate) {
-            console.log(`Sending welcome email using template ID: ${welcomeTemplate.id}`);
-            
-            await sendEmailWithService({
-              to: email,
-              subject: welcomeTemplate.subject.replace('[FIRSTNAME]', firstName),
-              html: welcomeTemplate.content
-                .replace('[FIRSTNAME]', firstName)
-                .replace('[DOWNLOAD_LINK]', '/downloads/hero-instinct-phrases.pdf'),
-              from: 'support@obsessiontrigger.com',
-              subscriberId: subscriber.id
-            });
-          } else {
-            // Fallback to generic email
-            console.log('No specific welcome template found, sending generic email');
-            
-            await sendEmailWithService({
-              to: email,
-              subject: `Your hero instinct guide is here, ${firstName}!`,
-              html: `
-                <h1>Your Free Guide Is Ready!</h1>
-                <p>Hi ${firstName},</p>
-                <p>Thank you for requesting the "7 Secret Phrases That Trigger His Hero Instinct" guide! Click the link below to download your copy:</p>
-                <p><a href="/downloads/hero-instinct-phrases.pdf">Download Your Free Guide</a></p>
-                <p>These powerful phrases will help you connect with him on a deeper level than ever before.</p>
-                <p>Enjoy!</p>
-              `,
-              from: 'support@obsessiontrigger.com',
-              subscriberId: subscriber.id
-            });
-          }
+          console.log('Welcome email queued for sending');
         } else {
-          // Fallback if no welcome sequence found
-          console.log('No welcome sequence found, sending generic email');
+          console.log('No welcome sequence found, creating a new one');
           
-          await sendEmailWithService({
-            to: email,
-            subject: `Your hero instinct guide is here, ${firstName}!`,
-            html: `
+          // Create a basic welcome sequence if none exists
+          const newSequence = await storage.saveEmailSequence({
+            name: 'Hero Instinct Welcome',
+            description: 'Welcome sequence for hero instinct lead magnet',
+            isActive: true
+          });
+          
+          // Create a template for it
+          const welcomeTemplate = await storage.saveEmailTemplate({
+            sequenceId: newSequence.id,
+            name: 'Hero Instinct Welcome',
+            subject: 'Your Hero Instinct Guide is Here, [FIRSTNAME]!',
+            content: `
               <h1>Your Free Guide Is Ready!</h1>
-              <p>Hi ${firstName},</p>
+              <p>Hi [FIRSTNAME],</p>
               <p>Thank you for requesting the "7 Secret Phrases That Trigger His Hero Instinct" guide! Click the link below to download your copy:</p>
-              <p><a href="/downloads/hero-instinct-phrases.pdf">Download Your Free Guide</a></p>
+              <p><a href="[DOWNLOAD_LINK]">Download Your Free Guide</a></p>
               <p>These powerful phrases will help you connect with him on a deeper level than ever before.</p>
               <p>Enjoy!</p>
             `,
-            from: 'support@obsessiontrigger.com',
-            subscriberId: subscriber.id
+            delay: 0,
+            isActive: true
           });
+          
+          // Queue the email
+          await storage.saveQueuedEmail({
+            subscriberId: subscriber.id,
+            sequenceId: newSequence.id,
+            templateId: welcomeTemplate.id,
+            status: 'pending',
+            scheduledFor: new Date(),
+            data: {
+              firstName,
+              downloadLink: '/downloads/hero-instinct-phrases.pdf'
+            }
+          });
+          
+          console.log('Created new welcome sequence and queued email');
         }
       } catch (emailError) {
         console.error('Failed to send welcome email:', emailError);

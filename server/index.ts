@@ -11,6 +11,7 @@ app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 // Serve static files from the public directory
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 app.use('/images', express.static(path.join(process.cwd(), 'public', 'images')));
+app.use('/downloads', express.static(path.join(process.cwd(), 'data', 'downloads')));
 
 app.use((req, res, next) => {
   const start = Date.now();
