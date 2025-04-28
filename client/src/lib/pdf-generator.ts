@@ -343,54 +343,92 @@ export const generatePDF = ({
   // Clean HTML tags from advice and then process markdown-like advice text
   const cleanAdvice = stripHtmlTags(advice);
   
-  // Process markdown to ensure proper formatting and better section structure
+  // Process and clean up the AI-generated markdown content
+  // First, simplify the content structure by normalizing with consistent line breaks
   let formattedAdvice = cleanAdvice
-    // Remove ### markers that appear in bad spots
-    .replace(/#{3,}/g, '')
-    // Better formatting for actual headers
-    .replace(/#{1,2}\s+([^\n]+)/g, (_, header) => `\n\n## ${header}\n`)
+    // Clean up any existing repeated formatting
+    .replace(/#{1,}(?=#{1,})/g, '')
+    .replace(/(\n\s*){3,}/g, '\n\n')
+    .replace(/^[\s\n]*/, '')
+    .trim();
+    
+  // Now extract the main components - we'll rebuild in a consistent structure
+  
+  // Extract the personalized plan intro if it exists
+  let planIntro = "";
+  const planIntroMatch = formattedAdvice.match(/Your Personalized Obsession Trigger Plan[^#]*/i);
+  if (planIntroMatch) {
+    planIntro = planIntroMatch[0].trim();
+    formattedAdvice = formattedAdvice.replace(planIntroMatch[0], '');
+  }
+  
+  // Extract the understanding section if it exists
+  let understandingSection = "";
+  const understandingMatch = formattedAdvice.match(/(?:#{1,}\s*)?Understanding His Behavior[^#]*/i);
+  if (understandingMatch) {
+    understandingSection = understandingMatch[0].trim();
+    formattedAdvice = formattedAdvice.replace(understandingMatch[0], '');
+  }
+  
+  // Extract the how to respond section if it exists
+  let respondSection = "";
+  const respondMatch = formattedAdvice.match(/(?:#{1,}\s*)?How to Respond[^#]*/i);
+  if (respondMatch) {
+    respondSection = respondMatch[0].trim();
+    formattedAdvice = formattedAdvice.replace(respondMatch[0], '');
+  }
+  
+  // Extract the next steps section if it exists
+  let nextStepsSection = "";
+  const nextStepsMatch = formattedAdvice.match(/(?:#{1,}\s*)?Next Steps[^#]*/i);
+  if (nextStepsMatch) {
+    nextStepsSection = nextStepsMatch[0].trim();
+    formattedAdvice = formattedAdvice.replace(nextStepsMatch[0], '');
+  }
+  
+  // Now rebuild with proper formatting
+  formattedAdvice = "";
+  
+  // Add the plan intro
+  if (planIntro) {
+    formattedAdvice += planIntro.trim() + "\n\n";
+  }
+  
+  // Add the understanding section with proper header
+  if (understandingSection) {
+    formattedAdvice += "## Understanding His Behavior\n" + 
+      understandingSection.replace(/^(?:#{1,}\s*)?Understanding His Behavior/i, '').trim() + "\n\n";
+  }
+  
+  // Add the how to respond section with proper header
+  if (respondSection) {
+    formattedAdvice += "## How to Respond Effectively\n" + 
+      respondSection.replace(/^(?:#{1,}\s*)?How to Respond/i, '').trim() + "\n\n";
+      
+    // Process the numbered strategies in the respond section
+    for (let i = 1; i <= 5; i++) {
+      const strategy = new RegExp(`${i}\\.\\s+([^\\n]+(?:\\n(?!\\d+\\.).*?)*)`, 'g');
+      formattedAdvice = formattedAdvice.replace(strategy, (match, content) => {
+        return `\n${i}. ${content.trim()}\n`;
+      });
+    }
+  }
+  
+  // Add the next steps section with proper header
+  if (nextStepsSection) {
+    formattedAdvice += "## Next Steps\n" + 
+      nextStepsSection.replace(/^(?:#{1,}\s*)?Next Steps/i, '').trim() + "\n\n";
+  }
+  
+  // Clean up any remaining inconsistencies
+  formattedAdvice = formattedAdvice
     // Clean bold markers but preserve text
     .replace(/\*\*([^*]+)\*\*/g, (_, text) => text)
-    // Add newlines and formatting before numbered items for better separation
-    .replace(/^\d+\.\s+/gm, (match) => `\n\n${match}`)
-    // Convert dashes to bullets with proper spacing
+    // Normalize bullet points
     .replace(/^\s*-\s+/gm, (match) => `\n• ${match.substring(2)}`)
+    // Clean up excessive newlines
+    .replace(/(\n\s*){3,}/g, '\n\n')
     .trim();
-  
-  // Clean up multiple consecutive newlines
-  formattedAdvice = formattedAdvice.replace(/\n{3,}/g, '\n\n');
-  
-  // Fix header formatting - ensure "Understanding His Behavior" is a proper header
-  if (formattedAdvice.includes("Understanding His Behavior")) {
-    formattedAdvice = formattedAdvice.replace(
-      /Understanding His Behavior/g, 
-      "\n## Understanding His Behavior"
-    );
-  }
-  
-  // Fix "How to Respond" formatting to ensure it's a proper header
-  if (formattedAdvice.includes("How to Respond")) {
-    formattedAdvice = formattedAdvice.replace(
-      /How to Respond/g, 
-      "\n## How to Respond"
-    );
-  }
-  
-  // Fix "Next Steps" formatting to ensure it's a proper header
-  if (formattedAdvice.includes("Next Steps")) {
-    formattedAdvice = formattedAdvice.replace(
-      /Next Steps/g, 
-      "\n## Next Steps"
-    );
-  }
-  
-  // Process numbered action items to ensure they stand out
-  for (let i = 1; i <= 5; i++) {
-    const regex = new RegExp(`${i}\\.\\s+([^\\n]+)`, 'g');
-    formattedAdvice = formattedAdvice.replace(regex, (match, content) => {
-      return `\n${i}. ${content}`;
-    });
-  }
   
   // Split into sections with better formatting
   const sections = formattedAdvice.split('\n\n');
