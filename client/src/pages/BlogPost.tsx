@@ -17,6 +17,7 @@ interface BlogPost {
   category: string;
   publishedAt: string;
   updatedAt: string | null;
+  imageUrls?: { original: string, photographer?: string, alt?: string }[];
 }
 
 const BlogPost: React.FC = () => {
@@ -29,6 +30,86 @@ const BlogPost: React.FC = () => {
 
   const post = blogPostResponse?.success && blogPostResponse?.data ? 
     blogPostResponse.data : null;
+
+  // Process the content to enhance image arrangement
+  const processContent = (content: string, images?: { original: string, photographer?: string, alt?: string }[]) => {
+    if (!content) return content;
+    
+    // Add custom styling to images
+    let enhancedContent = content.replace(
+      /<img(.*?)src="(.*?)"(.*?)>/g, 
+      '<img$1src="$2"$3 class="rounded-lg shadow-md my-6 w-full h-auto">'
+    );
+    
+    // Add proper figure elements with captions when images reference a photographer
+    if (images && images.length > 0) {
+      // Replace existing images with proper figure elements
+      const imageRegex = /<img.*?src="(.*?)".*?>/g;
+      let match;
+      let imageIndex = 0;
+      const processedUrls: string[] = [];
+      
+      while ((match = imageRegex.exec(enhancedContent)) !== null && imageIndex < images.length) {
+        const imageUrl = match[1];
+        
+        // Skip if we've already processed this URL
+        if (processedUrls.includes(imageUrl)) continue;
+        processedUrls.push(imageUrl);
+        
+        const image = images[imageIndex];
+        const caption = image.photographer ? `Photo by ${image.photographer}` : '';
+        const alt = image.alt || post?.title || 'Blog image';
+        
+        const figureHtml = `
+          <figure class="my-8">
+            <img src="${image.original}" alt="${alt}" class="rounded-lg shadow-md w-full h-auto" />
+            ${caption ? `<figcaption class="text-sm text-gray-500 mt-2 text-center italic">${caption}</figcaption>` : ''}
+          </figure>
+        `;
+        
+        // Replace the image with the figure element
+        enhancedContent = enhancedContent.replace(match[0], figureHtml);
+        imageIndex++;
+      }
+      
+      // Insert any remaining images at appropriate points in the content if they weren't already included
+      if (imageIndex < images.length) {
+        // Find all paragraph elements
+        const paragraphs = enhancedContent.match(/<p>(.*?)<\/p>/g);
+        
+        if (paragraphs && paragraphs.length > 1) {
+          // Insert images after intro paragraphs
+          for (let i = imageIndex; i < images.length && i < paragraphs.length; i++) {
+            const image = images[i];
+            const caption = image.photographer ? `Photo by ${image.photographer}` : '';
+            const alt = image.alt || post?.title || 'Blog image';
+            
+            // Calculate position to insert (after the paragraph at index position i+2)
+            const insertPosition = Math.min(i + 2, paragraphs.length - 1);
+            const paragraphToInsertAfter = paragraphs[insertPosition];
+            const insertIndex = enhancedContent.indexOf(paragraphToInsertAfter) + paragraphToInsertAfter.length;
+            
+            const figureHtml = `
+              <figure class="my-8">
+                <img src="${image.original}" alt="${alt}" class="rounded-lg shadow-md w-full h-auto" />
+                ${caption ? `<figcaption class="text-sm text-gray-500 mt-2 text-center italic">${caption}</figcaption>` : ''}
+              </figure>
+            `;
+            
+            enhancedContent = enhancedContent.substring(0, insertIndex) + figureHtml + enhancedContent.substring(insertIndex);
+          }
+        }
+      }
+    }
+    
+    // Add styling to blockquotes
+    enhancedContent = enhancedContent.replace(
+      /<blockquote>([\s\S]*?)<\/blockquote>/g,
+      '<blockquote class="border-l-4 border-[#f24b7c] pl-4 py-1 my-6 text-lg italic text-gray-700">$1</blockquote>'
+    );
+    
+    return enhancedContent;
+  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
@@ -124,9 +205,85 @@ const BlogPost: React.FC = () => {
           </div>
           
           <div 
-            className="prose prose-lg max-w-none mb-10"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            className="prose prose-lg max-w-none mb-10 blog-content"
+            dangerouslySetInnerHTML={{ __html: processContent(post.content, post.imageUrls) }}
           ></div>
+          
+          {/* Add custom CSS for better blog layout */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            .blog-content {
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+              line-height: 1.8;
+              color: #333;
+            }
+            .blog-content h2 {
+              color: #f24b7c;
+              margin-top: 2rem;
+              margin-bottom: 1rem;
+              font-weight: 700;
+              font-size: 1.75rem;
+            }
+            .blog-content h3 {
+              color: #f24b7c;
+              margin-top: 1.5rem;
+              margin-bottom: 0.75rem;
+              font-weight: 600;
+              font-size: 1.5rem;
+            }
+            .blog-content p {
+              margin-bottom: 1.25rem;
+            }
+            .blog-content figure {
+              margin: 2rem 0;
+              width: 100%;
+              display: block;
+            }
+            .blog-content figure img {
+              border-radius: 0.5rem;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+              width: 100%;
+              height: auto;
+              transition: transform 0.3s ease;
+            }
+            .blog-content figure img:hover {
+              transform: scale(1.01);
+            }
+            .blog-content figcaption {
+              text-align: center;
+              font-size: 0.875rem;
+              color: #718096;
+              font-style: italic;
+              padding-top: 0.5rem;
+            }
+            .blog-content blockquote {
+              border-left: 4px solid #f24b7c;
+              padding-left: 1rem;
+              font-style: italic;
+              color: #4a5568;
+              margin: 1.5rem 0;
+              font-size: 1.125rem;
+            }
+            .blog-content ul, .blog-content ol {
+              padding-left: 1.5rem;
+              margin-bottom: 1.5rem;
+            }
+            .blog-content ul li, .blog-content ol li {
+              margin-bottom: 0.5rem;
+            }
+            .blog-content a {
+              color: #f24b7c;
+              text-decoration: none;
+              border-bottom: 1px dotted #f24b7c;
+              transition: border-bottom 0.2s ease;
+            }
+            .blog-content a:hover {
+              border-bottom: 1px solid #f24b7c;
+            }
+            .blog-content .quiz-link {
+              font-weight: 600;
+              color: #f24b7c;
+            }
+          `}} />
           
           {/* Quiz Call-to-Action */}
           <div className="bg-[#ffedf1] rounded-lg p-6 my-8">
