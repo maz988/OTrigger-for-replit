@@ -14,7 +14,8 @@ import {
   Linkedin, 
   MessageCircle,
   Sparkles,
-  Gift
+  Gift,
+  ExternalLink
 } from 'lucide-react';
 
 interface ResultsStepProps {
@@ -111,8 +112,23 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ advice, userData, pdfDocument
           </Button>
         </div>
         
+        {/* Affiliate CTA box */}
+        <div className="mt-6 p-4 border border-primary-200 rounded-lg bg-primary-50">
+          <h4 className="font-medium text-primary-800 mb-2 flex items-center text-sm">
+            <Sparkles className="h-4 w-4 mr-1" /> To learn the full system that activates his Hero Instinct:
+          </h4>
+          <a 
+            href="https://hop.clickbank.net/?affiliate=otrigger&vendor=hissecret&lp=0&tid=quiz" 
+            target="_blank"
+            rel="noopener noreferrer" 
+            className="text-center block w-full p-2 bg-primary-100 hover:bg-primary-200 rounded text-primary-600 font-medium transition-colors"
+          >
+            Download His Secret Obsession <ExternalLink className="inline h-3 w-3 ml-1" />
+          </a>
+        </div>
+        
         {/* Bonus gift box */}
-        <div className="mt-6 p-4 bg-[#fde8ef] rounded-lg">
+        <div className="mt-4 p-4 bg-[#fde8ef] rounded-lg">
           <div className="flex items-center mb-1">
             <Gift className="h-5 w-5 text-[#f24b7c] mr-2" />
             <h3 className="font-medium">Free Bonus!</h3>

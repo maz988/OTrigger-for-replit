@@ -1,17 +1,7 @@
 import { jsPDF } from "jspdf";
 import { QuizFormData, EmailFormData } from "@shared/schema";
-// Import image addImage plugin
+// Import autotable plugin for better formatting
 import 'jspdf-autotable';
-
-// Base64 encoded heart icon for PDF
-const HEART_ICON = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmMjRiN2MiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1oZWFydCI+PHBhdGggZD0iTTIwLjg0IDQuNjFhNS41IDUuNSAwIDAgMC03LjcgMEwxMiA1LjY3bC0xLjE0LTEuMDZhNS41IDUuNSAwIDAgMC03Ljc4IDcuNzhsMS4wNiAxLjA2TDEyIDIxLjIzbDcuODYtNy43OGwxLjA2LTEuMDZhNS41IDUuNSAwIDAgMCAwLTcuNzh6IiBmaWxsPSIjZmJiNWM4Ii8+PC9zdmc+";
-
-const DIAMOND_ICON = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmMjRiN2MiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1kaWFtb25kIj48cGF0aCBkPSJNMTYgMkg4TDMgOGw5IDEzbDktMTNMMTYgMnoiIGZpbGw9IiNmYmI1YzgiLz48L3N2Zz4=";
-
-const SPARKLE_ICON = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmMjRiN2MiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1zcGFya2xlcyI+PHBhdGggZD0iTTEyIDNWNSIgZmlsbD0iI2ZiYjVjOCIvPjxwYXRoIGQ9Ik0xOSA5aC0yIiBmaWxsPSIjZmJiNWM4Ii8+PHBhdGggZD0iTTEyIDE5djIiIGZpbGw9IiNmYmI1YzgiLz48cGF0aCBkPSJNNyA5SDUiIGZpbGw9IiNmYmI1YzgiLz48cGF0aCBkPSJtMTYuOTUgMTYgLjYgMiIgZmlsbD0iI2ZiYjVjOCIvPjxwYXRoIGQ9Im0zLjUgMTQuMTUgMS45LjYiIGZpbGw9IiNmYmI1YzgiLz48cGF0aCBkPSJtMTYuNiA2IDE1LTEuNCIgZmlsbD0iI2ZiYjVjOCIvPjxwYXRoIGQ9Im0zLjUgOS44NS45LjMiIGZpbGw9IiNmYmI1YzgiLz48L3N2Zz4=";
-
-// Relationship graphics
-const COUPLE_IMAGE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMjAwIDEwMCI+PHBhdGggZD0iTTcwLDIwYzE1LDAsMTUsMjAsMCwyMHMtMTUtMjAsMC0yMFoiIGZpbGw9IiNmMjRiN2MiIG9wYWNpdHk9IjAuMiIvPjxwYXRoIGQ9Ik0xMzAsMjBjMTUsMCwxNSwyMCwwLDIwcy0xNS0yMCwwLTIwWiIgZmlsbD0iI2YyNGI3YyIgb3BhY2l0eT0iMC4yIi8+PHBhdGggZD0iTTcwLDQwbC01LDQwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik03MCw0MGwxMCw0MCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTMwLDQwbC01LDQwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik0xMzAsNDBsMTAsNDAiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTEwMCw1MEM5MCw2MCw3MCw1MCw2NSwzNWMtNSwyMCw1LDMwLDI1LDMwczMwLTEwLDI1LTMwQzExMCw1MCw5MCw2MCw4MCw1MHoiIGZpbGw9IiNmMjRiN2MiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==";
 
 interface GeneratePDFParams {
   quizData: QuizFormData;
@@ -43,14 +33,26 @@ export const generatePDF = ({
   doc.setFillColor(252, 231, 243); // light pink #fce7f3
   doc.rect(0, 0, pageWidth, 40, 'F');
   
-  // Add heart icon
-  try {
-    const img = new Image();
-    img.src = HEART_ICON;
-    doc.addImage(HEART_ICON, 'SVG', pageWidth - margin - 10, margin - 10, 10, 10);
-  } catch (e) {
-    console.error('Error adding heart icon:', e);
-  }
+  // Draw a heart directly instead of using SVG image
+  const heartX = pageWidth - margin - 10;
+  const heartY = margin;
+  
+  // Draw heart shape
+  doc.setDrawColor(242, 75, 124); // #f24b7c
+  doc.setFillColor(242, 75, 124); // #f24b7c
+  doc.setLineWidth(0.5);
+  
+  // Left half of heart
+  doc.circle(heartX, heartY, 3, 'F');
+  // Right half of heart
+  doc.circle(heartX + 6, heartY, 3, 'F');
+  // Bottom triangle of heart
+  doc.triangle(
+    heartX - 3, heartY, 
+    heartX + 9, heartY, 
+    heartX + 3, heartY + 6, 
+    'F'
+  );
   
   // Add title with pink color
   doc.setTextColor(242, 59, 108); // #F23B6C
@@ -68,12 +70,42 @@ export const generatePDF = ({
   doc.setDrawColor(229, 231, 235); // gray-200
   doc.line(margin, margin + 18, pageWidth - margin, margin + 18);
   
-  // Add couple illustration
-  try {
-    doc.addImage(COUPLE_IMAGE, 'SVG', pageWidth / 2 - 25, margin + 22, 50, 25);
-  } catch (e) {
-    console.error('Error adding couple image:', e);
-  }
+  // Draw relationship illustration box
+  const coupleX = pageWidth / 2;
+  const coupleY = margin + 30;
+  
+  // Background box for illustration
+  doc.setFillColor(252, 231, 243); // Light pink #fce7f3
+  doc.roundedRect(coupleX - 20, coupleY - 10, 40, 25, 2, 2, 'F');
+  
+  // Hearts for the illustration
+  doc.setFillColor(242, 75, 124); // #f24b7c
+  
+  // Left heart
+  doc.circle(coupleX - 10, coupleY, 3, 'F');
+  doc.circle(coupleX - 5, coupleY, 3, 'F');
+  doc.triangle(
+    coupleX - 13, coupleY, 
+    coupleX - 2, coupleY, 
+    coupleX - 7.5, coupleY + 5, 
+    'F'
+  );
+  
+  // Right heart
+  doc.circle(coupleX + 5, coupleY, 3, 'F');
+  doc.circle(coupleX + 10, coupleY, 3, 'F');
+  doc.triangle(
+    coupleX + 2, coupleY, 
+    coupleX + 13, coupleY, 
+    coupleX + 7.5, coupleY + 5, 
+    'F'
+  );
+  
+  // Text for illustration
+  doc.setTextColor(242, 75, 124); // #f24b7c
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.text("Understanding Relationships", coupleX, coupleY + 10, { align: "center" });
   
   // Start content after the image
   let yPosition = margin + 55;
@@ -93,6 +125,36 @@ export const generatePDF = ({
   // Process markdown-like advice text
   const sections = advice.split('\n\n');
   
+  // Helper function to draw a sparkle
+  const drawSparkle = (x: number, y: number, size: number = 5) => {
+    const halfSize = size / 2;
+    
+    // Draw sparkle
+    doc.setDrawColor(242, 75, 124);
+    doc.setLineWidth(0.5);
+    
+    // Vertical line
+    doc.line(x, y - halfSize, x, y + halfSize);
+    
+    // Horizontal line
+    doc.line(x - halfSize, y, x + halfSize, y);
+    
+    // Diagonal lines
+    doc.line(x - halfSize * 0.7, y - halfSize * 0.7, x + halfSize * 0.7, y + halfSize * 0.7);
+    doc.line(x - halfSize * 0.7, y + halfSize * 0.7, x + halfSize * 0.7, y - halfSize * 0.7);
+  };
+  
+  // Helper function to draw a diamond
+  const drawDiamond = (x: number, y: number, size: number = 6) => {
+    doc.setFillColor(242, 75, 124);
+    
+    // Draw a simple square rotated 45 degrees instead
+    doc.setLineWidth(0.5);
+    
+    // Draw a small filled circle instead of a diamond to avoid errors
+    doc.circle(x, y, size/2, 'F');
+  };
+  
   for (const section of sections) {
     // Check if we need to add a page break
     if (yPosition > pageHeight - 50) {
@@ -109,11 +171,7 @@ export const generatePDF = ({
       
       // Add diamond icon before main headers
       if (section.startsWith('## ') && !headerText.includes("How to Respond")) {
-        try {
-          doc.addImage(DIAMOND_ICON, 'SVG', margin - 10, yPosition - 5, 8, 8);
-        } catch (e) {
-          console.error('Error adding diamond icon:', e);
-        }
+        drawDiamond(margin - 7, yPosition - 1);
       }
       
       const lines = doc.splitTextToSize(headerText, contentWidth);
@@ -132,11 +190,7 @@ export const generatePDF = ({
       
       // Add sparkle icon for numbered items
       if (/^\d+\.\s/.test(section)) {
-        try {
-          doc.addImage(SPARKLE_ICON, 'SVG', margin, yPosition - 4, 5, 5);
-        } catch (e) {
-          console.error('Error adding sparkle icon:', e);
-        }
+        drawSparkle(margin + 3, yPosition - 1, 4);
       }
       
       const lines = doc.splitTextToSize(listText, contentWidth - 10);
@@ -160,8 +214,34 @@ export const generatePDF = ({
     yPosition = margin;
   }
   
+  // Next Steps section before CTA
+  doc.setTextColor(242, 75, 124); // #f24b7c
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("Next Steps", margin, yPosition);
+  yPosition += 8;
+  
+  // Next steps advice
+  doc.setTextColor(31, 41, 55); // gray-800
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  
+  const nextStepsText = [
+    "Apply these techniques for the next 2-3 weeks, and you'll likely notice a shift in his behavior pattern.",
+    "Remember that a man who truly values you will work to keep you in his life.",
+    "Remember: You deserve someone who recognizes your worth consistently, not just when it's convenient for them."
+  ];
+  
+  for (const step of nextStepsText) {
+    const lines = doc.splitTextToSize(step, contentWidth);
+    doc.text(lines, margin, yPosition);
+    yPosition += lines.length * 6 + 2;
+  }
+  
+  yPosition += 5;
+  
   // Add call to action box with pink background
-  const ctaY = yPosition + 5;
+  const ctaY = yPosition;
   doc.setFillColor(252, 231, 243); // Light pink #fce7f3
   doc.setDrawColor(242, 75, 124); // #f24b7c
   doc.roundedRect(margin, ctaY, contentWidth, 25, 3, 3, 'FD');
@@ -172,16 +252,14 @@ export const generatePDF = ({
   doc.setFont("helvetica", "bold");
   doc.text("To learn the full system that activates his Hero Instinct, download:", margin + 5, ctaY + 8);
   
+  // Product name with hidden link
   doc.setTextColor(242, 75, 124); // #f24b7c
   doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
   doc.text("His Secret Obsession", margin + 5, ctaY + 16);
   
-  doc.setTextColor(242, 75, 124); // #f24b7c
-  doc.setFontSize(11);
-  doc.text("Click here!", margin + 5, ctaY + 22);
-  
-  // Add hidden link annotation (not visible in the text but clickable)
-  doc.link(margin + 5, ctaY + 16, 80, 10, { url: affiliateLink });
+  // Make the product name clickable with affiliate link
+  doc.link(margin + 5, ctaY + 10, 60, 8, { url: affiliateLink });
   
   // Add footer
   doc.setTextColor(107, 114, 128); // gray-500
